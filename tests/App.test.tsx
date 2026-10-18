@@ -125,6 +125,81 @@ describe('App', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
   });
 
+  it('shows page size and page count, and switches page size', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const preview = screen.getByLabelText('Resume preview');
+    expect(preview).toHaveTextContent('US Letter');
+    expect(preview).toHaveTextContent('1 page');
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('button', { name: 'Formatting' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByLabelText('Page size')).toHaveValue('letter');
+
+    await user.selectOptions(screen.getByLabelText('Page size'), 'a4');
+    expect(preview).toHaveTextContent('A4');
+
+    await waitFor(() => {
+      const raw = localStorage.getItem(DRAFT_KEY) ?? '';
+      expect(raw).toContain('"pageSize":"a4"');
+    });
+  });
+
+  it('changes typography and resets formatting to defaults', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const preview = screen.getByLabelText('Resume preview');
+    const name = within(preview).getByText('Jordan Avery');
+    const initialSize = Number.parseFloat((name as HTMLElement).style.fontSize);
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.selectOptions(screen.getByLabelText('Font size'), 'large');
+    await user.selectOptions(screen.getByLabelText('Page size'), 'legal');
+
+    const enlarged = Number.parseFloat((name as HTMLElement).style.fontSize);
+    expect(enlarged).toBeGreaterThan(initialSize);
+    expect(preview).toHaveTextContent('US Legal');
+
+    await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+    expect(screen.getByLabelText('Page size')).toHaveValue('letter');
+    expect(screen.getByLabelText('Font size')).toHaveValue('standard');
+    expect(preview).toHaveTextContent('US Letter');
+  });
+
+  it('persists formatting across reloads and imports', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.selectOptions(screen.getByLabelText('Page size'), 'a4');
+    await user.selectOptions(screen.getByLabelText('Content density'), 'spacious');
+
+    await waitFor(() => {
+      const raw = localStorage.getItem(DRAFT_KEY) ?? '';
+      expect(raw).toContain('"pageSize":"a4"');
+      expect(raw).toContain('"density":"spacious"');
+    });
+
+    unmount();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByLabelText('Page size')).toHaveValue('a4');
+    expect(screen.getByLabelText('Content density')).toHaveValue('spacious');
+
+    await user.click(screen.getByRole('button', { name: 'Import text' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Structured resume text'), {
+      target: { value: '# Imported Person\nimported@example.com\n\n## SUMMARY\nFresh.' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Parse and replace' }));
+
+    expect(screen.getByLabelText('Page size')).toHaveValue('a4');
+    expect(screen.getByLabelText('Content density')).toHaveValue('spacious');
+  });
+
   it('adds a custom section', async () => {
     const user = userEvent.setup();
     render(<App />);

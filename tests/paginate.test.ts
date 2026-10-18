@@ -4,6 +4,7 @@ import { paginateColumn, type FlowBlock } from '../src/lib/paginate';
 function block(lines: string[], options: Partial<FlowBlock> = {}): FlowBlock {
   return {
     sectionId: 'sec-0',
+    kind: 'body',
     lineHeightPt: 10,
     lines: lines.map((text) => ({
       text,
@@ -59,6 +60,44 @@ describe('paginateColumn', () => {
     expect(pages).toHaveLength(2);
     expect(pages[1][0].lines[0].text).toBe('heading');
     expect(pages[1][1].lines[0].text).toBe('content');
+  });
+
+  it('keeps a title, subtitle, and metadata chain together', () => {
+    const pages = paginateColumn(
+      [
+        block(['filler1', 'filler2', 'filler3', 'filler4', 'filler5']),
+        block(['title'], { keepWithNext: true, splittable: false }),
+        block(['subtitle'], { keepWithNext: true, splittable: false }),
+        block(['meta'], { keepWithNext: true, splittable: false }),
+        block(['bullet1', 'bullet2']),
+      ],
+      60,
+      60,
+      200,
+    );
+
+    expect(pages).toHaveLength(2);
+    expect(pages[1].map((item) => item.lines[0].text)).toEqual([
+      'title',
+      'subtitle',
+      'meta',
+      'bullet1',
+    ]);
+  });
+
+  it('keeps a heading with the first two lines of the next block', () => {
+    const pages = paginateColumn(
+      [
+        block(['filler1', 'filler2', 'filler3', 'filler4']),
+        block(['heading'], { keepWithNext: true, splittable: false }),
+        block(['content1', 'content2', 'content3'], { splittable: false }),
+      ],
+      60,
+      60,
+      200,
+    );
+    expect(pages).toHaveLength(2);
+    expect(pages[1][0].lines[0].text).toBe('heading');
   });
 
   it('never returns a trailing empty page', () => {

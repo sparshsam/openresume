@@ -3,6 +3,8 @@ import type { SaveState } from '../hooks/useDraft';
 interface ToolbarProps {
   saveState: SaveState;
   message: string | null;
+  formattingOpen: boolean;
+  onToggleFormatting: () => void;
   onImport: () => void;
   onExportPdf: () => void;
   onExportDocx: () => void;
@@ -19,6 +21,8 @@ function statusText(saveState: SaveState, message: string | null): string {
 export function Toolbar({
   saveState,
   message,
+  formattingOpen,
+  onToggleFormatting,
   onImport,
   onExportPdf,
   onExportDocx,
@@ -35,6 +39,15 @@ export function Toolbar({
         <span className="toolbar-status" role="status" aria-live="polite">
           {statusText(saveState, message)}
         </span>
+        <button
+          type="button"
+          className="button"
+          aria-expanded={formattingOpen}
+          aria-controls="formatting-panel"
+          onClick={onToggleFormatting}
+        >
+          Formatting
+        </button>
         <button type="button" className="button" onClick={onImport}>
           Import text
         </button>

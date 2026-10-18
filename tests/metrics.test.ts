@@ -116,9 +116,9 @@ describe('normalize', () => {
     expect(
       normalizeFormat({ fontSize: 'large', margins: 'wide', density: 'compact' }),
     ).toMatchObject({ fontSize: 'large', margins: 'wide', density: 'compact' });
-    expect(
-      normalizeFormat({ fontSize: 'huge', margins: 'giant', density: 'unknown' }),
-    ).toEqual(DEFAULT_FORMAT);
+    expect(normalizeFormat({ fontSize: 'huge', margins: 'giant', density: 'unknown' })).toEqual(
+      DEFAULT_FORMAT,
+    );
   });
 
   it('upgrades a v0.1.0 template without losing its page size', () => {

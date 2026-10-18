@@ -23,7 +23,8 @@ function drawHeader(doc: jsPDF, header: HeaderLayout): void {
 }
 
 export function createPdfDocument(resume: Resume, layout: Layout): jsPDF {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: false });
+  const pageFormat: [number, number] = [layout.pageWidthPt, layout.pageHeightPt];
+  const doc = new jsPDF({ unit: 'pt', format: pageFormat, compress: false });
   doc.setProperties({
     title: `${resume.header.name || 'Resume'} — Resume`,
     subject: resume.header.headline ?? 'Resume',
@@ -32,7 +33,7 @@ export function createPdfDocument(resume: Resume, layout: Layout): jsPDF {
   });
 
   layout.pages.forEach((page, index) => {
-    if (index > 0) doc.addPage('a4', 'portrait');
+    if (index > 0) doc.addPage(pageFormat, 'portrait');
     if (page.header) drawHeader(doc, page.header);
 
     for (const block of page.blocks) {

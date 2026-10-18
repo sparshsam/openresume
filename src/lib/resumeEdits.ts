@@ -1,4 +1,13 @@
-import type { Resume, ResumeItem, ResumeSection, SectionKind } from '../types/resume';
+import {
+  DEFAULT_FORMAT,
+  DEFAULT_TEMPLATE,
+  type FormatSettings,
+  type Resume,
+  type ResumeItem,
+  type ResumeSection,
+  type ResumeTemplate,
+  type SectionKind,
+} from '../types/resume';
 
 let counter = 0;
 
@@ -165,6 +174,23 @@ export function removeBullet(
           }
         : section,
     ),
+  };
+}
+
+export function updateTemplate(resume: Resume, patch: Partial<ResumeTemplate>): Resume {
+  return { ...resume, template: { ...resume.template, ...patch } };
+}
+
+export function updateFormat(resume: Resume, patch: Partial<FormatSettings>): Resume {
+  return updateTemplate(resume, {
+    format: { ...resume.template.format, ...patch },
+  });
+}
+
+export function resetTemplate(resume: Resume): Resume {
+  return {
+    ...resume,
+    template: { ...DEFAULT_TEMPLATE, format: { ...DEFAULT_FORMAT } },
   };
 }
 

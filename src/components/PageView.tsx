@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react';
 import type { PlacedLine } from '../lib/paginate';
 import type { HeaderLine, PageLayout } from '../lib/layout';
 import type { FontSpec } from '../lib/measure';
-import { PAGE } from '../lib/tokens';
 
 interface PageViewProps {
   page: PageLayout;
@@ -39,7 +38,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
   return (
     <div
       className="page"
-      style={{ width: `${PAGE.widthPt}pt`, height: `${PAGE.heightPt}pt` }}
+      style={{ width: `${page.widthPt}pt`, height: `${page.heightPt}pt` }}
       role="group"
       aria-label={`Resume page ${page.index + 1}`}
     >
@@ -47,7 +46,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
         <>
           <span
             className="page-line"
-            style={headerStyle(page.header.name, 27)}
+            style={headerStyle(page.header.name, page.header.name.font.sizePt * 1.17)}
             onClick={() => onFocusTarget?.('__header__')}
           >
             {page.header.name.text}
@@ -55,7 +54,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
           {page.header.headline ? (
             <span
               className="page-line"
-              style={headerStyle(page.header.headline, 13)}
+              style={headerStyle(page.header.headline, page.header.headline.font.sizePt * 1.24)}
               onClick={() => onFocusTarget?.('__header__')}
             >
               {page.header.headline.text}
@@ -65,7 +64,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
             <span
               key={`contact-${index}`}
               className="page-line"
-              style={headerStyle(line, 11.2)}
+              style={headerStyle(line, line.font.sizePt * 1.33)}
               onClick={() => onFocusTarget?.('__header__')}
             >
               {line.text}

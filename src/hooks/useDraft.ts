@@ -30,7 +30,7 @@ export function useDraft() {
 
   const reset = useCallback(() => {
     clearDraft();
-    setResume(createSampleResume());
+    setResume((current) => ({ ...createSampleResume(), template: current.template }));
     setSaveState('loaded');
   }, []);
 

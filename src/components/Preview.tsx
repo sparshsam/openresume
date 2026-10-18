@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { PageView } from './PageView';
-import { PAGE } from '../lib/tokens';
 import type { Layout } from '../lib/layout';
 
 const PAGE_GAP_PX = 28;
@@ -20,7 +19,7 @@ export function Preview({ layout, onFocusTarget }: PreviewProps) {
     if (!region) return;
 
     const updateScale = () => {
-      const pageWidthPx = PAGE.widthPt * PX_PER_PT;
+      const pageWidthPx = layout.pageWidthPt * PX_PER_PT;
       const available = region.clientWidth - 48;
       setScale(Math.max(0.35, Math.min(1, available / pageWidthPx)));
     };
@@ -33,10 +32,10 @@ export function Preview({ layout, onFocusTarget }: PreviewProps) {
     const observer = new ResizeObserver(updateScale);
     observer.observe(region);
     return () => observer.disconnect();
-  }, []);
+  }, [layout.pageWidthPt]);
 
-  const pageWidthPx = PAGE.widthPt * PX_PER_PT;
-  const pageHeightPx = PAGE.heightPt * PX_PER_PT;
+  const pageWidthPx = layout.pageWidthPt * PX_PER_PT;
+  const pageHeightPx = layout.pageHeightPt * PX_PER_PT;
   const totalHeightPx =
     layout.pages.length * pageHeightPx + Math.max(0, layout.pages.length - 1) * PAGE_GAP_PX;
 
@@ -44,7 +43,8 @@ export function Preview({ layout, onFocusTarget }: PreviewProps) {
     <div className="preview-region" ref={regionRef} aria-label="Resume preview">
       <div className="preview-meta">
         <span>
-          {layout.pages.length} {layout.pages.length === 1 ? 'page' : 'pages'}
+          {layout.pageSizeLabel} · {layout.pages.length}{' '}
+          {layout.pages.length === 1 ? 'page' : 'pages'}
         </span>
         <span>{Math.round(scale * 100)}%</span>
       </div>

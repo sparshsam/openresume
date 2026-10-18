@@ -1,5 +1,16 @@
 import type { FontSpec } from './measure';
 
+export type BlockKind =
+  | 'heading'
+  | 'title'
+  | 'subtitle'
+  | 'meta'
+  | 'body'
+  | 'bullet'
+  | 'listItem'
+  | 'skillLabel'
+  | 'skillValue';
+
 export interface FlowLine {
   text: string;
   xOffsetPt: number;
@@ -11,6 +22,7 @@ export interface FlowLine {
 export interface FlowBlock {
   sectionId: string;
   itemId?: string;
+  kind: BlockKind;
   lineHeightPt: number;
   lines: FlowLine[];
   spaceBeforePt: number;
@@ -27,6 +39,7 @@ export interface PlacedLine extends FlowLine {
 export interface PlacedBlock {
   sectionId: string;
   itemId?: string;
+  kind: BlockKind;
   xPt: number;
   yPt: number;
   widthPt: number;
@@ -62,6 +75,7 @@ export function paginateColumn(
     const placed: PlacedBlock = {
       sectionId: block.sectionId,
       itemId: block.itemId,
+      kind: block.kind,
       xPt: 0,
       yPt,
       widthPt: columnWidthPt,
@@ -90,7 +104,7 @@ export function paginateColumn(
       const next = blocks[index + 1];
       const keepWithNextPt =
         block.keepWithNext && next
-          ? next.spaceBeforePt + Math.min(next.lines.length, 1) * next.lineHeightPt
+          ? next.spaceBeforePt + Math.min(next.lines.length, 2) * next.lineHeightPt
           : 0;
 
       if (neededPt + keepWithNextPt <= availablePt) {

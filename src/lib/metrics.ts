@@ -63,6 +63,12 @@ const BULLET_SPACING: Record<SpacingPreset, number> = {
   relaxed: 2.6,
 };
 
+const WORD_LINE_TWIPS: Record<SpacingPreset, number> = {
+  compact: 240,
+  standard: 276,
+  relaxed: 330,
+};
+
 const MAIN_COLUMN_RATIO = 0.6308;
 const MIN_SIDE_WIDTH_PT = 100;
 
@@ -93,6 +99,7 @@ export interface ResolvedMetrics {
   paragraphAfterPt: number;
   bulletAfterPt: number;
   densityFactor: number;
+  wordLineTwips: number;
 }
 
 export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
@@ -147,5 +154,6 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
     paragraphAfterPt: 3 * density,
     bulletAfterPt: BULLET_SPACING[normalized.format.bulletSpacing] * density,
     densityFactor: density,
+    wordLineTwips: WORD_LINE_TWIPS[normalized.format.lineSpacing],
   };
 }

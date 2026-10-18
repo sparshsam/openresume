@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
+import { FormattingPanel } from './components/FormattingPanel';
 import { ImportDialog } from './components/ImportDialog';
 import { Preview } from './components/Preview';
 import { Toolbar } from './components/Toolbar';
@@ -14,14 +15,24 @@ import {
   removeBullet,
   removeItem,
   removeSection,
+  resetTemplate,
   updateBullet,
   updateContact,
+  updateFormat,
   updateHeader,
   updateItem,
   updateSection,
+  updateTemplate,
 } from './lib/resumeEdits';
 import { serializeResume } from './lib/serialize';
-import type { Resume, ResumeItem, ResumeSection, SectionKind } from './types/resume';
+import type {
+  FormatSettings,
+  PageSize,
+  Resume,
+  ResumeItem,
+  ResumeSection,
+  SectionKind,
+} from './types/resume';
 
 function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
@@ -37,6 +48,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 export default function App() {
   const { resume, setResume, reset, saveState } = useDraft();
   const [importOpen, setImportOpen] = useState(false);
+  const [formattingOpen, setFormattingOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
@@ -90,6 +102,19 @@ export default function App() {
     }
   };
 
+  const handlePageSize = (pageSize: PageSize) => {
+    setResume((current) => updateTemplate(current, { pageSize }));
+  };
+
+  const handleFormat = (patch: Partial<FormatSettings>) => {
+    setResume((current) => updateFormat(current, patch));
+  };
+
+  const handleResetFormatting = () => {
+    setResume((current) => resetTemplate(current));
+    setMessage('Formatting reset to defaults.');
+  };
+
   const sectionHandlers = {
     onAddSection: (kind: SectionKind) => setResume((current) => addSection(current, kind)),
     onUpdateSection: (sectionId: string, patch: Partial<ResumeSection>) =>
@@ -119,11 +144,21 @@ export default function App() {
       <Toolbar
         saveState={saveState}
         message={message}
+        formattingOpen={formattingOpen}
+        onToggleFormatting={() => setFormattingOpen((open) => !open)}
         onImport={() => setImportOpen(true)}
         onExportPdf={handleExportPdf}
         onExportDocx={handleExportDocx}
         onReset={handleReset}
       />
+      {formattingOpen ? (
+        <FormattingPanel
+          template={resume.template}
+          onPageSize={handlePageSize}
+          onFormat={handleFormat}
+          onReset={handleResetFormatting}
+        />
+      ) : null}
       <div className="workspace">
         <EditorPanel
           resume={resume}

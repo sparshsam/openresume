@@ -1,8 +1,9 @@
 import { measureLineWidth, wrapText, type FontSpec } from './measure';
-import { paginateColumn, type FlowBlock, type PlacedBlock } from './paginate';
-import { COLORS, COLUMNS, HEADER, MARGIN, PAGE, SPACING, TYPE } from './tokens';
-import type { ColumnId, Resume, ResumeItem, ResumeSection } from '../types/resume';
+import { resolveMetrics, type ResolvedMetrics } from './metrics';
+import { paginateColumn, type BlockKind, type FlowBlock, type PlacedBlock } from './paginate';
 import { LIST_KINDS } from './parse';
+import { COLORS } from './tokens';
+import type { ColumnId, Resume, ResumeItem, ResumeSection } from '../types/resume';
 
 export interface HeaderLine {
   text: string;
@@ -31,37 +32,53 @@ export interface Layout {
   pages: PageLayout[];
   pageWidthPt: number;
   pageHeightPt: number;
+  pageSizeLabel: string;
+  metrics: ResolvedMetrics;
 }
-
-const BODY: FontSpec = { sizePt: TYPE.bodyPt };
-const BODY_BOLD: FontSpec = { sizePt: TYPE.bodyPt, bold: true };
-const SMALL: FontSpec = { sizePt: TYPE.smallPt };
-const HEADING: FontSpec = { sizePt: TYPE.headingPt, bold: true };
 
 const BULLET_PREFIX = '•  ';
 
-function headerLayout(resume: Resume): HeaderLayout {
+function bodyFont(metrics: ResolvedMetrics): FontSpec {
+  return { sizePt: metrics.bodyPt };
+}
+
+function boldFont(metrics: ResolvedMetrics): FontSpec {
+  return { sizePt: metrics.bodyPt, bold: true };
+}
+
+function smallFont(metrics: ResolvedMetrics): FontSpec {
+  return { sizePt: metrics.smallPt };
+}
+
+function headingFont(metrics: ResolvedMetrics): FontSpec {
+  return { sizePt: metrics.headingPt, bold: true };
+}
+
+function buildHeader(
+  resume: Resume,
+  metrics: ResolvedMetrics,
+): { header: HeaderLayout; heightPt: number } {
   const name: HeaderLine = {
     text: resume.header.name,
-    xPt: MARGIN.xPt,
-    yPt: MARGIN.topPt + HEADER.nameTopPt,
-    font: { sizePt: TYPE.namePt, bold: true },
+    xPt: metrics.marginXPt,
+    yPt: metrics.marginTopPt,
+    font: { sizePt: metrics.namePt, bold: true },
     color: COLORS.accent,
   };
 
-  let cursor = MARGIN.topPt + HEADER.nameTopPt + TYPE.nameLinePt;
+  let cursor = metrics.marginTopPt + metrics.nameLinePt;
   let headline: HeaderLine | undefined;
 
   if (resume.header.headline) {
-    cursor += HEADER.headlineGapPt - TYPE.nameLinePt;
+    const yPt = cursor + 4;
     headline = {
       text: resume.header.headline,
-      xPt: MARGIN.xPt,
-      yPt: cursor,
-      font: { sizePt: TYPE.headlinePt },
+      xPt: metrics.marginXPt,
+      yPt,
+      font: { sizePt: metrics.headlinePt },
       color: COLORS.text,
     };
-    cursor += TYPE.headlineLinePt;
+    cursor = yPt + metrics.headlineLinePt;
   }
 
   const contactParts = [
@@ -71,150 +88,162 @@ function headerLayout(resume: Resume): HeaderLayout {
     ...resume.contact.links.map((link) => link.label),
   ].filter((part): part is string => Boolean(part));
   const contactText = contactParts.join('  ·  ');
-  const contactWidth = PAGE.widthPt - MARGIN.xPt * 2;
-  const contactRows = contactText ? wrapText(contactText, contactWidth, SMALL) : [];
+  const contactRows = contactText
+    ? wrapText(contactText, metrics.contentWidthPt, smallFont(metrics))
+    : [];
 
-  const contactTop = cursor + (headline ? HEADER.contactGapPt : HEADER.contactGapPt - 4);
+  const contactTop = cursor + (contactRows.length > 0 ? 8 : 0);
   const contactLines = contactRows.map((text, index) => ({
     text,
-    xPt: MARGIN.xPt,
-    yPt: contactTop + index * TYPE.smallLinePt,
-    font: SMALL,
+    xPt: metrics.marginXPt,
+    yPt: contactTop + index * metrics.smallLinePt,
+    font: smallFont(metrics),
     color: COLORS.muted,
   }));
 
-  const ruleY = MARGIN.topPt + HEADER.heightPt - 12;
+  cursor = contactTop + contactRows.length * metrics.smallLinePt;
+  const ruleY = cursor + 10;
+  const columnTop = ruleY + 10;
 
   return {
-    name,
-    headline,
-    contactLines,
-    rule: {
-      x1Pt: MARGIN.xPt,
-      y1Pt: ruleY,
-      x2Pt: PAGE.widthPt - MARGIN.xPt,
-      y2Pt: ruleY,
-      widthPt: 1.2,
-      color: COLORS.accent,
+    header: {
+      name,
+      headline,
+      contactLines,
+      rule: {
+        x1Pt: metrics.marginXPt,
+        y1Pt: ruleY,
+        x2Pt: metrics.pageWidthPt - metrics.marginXPt,
+        y2Pt: ruleY,
+        widthPt: 1.2,
+        color: COLORS.accent,
+      },
     },
+    heightPt: columnTop - metrics.marginTopPt,
   };
 }
 
-function headingBlock(section: ResumeSection, first: boolean): FlowBlock {
+interface TextBlockOptions {
+  kind: BlockKind;
+  sectionId: string;
+  itemId?: string;
+  font: FontSpec;
+  color: string;
+  lineHeightPt: number;
+  spaceBeforePt: number;
+  spaceAfterPt: number;
+  splittable?: boolean;
+  keepWithNext?: boolean;
+}
+
+function textBlock(text: string, widthPt: number, options: TextBlockOptions): FlowBlock {
+  const lines = wrapText(text, widthPt, options.font).map((line) => ({
+    text: line,
+    xOffsetPt: 0,
+    font: options.font,
+    color: options.color,
+  }));
+
+  return {
+    sectionId: options.sectionId,
+    itemId: options.itemId,
+    kind: options.kind,
+    lineHeightPt: options.lineHeightPt,
+    lines,
+    spaceBeforePt: options.spaceBeforePt,
+    spaceAfterPt: options.spaceAfterPt,
+    splittable: options.splittable ?? true,
+    keepWithNext: options.keepWithNext,
+  };
+}
+
+function bulletBlock(
+  text: string,
+  widthPt: number,
+  metrics: ResolvedMetrics,
+  sectionId: string,
+  itemId?: string,
+): FlowBlock {
+  const font = bodyFont(metrics);
+  const indentPt = measureLineWidth(BULLET_PREFIX, font) + 1;
+  const bodyLines = wrapText(text, widthPt - indentPt, font);
+  const lines = bodyLines.map((line, index) => ({
+    text: index === 0 ? `${BULLET_PREFIX}${line}` : line,
+    xOffsetPt: index === 0 ? 0 : indentPt,
+    font,
+    color: COLORS.text,
+  }));
+
+  return {
+    sectionId,
+    itemId,
+    kind: 'bullet',
+    lineHeightPt: metrics.bodyLinePt,
+    lines,
+    spaceBeforePt: 0,
+    spaceAfterPt: metrics.bulletAfterPt,
+    splittable: true,
+  };
+}
+
+function headingBlock(section: ResumeSection, first: boolean, metrics: ResolvedMetrics): FlowBlock {
   return {
     sectionId: section.id,
-    lineHeightPt: TYPE.headingLinePt,
-    spaceBeforePt: first ? 0 : SPACING.sectionBeforePt,
-    spaceAfterPt: SPACING.sectionAfterPt,
+    kind: 'heading',
+    lineHeightPt: metrics.headingLinePt,
+    spaceBeforePt: first ? 0 : metrics.sectionBeforePt,
+    spaceAfterPt: metrics.sectionAfterPt,
     splittable: false,
     keepWithNext: true,
     lines: [
       {
         text: section.title.toUpperCase(),
         xOffsetPt: 0,
-        font: HEADING,
+        font: headingFont(metrics),
         color: COLORS.accent,
       },
     ],
   };
 }
 
-function textBlock(
-  text: string,
-  widthPt: number,
-  options: {
-    font?: FontSpec;
-    color?: string;
-    lineHeightPt?: number;
-    spaceBeforePt?: number;
-    spaceAfterPt?: number;
-    splittable?: boolean;
-    keepWithNext?: boolean;
-    sectionId: string;
-    itemId?: string;
-    xOffsetPt?: number;
-  },
-): FlowBlock[] {
-  const font = options.font ?? BODY;
-  const lineHeightPt = options.lineHeightPt ?? TYPE.bodyLinePt;
-  const xOffsetPt = options.xOffsetPt ?? 0;
-  const lines = wrapText(text, widthPt - xOffsetPt, font).map((line) => ({
-    text: line,
-    xOffsetPt,
-    font,
-    color: options.color ?? COLORS.text,
-  }));
-  return [
-    {
-      sectionId: options.sectionId,
-      itemId: options.itemId,
-      lineHeightPt,
-      lines,
-      spaceBeforePt: options.spaceBeforePt ?? 0,
-      spaceAfterPt: options.spaceAfterPt ?? 0,
-      splittable: options.splittable ?? true,
-      keepWithNext: options.keepWithNext,
-    },
-  ];
-}
-
-function bulletBlocks(
-  text: string,
-  widthPt: number,
-  sectionId: string,
-  itemId: string,
-): FlowBlock[] {
-  const indentPt = measureLineWidth(BULLET_PREFIX, BODY) + 1;
-  const bodyLines = wrapText(text, widthPt - indentPt, BODY);
-  const lines = bodyLines.map((line, index) => ({
-    text: index === 0 ? `${BULLET_PREFIX}${line}` : line,
-    xOffsetPt: index === 0 ? 0 : indentPt,
-    font: BODY,
-    color: COLORS.text,
-  }));
-  return [
-    {
-      sectionId,
-      itemId,
-      lineHeightPt: TYPE.bodyLinePt,
-      lines,
-      spaceBeforePt: 0,
-      spaceAfterPt: SPACING.bulletAfterPt,
-      splittable: true,
-    },
-  ];
-}
-
 function itemBlocks(
   section: ResumeSection,
   item: ResumeItem,
   widthPt: number,
+  metrics: ResolvedMetrics,
   first: boolean,
 ): FlowBlock[] {
   const blocks: FlowBlock[] = [];
-  const spaceBeforePt = first ? 0 : SPACING.itemBeforePt;
+  const before = first ? 0 : metrics.itemBeforePt;
 
   if (section.kind === 'skills') {
     if (item.title) {
       blocks.push(
-        ...textBlock(item.title, widthPt, {
-          font: BODY_BOLD,
-          spaceBeforePt,
+        textBlock(item.title, widthPt, {
+          kind: 'skillLabel',
+          sectionId: section.id,
+          itemId: item.id,
+          font: boldFont(metrics),
+          color: COLORS.text,
+          lineHeightPt: metrics.bodyLinePt,
+          spaceBeforePt: before,
           spaceAfterPt: 0,
           keepWithNext: true,
           splittable: false,
-          sectionId: section.id,
-          itemId: item.id,
         }),
       );
     }
     if (item.subtitle) {
       blocks.push(
-        ...textBlock(item.subtitle, widthPt, {
-          spaceBeforePt: item.title ? 0 : spaceBeforePt,
-          spaceAfterPt: SPACING.skillAfterPt,
+        textBlock(item.subtitle, widthPt, {
+          kind: 'skillValue',
           sectionId: section.id,
           itemId: item.id,
+          font: bodyFont(metrics),
+          color: COLORS.text,
+          lineHeightPt: metrics.bodyLinePt,
+          spaceBeforePt: item.title ? 0 : before,
+          spaceAfterPt: metrics.paragraphAfterPt * 1.5,
         }),
       );
     }
@@ -225,48 +254,59 @@ function itemBlocks(
     const text = item.body ?? item.title ?? '';
     if (text) {
       if (section.kind === 'languages' || section.kind === 'interests') {
-        blocks.push(...bulletBlocks(text, widthPt, section.id, item.id));
+        blocks.push(bulletBlock(text, widthPt, metrics, section.id, item.id));
       } else {
         blocks.push(
-          ...textBlock(text, widthPt, {
-            spaceBeforePt,
-            spaceAfterPt: 2,
+          textBlock(text, widthPt, {
+            kind: 'listItem',
             sectionId: section.id,
             itemId: item.id,
+            font: bodyFont(metrics),
+            color: COLORS.text,
+            lineHeightPt: metrics.bodyLinePt,
+            spaceBeforePt: before,
+            spaceAfterPt: metrics.paragraphAfterPt,
           }),
         );
       }
     }
     for (const bullet of item.bullets) {
-      blocks.push(...bulletBlocks(bullet, widthPt, section.id, item.id));
+      blocks.push(bulletBlock(bullet, widthPt, metrics, section.id, item.id));
     }
     return blocks;
   }
 
   if (item.title) {
     blocks.push(
-      ...textBlock(item.title, widthPt, {
-        font: BODY_BOLD,
-        spaceBeforePt,
+      textBlock(item.title, widthPt, {
+        kind: 'title',
+        sectionId: section.id,
+        itemId: item.id,
+        font: boldFont(metrics),
+        color: COLORS.text,
+        lineHeightPt: metrics.bodyLinePt,
+        spaceBeforePt: before,
         spaceAfterPt: 0,
         keepWithNext: true,
         splittable: false,
-        sectionId: section.id,
-        itemId: item.id,
       }),
     );
   }
 
   if (item.subtitle) {
     blocks.push(
-      ...textBlock(item.subtitle, widthPt, {
-        spaceBeforePt: item.title ? 0 : spaceBeforePt,
+      textBlock(item.subtitle, widthPt, {
+        kind: 'subtitle',
+        sectionId: section.id,
+        itemId: item.id,
+        font: bodyFont(metrics),
+        color: COLORS.text,
+        lineHeightPt: metrics.bodyLinePt,
+        spaceBeforePt: item.title ? 0 : before,
         spaceAfterPt: 0,
         keepWithNext: Boolean(
           item.dateRange || item.location || item.body || item.bullets.length > 0,
         ),
-        sectionId: section.id,
-        itemId: item.id,
       }),
     );
   }
@@ -274,33 +314,38 @@ function itemBlocks(
   const meta = [item.dateRange, item.location].filter(Boolean).join('  ·  ');
   if (meta) {
     blocks.push(
-      ...textBlock(meta, widthPt, {
-        font: SMALL,
+      textBlock(meta, widthPt, {
+        kind: 'meta',
+        sectionId: section.id,
+        itemId: item.id,
+        font: smallFont(metrics),
         color: COLORS.muted,
-        lineHeightPt: TYPE.smallLinePt,
-        spaceBeforePt: item.title || item.subtitle ? 1.5 : spaceBeforePt,
+        lineHeightPt: metrics.smallLinePt,
+        spaceBeforePt: item.title || item.subtitle ? 1.5 : before,
         spaceAfterPt: 2,
         keepWithNext: Boolean(item.body || item.bullets.length > 0),
         splittable: false,
-        sectionId: section.id,
-        itemId: item.id,
       }),
     );
   }
 
   if (item.body) {
     blocks.push(
-      ...textBlock(item.body, widthPt, {
-        spaceBeforePt: item.title || item.subtitle || meta ? 0 : spaceBeforePt,
-        spaceAfterPt: SPACING.paragraphAfterPt,
+      textBlock(item.body, widthPt, {
+        kind: 'body',
         sectionId: section.id,
         itemId: item.id,
+        font: bodyFont(metrics),
+        color: COLORS.text,
+        lineHeightPt: metrics.bodyLinePt,
+        spaceBeforePt: item.title || item.subtitle || meta ? 0 : before,
+        spaceAfterPt: metrics.paragraphAfterPt,
       }),
     );
   }
 
   for (const bullet of item.bullets) {
-    blocks.push(...bulletBlocks(bullet, widthPt, section.id, item.id));
+    blocks.push(bulletBlock(bullet, widthPt, metrics, section.id, item.id));
   }
 
   return blocks;
@@ -314,38 +359,46 @@ function hasContent(section: ResumeSection): boolean {
   );
 }
 
-function buildColumnBlocks(resume: Resume, column: ColumnId): FlowBlock[] {
-  const widthPt = column === 'main' ? COLUMNS.mainWidthPt : COLUMNS.sideWidthPt;
+function buildColumnBlocks(
+  resume: Resume,
+  column: ColumnId,
+  metrics: ResolvedMetrics,
+): FlowBlock[] {
+  const widthPt = column === 'main' ? metrics.mainWidthPt : metrics.sideWidthPt;
   const blocks: FlowBlock[] = [];
   let first = true;
 
   for (const section of resume.sections) {
     if (!section.enabled || section.column !== column || !hasContent(section)) continue;
 
-    blocks.push(headingBlock(section, first));
+    blocks.push(headingBlock(section, first, metrics));
     first = false;
 
     if (section.kind === 'summary' || section.kind === 'custom') {
       section.items.forEach((item, itemIndex) => {
         if (item.body) {
           blocks.push(
-            ...textBlock(item.body, widthPt, {
-              spaceBeforePt: itemIndex === 0 ? 0 : SPACING.itemBeforePt,
-              spaceAfterPt: SPACING.paragraphAfterPt,
+            textBlock(item.body, widthPt, {
+              kind: 'body',
               sectionId: section.id,
               itemId: item.id,
+              font: bodyFont(metrics),
+              color: COLORS.text,
+              lineHeightPt: metrics.bodyLinePt,
+              spaceBeforePt: itemIndex === 0 ? 0 : metrics.itemBeforePt,
+              spaceAfterPt: metrics.paragraphAfterPt,
             }),
           );
         }
         for (const bullet of item.bullets) {
-          blocks.push(...bulletBlocks(bullet, widthPt, section.id, item.id));
+          blocks.push(bulletBlock(bullet, widthPt, metrics, section.id, item.id));
         }
       });
       continue;
     }
 
     section.items.forEach((item, itemIndex) => {
-      blocks.push(...itemBlocks(section, item, widthPt, itemIndex === 0));
+      blocks.push(...itemBlocks(section, item, widthPt, metrics, itemIndex === 0));
     });
   }
 
@@ -366,43 +419,58 @@ function translateBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlo
 }
 
 export function layoutResume(resume: Resume): Layout {
-  const firstCapacityPt = PAGE.heightPt - MARGIN.topPt - HEADER.heightPt - MARGIN.bottomPt;
-  const restCapacityPt = PAGE.heightPt - MARGIN.topPt - MARGIN.bottomPt;
+  const metrics = resolveMetrics(resume.template);
+  const { header, heightPt: headerHeightPt } = buildHeader(resume, metrics);
 
-  const mainBlocks = buildColumnBlocks(resume, 'main');
-  const sideBlocks = buildColumnBlocks(resume, 'side');
+  const firstCapacityPt =
+    metrics.pageHeightPt - metrics.marginTopPt - headerHeightPt - metrics.marginBottomPt;
+  const restCapacityPt = metrics.pageHeightPt - metrics.marginTopPt - metrics.marginBottomPt;
+
+  const mainBlocks = buildColumnBlocks(resume, 'main', metrics);
+  const sideBlocks = buildColumnBlocks(resume, 'side', metrics);
 
   const mainPages = paginateColumn(
     mainBlocks,
     firstCapacityPt,
     restCapacityPt,
-    COLUMNS.mainWidthPt,
+    metrics.mainWidthPt,
   );
   const sidePages = paginateColumn(
     sideBlocks,
     firstCapacityPt,
     restCapacityPt,
-    COLUMNS.sideWidthPt,
+    metrics.sideWidthPt,
   );
 
   const pageCount = Math.max(1, mainPages.length, sidePages.length);
-  const header = headerLayout(resume);
-  const sideX = MARGIN.xPt + COLUMNS.mainWidthPt + COLUMNS.gapPt;
+  const sideX = metrics.marginXPt + metrics.mainWidthPt + metrics.gapPt;
 
   const pages: PageLayout[] = Array.from({ length: pageCount }, (_, index) => {
-    const top = MARGIN.topPt + (index === 0 ? HEADER.heightPt : 0);
+    const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);
     const blocks = [
-      ...(mainPages[index] ?? []).map((block) => translateBlock(block, MARGIN.xPt, top)),
+      ...(mainPages[index] ?? []).map((block) => translateBlock(block, metrics.marginXPt, top)),
       ...(sidePages[index] ?? []).map((block) => translateBlock(block, sideX, top)),
     ];
     return {
       index,
-      widthPt: PAGE.widthPt,
-      heightPt: PAGE.heightPt,
+      widthPt: metrics.pageWidthPt,
+      heightPt: metrics.pageHeightPt,
       blocks,
       header: index === 0 ? header : undefined,
     };
   });
 
-  return { pages, pageWidthPt: PAGE.widthPt, pageHeightPt: PAGE.heightPt };
+  const contentPages = pages.filter((page) => page.blocks.length > 0 || page.header);
+  const finalPages = contentPages.length > 0 ? contentPages : pages.slice(0, 1);
+  finalPages.forEach((page, index) => {
+    page.index = index;
+  });
+
+  return {
+    pages: finalPages,
+    pageWidthPt: metrics.pageWidthPt,
+    pageHeightPt: metrics.pageHeightPt,
+    pageSizeLabel: metrics.pageSizeLabel,
+    metrics,
+  };
 }

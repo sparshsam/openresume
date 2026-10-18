@@ -22,8 +22,4 @@
   --editor-width: 408px;
   --radius-sm: 6px;
   --radius-md: 10px;
-
-  /* Page geometry must mirror src/lib/tokens.ts. */
-  --page-width: 595.28pt;
-  --page-height: 841.89pt;
 }

@@ -2,6 +2,7 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  LineRuleType,
   Packer,
   PageBreak,
   Paragraph,
@@ -12,107 +13,250 @@ import {
   WidthType,
 } from 'docx';
 import type { Layout, PageLayout } from './layout';
-import { COLORS, COLUMNS, MARGIN } from './tokens';
+import type { ResolvedMetrics } from './metrics';
 import type { PlacedBlock } from './paginate';
+import { COLORS } from './tokens';
 import type { Resume } from '../types/resume';
 
-const SIDE_START_X = MARGIN.xPt + COLUMNS.mainWidthPt + COLUMNS.gapPt;
 const PT_TO_TWIP = 20;
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-const NO_BORDERS = {
+const CELL_BORDERS = {
   top: NO_BORDER,
   bottom: NO_BORDER,
   left: NO_BORDER,
   right: NO_BORDER,
+};
+const TABLE_BORDERS = {
+  ...CELL_BORDERS,
   insideHorizontal: NO_BORDER,
   insideVertical: NO_BORDER,
 };
+
+interface BlockStyle {
+  bold: boolean;
+  color: string;
+  sizeHalfPt: number;
+  beforeTwip: number;
+  afterTwip: number;
+  bullet: boolean;
+  keepNext: boolean;
+  keepLines: boolean;
+}
 
 function hexColor(value: string): string {
   return value.replace('#', '').toUpperCase();
 }
 
-function lineParagraph(
-  line: PlacedBlock['lines'][number],
+function styleFor(block: PlacedBlock, metrics: ResolvedMetrics): BlockStyle {
+  const body = Math.round(metrics.bodyPt * 2);
+  const small = Math.round(metrics.smallPt * 2);
+  const heading = Math.round(metrics.headingPt * 2);
+  const before = Math.round(metrics.itemBeforePt * PT_TO_TWIP);
+  const after = Math.round(metrics.paragraphAfterPt * PT_TO_TWIP);
+
+  switch (block.kind) {
+    case 'heading':
+      return {
+        bold: true,
+        color: COLORS.accent,
+        sizeHalfPt: heading,
+        beforeTwip: Math.round(metrics.sectionBeforePt * PT_TO_TWIP),
+        afterTwip: Math.round(metrics.sectionAfterPt * PT_TO_TWIP),
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'title':
+      return {
+        bold: true,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: before,
+        afterTwip: 0,
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'subtitle':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: 0,
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'meta':
+      return {
+        bold: false,
+        color: COLORS.muted,
+        sizeHalfPt: small,
+        beforeTwip: 0,
+        afterTwip: Math.round(2 * PT_TO_TWIP),
+        bullet: false,
+        keepNext: true,
+        keepLines: false,
+      };
+    case 'bullet':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: Math.round(metrics.bulletAfterPt * PT_TO_TWIP),
+        bullet: true,
+        keepNext: false,
+        keepLines: true,
+      };
+    case 'listItem':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: after,
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
+    case 'skillLabel':
+      return {
+        bold: true,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: before,
+        afterTwip: 0,
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'skillValue':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: Math.round(metrics.paragraphAfterPt * 1.5 * PT_TO_TWIP),
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
+    case 'body':
+    default:
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: after,
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
+  }
+}
+
+function blockText(block: PlacedBlock): string {
+  const joined = block.lines.map((line) => line.text).join(' ');
+  return block.kind === 'bullet' ? joined.replace(/^•\s+/, '') : joined;
+}
+
+function paragraphFor(
   block: PlacedBlock,
-  columnStartX: number,
-) {
+  metrics: ResolvedMetrics,
+  firstInCell: boolean,
+): Paragraph {
+  const style = styleFor(block, metrics);
   return new Paragraph({
     children: [
       new TextRun({
-        text: line.text,
-        bold: Boolean(line.font.bold),
-        size: Math.round(line.font.sizePt * 2),
-        color: hexColor(line.color),
+        text: blockText(block),
+        bold: style.bold,
+        size: style.sizeHalfPt,
+        color: hexColor(style.color),
         font: 'Helvetica',
       }),
     ],
     spacing: {
-      before: 0,
-      after: 0,
-      line: Math.round(block.lineHeightPt * PT_TO_TWIP),
-      lineRule: 'exact',
+      before: firstInCell ? 0 : style.beforeTwip,
+      after: style.afterTwip,
+      line: metrics.wordLineTwips,
+      lineRule: LineRuleType.AUTO,
     },
-    indent: { left: Math.round(Math.max(0, line.xPt - columnStartX) * PT_TO_TWIP) },
+    keepNext: style.keepNext,
+    keepLines: style.keepLines,
+    bullet: style.bullet ? { level: 0 } : undefined,
+    indent: style.bullet ? { left: 360, hanging: 180 } : undefined,
     alignment: AlignmentType.LEFT,
   });
 }
 
-function cell(blocks: PlacedBlock[], columnStartX: number, widthTwip: number): TableCell {
-  const paragraphs = blocks.flatMap((block) =>
-    block.lines.map((line) => lineParagraph(line, block, columnStartX)),
-  );
-  if (paragraphs.length === 0) paragraphs.push(new Paragraph({}));
+function emptyParagraph(): Paragraph {
+  return new Paragraph({
+    children: [],
+    spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.AUTO },
+  });
+}
+
+function cell(blocks: PlacedBlock[], metrics: ResolvedMetrics, widthTwip: number): TableCell {
+  const paragraphs = blocks.map((block, index) => paragraphFor(block, metrics, index === 0));
+  if (paragraphs.length === 0) paragraphs.push(emptyParagraph());
   return new TableCell({
     children: paragraphs,
     width: { size: widthTwip, type: WidthType.DXA },
-    borders: NO_BORDERS,
+    borders: CELL_BORDERS,
     margins: { top: 0, bottom: 0, left: 0, right: 0 },
   });
 }
 
-function pageTable(page: PageLayout): Table {
-  const mainBlocks = page.blocks.filter((block) => block.xPt < SIDE_START_X);
-  const sideBlocks = page.blocks.filter((block) => block.xPt >= SIDE_START_X);
+function pageTable(page: PageLayout, metrics: ResolvedMetrics): Table {
+  const sideStartX = metrics.marginXPt + metrics.mainWidthPt + metrics.gapPt;
+  const mainBlocks = page.blocks.filter((block) => block.xPt < sideStartX);
+  const sideBlocks = page.blocks.filter((block) => block.xPt >= sideStartX);
+  const mainWidthTwip = Math.round(metrics.mainWidthPt * PT_TO_TWIP);
+  const gapWidthTwip = Math.round(metrics.gapPt * PT_TO_TWIP);
+  const sideWidthTwip = Math.round(metrics.sideWidthPt * PT_TO_TWIP);
 
   return new Table({
-    width: { size: 10145, type: WidthType.DXA },
-    columnWidths: [
-      COLUMNS.mainWidthPt * PT_TO_TWIP,
-      COLUMNS.gapPt * PT_TO_TWIP,
-      COLUMNS.sideWidthPt * PT_TO_TWIP,
-    ],
-    borders: NO_BORDERS,
+    width: {
+      size: mainWidthTwip + gapWidthTwip + sideWidthTwip,
+      type: WidthType.DXA,
+    },
+    columnWidths: [mainWidthTwip, gapWidthTwip, sideWidthTwip],
+    borders: TABLE_BORDERS,
     rows: [
       new TableRow({
         children: [
-          cell(mainBlocks, MARGIN.xPt, COLUMNS.mainWidthPt * PT_TO_TWIP),
+          cell(mainBlocks, metrics, mainWidthTwip),
           new TableCell({
-            children: [new Paragraph({})],
-            width: { size: COLUMNS.gapPt * PT_TO_TWIP, type: WidthType.DXA },
-            borders: NO_BORDERS,
+            children: [emptyParagraph()],
+            width: { size: gapWidthTwip, type: WidthType.DXA },
+            borders: CELL_BORDERS,
             margins: { top: 0, bottom: 0, left: 0, right: 0 },
           }),
-          cell(sideBlocks, SIDE_START_X, COLUMNS.sideWidthPt * PT_TO_TWIP),
+          cell(sideBlocks, metrics, sideWidthTwip),
         ],
       }),
     ],
   });
 }
 
-function headerParagraphs(resume: Resume): Paragraph[] {
+function headerParagraphs(resume: Resume, metrics: ResolvedMetrics): Paragraph[] {
   const paragraphs: Paragraph[] = [
     new Paragraph({
       children: [
         new TextRun({
           text: resume.header.name,
           bold: true,
-          size: 46,
+          size: Math.round(metrics.namePt * 2),
           color: hexColor(COLORS.accent),
           font: 'Helvetica',
         }),
       ],
-      spacing: { after: 60 },
+      spacing: { after: 60, line: 240, lineRule: LineRuleType.AUTO },
+      keepNext: true,
     }),
   ];
 
@@ -122,12 +266,13 @@ function headerParagraphs(resume: Resume): Paragraph[] {
         children: [
           new TextRun({
             text: resume.header.headline,
-            size: 21,
+            size: Math.round(metrics.headlinePt * 2),
             color: hexColor(COLORS.text),
             font: 'Helvetica',
           }),
         ],
-        spacing: { after: 40 },
+        spacing: { after: 40, line: 240, lineRule: LineRuleType.AUTO },
+        keepNext: true,
       }),
     );
   }
@@ -147,12 +292,12 @@ function headerParagraphs(resume: Resume): Paragraph[] {
         children: [
           new TextRun({
             text: contact,
-            size: 17,
+            size: Math.round(metrics.smallPt * 2),
             color: hexColor(COLORS.muted),
             font: 'Helvetica',
           }),
         ],
-        spacing: { after: 240 },
+        spacing: { after: 180, line: 240, lineRule: LineRuleType.AUTO },
       }),
     );
   }
@@ -161,11 +306,19 @@ function headerParagraphs(resume: Resume): Paragraph[] {
 }
 
 export function createDocxDocument(resume: Resume, layout: Layout): Document {
-  const children: (Paragraph | Table)[] = [...headerParagraphs(resume)];
+  const { metrics } = layout;
+  const children: (Paragraph | Table)[] = [...headerParagraphs(resume, metrics)];
 
   layout.pages.forEach((page, index) => {
-    if (index > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
-    children.push(pageTable(page));
+    if (index > 0) {
+      children.push(
+        new Paragraph({
+          children: [new PageBreak()],
+          spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.AUTO },
+        }),
+      );
+    }
+    children.push(pageTable(page, metrics));
   });
 
   return new Document({
@@ -175,7 +328,7 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
     styles: {
       default: {
         document: {
-          run: { font: 'Helvetica', size: 18 },
+          run: { font: 'Helvetica', size: Math.round(metrics.bodyPt * 2) },
         },
       },
     },
@@ -183,8 +336,16 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
       {
         properties: {
           page: {
-            size: { width: 11906, height: 16838 },
-            margin: { top: 800, bottom: 800, left: 880, right: 880 },
+            size: {
+              width: Math.round(metrics.pageWidthPt * PT_TO_TWIP),
+              height: Math.round(metrics.pageHeightPt * PT_TO_TWIP),
+            },
+            margin: {
+              top: Math.round(metrics.marginTopPt * PT_TO_TWIP),
+              bottom: Math.round(metrics.marginBottomPt * PT_TO_TWIP),
+              left: Math.round(metrics.marginXPt * PT_TO_TWIP),
+              right: Math.round(metrics.marginXPt * PT_TO_TWIP),
+            },
           },
         },
         children,
@@ -201,15 +362,18 @@ export async function exportDocx(resume: Resume, layout: Layout): Promise<Blob> 
 export function docxTextContent(resume: Resume, layout: Layout): string[] {
   const texts: string[] = [resume.header.name];
   if (resume.header.headline) texts.push(resume.header.headline);
+  for (const value of [
+    resume.contact.email,
+    resume.contact.phone,
+    resume.contact.location,
+    ...resume.contact.links.map((link) => link.label),
+  ]) {
+    if (value) texts.push(value);
+  }
 
   for (const page of layout.pages) {
     for (const block of page.blocks) {
-      const text = block.lines
-        .map((line) => line.text)
-        .join(' ')
-        .replace(/•\s+/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const text = blockText(block).replace(/\s+/g, ' ').trim();
       if (text) texts.push(text);
     }
   }
