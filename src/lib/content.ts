@@ -1,3 +1,4 @@
+import type { CoverLetter } from '../types/coverLetter';
 import type { Resume } from '../types/resume';
 
 export function collectContentStrings(resume: Resume): string[] {
@@ -26,6 +27,31 @@ export function collectContentStrings(resume: Resume): string[] {
       for (const bullet of item.bullets) push(bullet);
     }
   }
+
+  return values;
+}
+
+export function collectCoverLetterContentStrings(letter: CoverLetter): string[] {
+  const values: string[] = [];
+  const push = (value?: string) => {
+    const trimmed = value?.trim();
+    if (trimmed) values.push(trimmed);
+  };
+
+  push(letter.applicant.name);
+  push(letter.applicant.headline);
+  push(letter.applicant.contact.email);
+  push(letter.applicant.contact.phone);
+  push(letter.applicant.contact.location);
+  for (const link of letter.applicant.contact.links) push(link.label);
+
+  push(letter.date);
+  for (const line of letter.recipient) push(line);
+  push(letter.position);
+  push(letter.salutation);
+  for (const paragraph of letter.body) push(paragraph);
+  push(letter.closing);
+  push(letter.signature);
 
   return values;
 }

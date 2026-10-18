@@ -12,10 +12,11 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
-import type { Layout, PageLayout } from './layout';
+import type { DocumentIdentity, Layout, PageLayout } from './layout';
 import type { ResolvedMetrics } from './metrics';
 import type { PlacedBlock } from './paginate';
 import { COLORS } from './tokens';
+import type { CoverLetter } from '../types/coverLetter';
 import type { Resume } from '../types/resume';
 
 const PT_TO_TWIP = 20;
@@ -143,6 +144,83 @@ function styleFor(block: PlacedBlock, metrics: ResolvedMetrics): BlockStyle {
         keepNext: false,
         keepLines: true,
       };
+    case 'letterDate':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: Math.round(12 * PT_TO_TWIP),
+        bullet: false,
+        keepNext: false,
+        keepLines: false,
+      };
+    case 'recipient':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: 0,
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
+    case 'subject':
+      return {
+        bold: true,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: Math.round(10 * PT_TO_TWIP),
+        afterTwip: Math.round(10 * PT_TO_TWIP),
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'salutation':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: Math.round(10 * PT_TO_TWIP),
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'letterBody':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: 0,
+        afterTwip: Math.round(metrics.paragraphSpacingPt * PT_TO_TWIP),
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
+    case 'closing':
+      return {
+        bold: false,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: Math.round(14 * PT_TO_TWIP),
+        afterTwip: 0,
+        bullet: false,
+        keepNext: true,
+        keepLines: true,
+      };
+    case 'signature':
+      return {
+        bold: true,
+        color: COLORS.text,
+        sizeHalfPt: body,
+        beforeTwip: Math.round(22 * PT_TO_TWIP),
+        afterTwip: 0,
+        bullet: false,
+        keepNext: false,
+        keepLines: true,
+      };
     case 'body':
     default:
       return {
@@ -243,12 +321,15 @@ function pageTable(page: PageLayout, metrics: ResolvedMetrics): Table {
   });
 }
 
-function headerParagraphs(resume: Resume, metrics: ResolvedMetrics): Paragraph[] {
+function headerParagraphs(
+  identity: DocumentIdentity,
+  metrics: ResolvedMetrics,
+): Paragraph[] {
   const paragraphs: Paragraph[] = [
     new Paragraph({
       children: [
         new TextRun({
-          text: resume.header.name,
+          text: identity.name,
           bold: true,
           size: Math.round(metrics.namePt * 2),
           color: hexColor(COLORS.accent),
@@ -260,12 +341,12 @@ function headerParagraphs(resume: Resume, metrics: ResolvedMetrics): Paragraph[]
     }),
   ];
 
-  if (resume.header.headline) {
+  if (identity.headline) {
     paragraphs.push(
       new Paragraph({
         children: [
           new TextRun({
-            text: resume.header.headline,
+            text: identity.headline,
             size: Math.round(metrics.headlinePt * 2),
             color: hexColor(COLORS.text),
             font: 'Helvetica',
@@ -278,10 +359,10 @@ function headerParagraphs(resume: Resume, metrics: ResolvedMetrics): Paragraph[]
   }
 
   const contact = [
-    resume.contact.email,
-    resume.contact.phone,
-    resume.contact.location,
-    ...resume.contact.links.map((link) => link.label),
+    identity.contact.email,
+    identity.contact.phone,
+    identity.contact.location,
+    ...identity.contact.links.map((link) => link.label),
   ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
@@ -305,25 +386,21 @@ function headerParagraphs(resume: Resume, metrics: ResolvedMetrics): Paragraph[]
   return paragraphs;
 }
 
-export function createDocxDocument(resume: Resume, layout: Layout): Document {
-  const { metrics } = layout;
-  const children: (Paragraph | Table)[] = [...headerParagraphs(resume, metrics)];
-
-  layout.pages.forEach((page, index) => {
-    if (index > 0) {
-      children.push(
-        new Paragraph({
-          children: [new PageBreak()],
-          spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.AUTO },
-        }),
-      );
-    }
-    children.push(pageTable(page, metrics));
+function pageBreakParagraph(): Paragraph {
+  return new Paragraph({
+    children: [new PageBreak()],
+    spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.AUTO },
   });
+}
 
+function baseDocument(
+  children: (Paragraph | Table)[],
+  metrics: ResolvedMetrics,
+  title: string,
+): Document {
   return new Document({
     creator: 'OpenResume',
-    title: `${resume.header.name || 'Resume'} — Resume`,
+    title,
     description: 'Generated by OpenResume',
     styles: {
       default: {
@@ -354,19 +431,83 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
   });
 }
 
+export function createDocxDocument(resume: Resume, layout: Layout): Document {
+  const { metrics } = layout;
+  const children: (Paragraph | Table)[] = [
+    ...headerParagraphs(
+      {
+        name: resume.header.name,
+        headline: resume.header.headline,
+        contact: resume.contact,
+      },
+      metrics,
+    ),
+  ];
+
+  layout.pages.forEach((page, index) => {
+    if (index > 0) children.push(pageBreakParagraph());
+    children.push(pageTable(page, metrics));
+  });
+
+  return baseDocument(children, metrics, `${resume.header.name || 'Resume'} — Resume`);
+}
+
+export function createCoverLetterDocxDocument(
+  letter: CoverLetter,
+  layout: Layout,
+): Document {
+  const { metrics } = layout;
+  const children: (Paragraph | Table)[] = [
+    ...headerParagraphs(
+      {
+        name: letter.applicant.name,
+        headline: letter.applicant.headline,
+        contact: letter.applicant.contact,
+      },
+      metrics,
+    ),
+  ];
+
+  layout.pages.forEach((page, index) => {
+    if (index > 0) children.push(pageBreakParagraph());
+    const paragraphs = page.blocks.map((block, blockIndex) =>
+      paragraphFor(block, metrics, blockIndex === 0),
+    );
+    if (paragraphs.length === 0) paragraphs.push(emptyParagraph());
+    children.push(...paragraphs);
+  });
+
+  return baseDocument(
+    children,
+    metrics,
+    `${letter.applicant.name || 'Cover Letter'} — Cover Letter`,
+  );
+}
+
 export async function exportDocx(resume: Resume, layout: Layout): Promise<Blob> {
   const document = createDocxDocument(resume, layout);
   return Packer.toBlob(document);
 }
 
-export function docxTextContent(resume: Resume, layout: Layout): string[] {
-  const texts: string[] = [resume.header.name];
-  if (resume.header.headline) texts.push(resume.header.headline);
+export async function exportCoverLetterDocx(
+  letter: CoverLetter,
+  layout: Layout,
+): Promise<Blob> {
+  const document = createCoverLetterDocxDocument(letter, layout);
+  return Packer.toBlob(document);
+}
+
+function textContentFrom(
+  identity: DocumentIdentity,
+  layout: Layout,
+): string[] {
+  const texts: string[] = [identity.name];
+  if (identity.headline) texts.push(identity.headline);
   for (const value of [
-    resume.contact.email,
-    resume.contact.phone,
-    resume.contact.location,
-    ...resume.contact.links.map((link) => link.label),
+    identity.contact.email,
+    identity.contact.phone,
+    identity.contact.location,
+    ...identity.contact.links.map((link) => link.label),
   ]) {
     if (value) texts.push(value);
   }
@@ -378,4 +519,29 @@ export function docxTextContent(resume: Resume, layout: Layout): string[] {
     }
   }
   return texts;
+}
+
+export function docxTextContent(resume: Resume, layout: Layout): string[] {
+  return textContentFrom(
+    {
+      name: resume.header.name,
+      headline: resume.header.headline,
+      contact: resume.contact,
+    },
+    layout,
+  );
+}
+
+export function coverLetterDocxTextContent(
+  letter: CoverLetter,
+  layout: Layout,
+): string[] {
+  return textContentFrom(
+    {
+      name: letter.applicant.name,
+      headline: letter.applicant.headline,
+      contact: letter.applicant.contact,
+    },
+    layout,
+  );
 }

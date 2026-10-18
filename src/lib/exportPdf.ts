@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { HeaderLayout, Layout } from './layout';
-import { resumeFilename } from './filename';
-import type { Resume } from '../types/resume';
+import { documentFilename } from './filename';
+import type { DocumentMeta } from './documentMeta';
 
 const BASELINE_RATIO = 0.78;
 
@@ -22,14 +22,15 @@ function drawHeader(doc: jsPDF, header: HeaderLayout): void {
   doc.line(header.rule.x1Pt, header.rule.y1Pt, header.rule.x2Pt, header.rule.y2Pt);
 }
 
-export function createPdfDocument(resume: Resume, layout: Layout): jsPDF {
+export function createPdfDocument(meta: DocumentMeta, layout: Layout): jsPDF {
   const pageFormat: [number, number] = [layout.pageWidthPt, layout.pageHeightPt];
   const doc = new jsPDF({ unit: 'pt', format: pageFormat, compress: false });
+  const label = meta.kind === 'resume' ? 'Resume' : 'Cover Letter';
   doc.setProperties({
-    title: `${resume.header.name || 'Resume'} — Resume`,
-    subject: resume.header.headline ?? 'Resume',
+    title: `${meta.name || 'Document'} — ${label}`,
+    subject: meta.headline ?? meta.subject ?? label,
     creator: 'OpenResume',
-    author: resume.header.name || 'OpenResume',
+    author: meta.name || 'OpenResume',
   });
 
   layout.pages.forEach((page, index) => {
@@ -49,7 +50,7 @@ export function createPdfDocument(resume: Resume, layout: Layout): jsPDF {
   return doc;
 }
 
-export function exportPdf(resume: Resume, layout: Layout): void {
-  const doc = createPdfDocument(resume, layout);
-  doc.save(resumeFilename(resume.header.name, 'pdf'));
+export function exportPdf(meta: DocumentMeta, layout: Layout): void {
+  const doc = createPdfDocument(meta, layout);
+  doc.save(documentFilename(meta.name, meta.kind, 'pdf'));
 }

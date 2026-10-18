@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { ImportScreen } from './components/ImportScreen';
 import { Preview } from './components/Preview';
 import { useDraft } from './hooks/useDraft';
+import { resumeMeta } from './lib/documentMeta';
 import { resumeFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
 import {
@@ -101,7 +102,7 @@ export default function App() {
     if (!resume || !layout) return;
     try {
       const { exportPdf } = await import('./lib/exportPdf');
-      exportPdf(resume, layout);
+      exportPdf(resumeMeta(resume), layout);
       setMessage('PDF downloaded.');
     } catch {
       setMessage('PDF export failed.');

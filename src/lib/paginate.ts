@@ -9,7 +9,14 @@ export type BlockKind =
   | 'bullet'
   | 'listItem'
   | 'skillLabel'
-  | 'skillValue';
+  | 'skillValue'
+  | 'letterDate'
+  | 'recipient'
+  | 'subject'
+  | 'salutation'
+  | 'letterBody'
+  | 'closing'
+  | 'signature';
 
 export interface FlowLine {
   text: string;

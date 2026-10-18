@@ -3,7 +3,8 @@ import { resolveMetrics, type ResolvedMetrics } from './metrics';
 import { paginateColumn, type BlockKind, type FlowBlock, type PlacedBlock } from './paginate';
 import { LIST_KINDS } from './parse';
 import { COLORS } from './tokens';
-import type { ColumnId, Resume, ResumeItem, ResumeSection } from '../types/resume';
+import type { DocumentKind } from '../types/document';
+import type { ColumnId, Contact, Resume, ResumeItem, ResumeSection } from '../types/resume';
 
 export interface HeaderLine {
   text: string;
@@ -29,11 +30,18 @@ export interface PageLayout {
 }
 
 export interface Layout {
+  kind: DocumentKind;
   pages: PageLayout[];
   pageWidthPt: number;
   pageHeightPt: number;
   pageSizeLabel: string;
   metrics: ResolvedMetrics;
+}
+
+export interface DocumentIdentity {
+  name: string;
+  headline?: string;
+  contact: Contact;
 }
 
 const BULLET_PREFIX = '•  ';
@@ -54,12 +62,12 @@ function headingFont(metrics: ResolvedMetrics): FontSpec {
   return { sizePt: metrics.headingPt, bold: true };
 }
 
-function buildHeader(
-  resume: Resume,
+export function buildDocumentHeader(
+  identity: DocumentIdentity,
   metrics: ResolvedMetrics,
 ): { header: HeaderLayout; heightPt: number } {
   const name: HeaderLine = {
-    text: resume.header.name,
+    text: identity.name,
     xPt: metrics.marginXPt,
     yPt: metrics.marginTopPt,
     font: { sizePt: metrics.namePt, bold: true },
@@ -69,10 +77,10 @@ function buildHeader(
   let cursor = metrics.marginTopPt + metrics.nameLinePt;
   let headline: HeaderLine | undefined;
 
-  if (resume.header.headline) {
+  if (identity.headline) {
     const yPt = cursor + 4;
     headline = {
-      text: resume.header.headline,
+      text: identity.headline,
       xPt: metrics.marginXPt,
       yPt,
       font: { sizePt: metrics.headlinePt },
@@ -82,10 +90,10 @@ function buildHeader(
   }
 
   const contactParts = [
-    resume.contact.email,
-    resume.contact.phone,
-    resume.contact.location,
-    ...resume.contact.links.map((link) => link.label),
+    identity.contact.email,
+    identity.contact.phone,
+    identity.contact.location,
+    ...identity.contact.links.map((link) => link.label),
   ].filter((part): part is string => Boolean(part));
   const contactText = contactParts.join('  ·  ');
   const contactRows = contactText
@@ -123,7 +131,7 @@ function buildHeader(
   };
 }
 
-interface TextBlockOptions {
+export interface TextBlockOptions {
   kind: BlockKind;
   sectionId: string;
   itemId?: string;
@@ -136,7 +144,7 @@ interface TextBlockOptions {
   keepWithNext?: boolean;
 }
 
-function textBlock(text: string, widthPt: number, options: TextBlockOptions): FlowBlock {
+export function textBlock(text: string, widthPt: number, options: TextBlockOptions): FlowBlock {
   const lines = wrapText(text, widthPt, options.font).map((line) => ({
     text: line,
     xOffsetPt: 0,
@@ -405,7 +413,7 @@ function buildColumnBlocks(
   return blocks;
 }
 
-function translateBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlock {
+export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlock {
   return {
     ...block,
     xPt: block.xPt + xPt,
@@ -420,7 +428,14 @@ function translateBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlo
 
 export function layoutResume(resume: Resume): Layout {
   const metrics = resolveMetrics(resume.template);
-  const { header, heightPt: headerHeightPt } = buildHeader(resume, metrics);
+  const { header, heightPt: headerHeightPt } = buildDocumentHeader(
+    {
+      name: resume.header.name,
+      headline: resume.header.headline,
+      contact: resume.contact,
+    },
+    metrics,
+  );
 
   const firstCapacityPt =
     metrics.pageHeightPt - metrics.marginTopPt - headerHeightPt - metrics.marginBottomPt;
@@ -448,8 +463,12 @@ export function layoutResume(resume: Resume): Layout {
   const pages: PageLayout[] = Array.from({ length: pageCount }, (_, index) => {
     const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);
     const blocks = [
-      ...(mainPages[index] ?? []).map((block) => translateBlock(block, metrics.marginXPt, top)),
-      ...(sidePages[index] ?? []).map((block) => translateBlock(block, sideX, top)),
+      ...(mainPages[index] ?? []).map((block) =>
+        translatePlacedBlock(block, metrics.marginXPt, top),
+      ),
+      ...(sidePages[index] ?? []).map((block) =>
+        translatePlacedBlock(block, sideX, top),
+      ),
     ];
     return {
       index,
@@ -467,6 +486,7 @@ export function layoutResume(resume: Resume): Layout {
   });
 
   return {
+    kind: 'resume',
     pages: finalPages,
     pageWidthPt: metrics.pageWidthPt,
     pageHeightPt: metrics.pageHeightPt,

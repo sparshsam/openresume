@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { collectContentStrings } from '../src/lib/content';
+import { resumeMeta } from '../src/lib/documentMeta';
 import { createPdfDocument } from '../src/lib/exportPdf';
 import { resumeFilename } from '../src/lib/filename';
 import { layoutResume } from '../src/lib/layout';
@@ -35,7 +36,7 @@ describe('PDF export', () => {
   it('creates a PDF with one page per layout page', () => {
     const resume = createSampleResume();
     const layout = layoutResume(resume);
-    const doc = createPdfDocument(resume, layout);
+    const doc = createPdfDocument(resumeMeta(resume), layout);
     expect(doc.getNumberOfPages()).toBe(layout.pages.length);
     expect(doc.output()).toMatch(/^%PDF/);
   });
@@ -43,7 +44,7 @@ describe('PDF export', () => {
   it('embeds real, selectable text and no images', () => {
     const resume = createSampleResume();
     const layout = layoutResume(resume);
-    const output = createPdfDocument(resume, layout).output();
+    const output = createPdfDocument(resumeMeta(resume), layout).output();
     expect(output).toContain('Jordan Avery');
     expect(output).toContain('Led the rebuild of a document workflow');
     expect(output).not.toContain('/Subtype /Image');
@@ -62,7 +63,7 @@ describe('PDF export', () => {
       ].join('\n'),
     );
     const layout = layoutResume(resume);
-    const doc = createPdfDocument(resume, layout);
+    const doc = createPdfDocument(resumeMeta(resume), layout);
     expect(layout.pages.length).toBeGreaterThan(1);
     expect(doc.getNumberOfPages()).toBe(layout.pages.length);
   });
@@ -77,7 +78,7 @@ describe('PDF export', () => {
     for (const [pageSize, width, height] of cases) {
       const resume = withPageSize(createSampleResume(), pageSize);
       const layout = layoutResume(resume);
-      const doc = createPdfDocument(resume, layout);
+      const doc = createPdfDocument(resumeMeta(resume), layout);
       expect(doc.internal.pageSize.getWidth()).toBeCloseTo(width, 1);
       expect(doc.internal.pageSize.getHeight()).toBeCloseTo(height, 1);
       expect(layout.pageWidthPt).toBeCloseTo(width, 1);
@@ -87,7 +88,7 @@ describe('PDF export', () => {
 
   it('contains every content string', () => {
     const resume = asciiResume();
-    const output = createPdfDocument(resume, layoutResume(resume)).output();
+    const output = createPdfDocument(resumeMeta(resume), layoutResume(resume)).output();
     for (const value of collectContentStrings(resume)) {
       expect(output, `missing PDF text: ${value}`).toContain(value);
     }
