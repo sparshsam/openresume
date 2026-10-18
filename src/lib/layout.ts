@@ -466,9 +466,7 @@ export function layoutResume(resume: Resume): Layout {
       ...(mainPages[index] ?? []).map((block) =>
         translatePlacedBlock(block, metrics.marginXPt, top),
       ),
-      ...(sidePages[index] ?? []).map((block) =>
-        translatePlacedBlock(block, sideX, top),
-      ),
+      ...(sidePages[index] ?? []).map((block) => translatePlacedBlock(block, sideX, top)),
     ];
     return {
       index,

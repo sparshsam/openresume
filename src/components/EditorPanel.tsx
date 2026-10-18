@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SectionEditor } from './SectionEditor';
-import type { ContactLink, Resume, ResumeItem, ResumeSection, SectionKind } from '../types/resume';
+import { linksToText, textToLinks } from '../lib/links';
+import type { Resume, ResumeItem, ResumeSection, SectionKind } from '../types/resume';
 
 const ADDABLE_SECTIONS: { kind: SectionKind; label: string }[] = [
   { kind: 'custom', label: 'Custom section' },
@@ -37,25 +38,7 @@ interface EditorPanelProps {
   onAddBullet: (sectionId: string, itemId: string) => void;
   onUpdateBullet: (sectionId: string, itemId: string, bulletIndex: number, value: string) => void;
   onRemoveBullet: (sectionId: string, itemId: string, bulletIndex: number) => void;
-}
-
-function linksToText(links: ContactLink[]): string {
-  return links.map((link) => `${link.label} | ${link.url}`).join('\n');
-}
-
-function textToLinks(text: string): ContactLink[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [first, second] = line.split('|').map((part) => part.trim());
-      const url = second || first;
-      return {
-        label: second ? first : first,
-        url: /^https?:\/\//i.test(url) ? url : `https://${url}`,
-      };
-    });
+  onCreateMatchingCoverLetter?: () => void;
 }
 
 export function EditorPanel({
@@ -73,6 +56,7 @@ export function EditorPanel({
   onAddBullet,
   onUpdateBullet,
   onRemoveBullet,
+  onCreateMatchingCoverLetter,
 }: EditorPanelProps) {
   const [newSectionKind, setNewSectionKind] = useState<SectionKind>('custom');
 
@@ -176,6 +160,15 @@ export function EditorPanel({
             onChange={(event) => onContact({ links: textToLinks(event.target.value) })}
           />
         </div>
+        {onCreateMatchingCoverLetter ? (
+          <button
+            type="button"
+            className="button button-small button-ghost editor-back"
+            onClick={onCreateMatchingCoverLetter}
+          >
+            Create matching cover letter →
+          </button>
+        ) : null}
       </section>
 
       <h2 className="editor-heading">Sections</h2>

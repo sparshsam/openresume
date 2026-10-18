@@ -2,6 +2,8 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
+> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.3 dual-document release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.3.
+
 ## Production
 
 | Item                  | Value                                      |
@@ -52,7 +54,8 @@ The deployed app remains fully client-side:
 
 - No server functions, databases, authentication, or analytics.
 - No runtime network requests.
-- Drafts persist in `localStorage['openresume:draft.v1']`.
+- Resume drafts persist in `localStorage['openresume:draft.v1']`.
+- Cover letter drafts persist in `localStorage['openresume:cover-letter.v1']`.
 - Theme choice persists in `localStorage['openresume-theme']`.
 - PDF and DOCX exports are generated in the browser.
 
@@ -60,14 +63,16 @@ The deployed app remains fully client-side:
 
 After a deployment:
 
-1. Load the production URL and confirm the import screen appears with no console errors.
-2. Import the fictional example, then verify editing and the live preview.
-3. Toggle light/dark, reload, and confirm the theme persists.
-4. Export PDF and DOCX and confirm text is selectable/editable.
-5. Check the layout at desktop and phone widths.
-6. Inspect the network panel: only same-origin document and asset requests.
-7. Confirm the security and cache headers with `curl -I`.
-8. Confirm GitHub Actions CI is green.
+1. Load the production URL and confirm the document-selection screen appears with no console errors.
+2. Build a resume and a cover letter from the examples, then verify editing and live previews.
+3. Use **Copy AI Instructions** and confirm the complete template reaches the clipboard.
+4. Create a matching cover letter from a resume and confirm the resume is unchanged.
+5. Toggle light/dark, reload, and confirm the theme and both drafts persist.
+6. Export PDF and DOCX for both documents and confirm text is selectable/editable.
+7. Check the layout at desktop and phone widths.
+8. Inspect the network panel: only same-origin document and asset requests.
+9. Confirm the security and cache headers with `curl -I`.
+10. Confirm GitHub Actions CI is green.
 
 ## Rollback
 

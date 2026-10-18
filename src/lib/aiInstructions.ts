@@ -1,16 +1,9 @@
 import { COVER_LETTER_SECTION_ALIASES } from './parseCoverLetter';
-import {
-  LIST_KINDS,
-  RESUME_SECTION_ALIASES,
-  RESUME_SECTION_TITLES,
-} from './parse';
+import { LIST_KINDS, RESUME_SECTION_ALIASES, RESUME_SECTION_TITLES } from './parse';
 import type { DocumentKind } from '../types/document';
 import type { SectionKind } from '../types/resume';
 
-function aliasGroups(
-  aliases: Record<string, string>,
-  titles?: Record<string, string>,
-): string {
+function aliasGroups(aliases: Record<string, string>, titles?: Record<string, string>): string {
   const groups = new Map<string, string[]>();
 
   for (const [alias, kind] of Object.entries(aliases)) {
@@ -21,7 +14,9 @@ function aliasGroups(
     groups.set(title, entries);
   }
 
-  return [...groups.entries()].map(([title, entries]) => `${title}: ${entries.join(', ')}`).join('\n');
+  return [...groups.entries()]
+    .map(([title, entries]) => `${title}: ${entries.join(', ')}`)
+    .join('\n');
 }
 
 const RESUME_SECTION_LIST = aliasGroups(RESUME_SECTION_ALIASES, RESUME_SECTION_TITLES);

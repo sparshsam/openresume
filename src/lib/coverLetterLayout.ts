@@ -75,8 +75,9 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
     );
   }
 
-  letter.recipient.forEach((line, index) => {
-    const isLast = index === letter.recipient.length - 1;
+  const recipientLines = letter.recipient.map((line) => line.trim()).filter(Boolean);
+  recipientLines.forEach((line, index) => {
+    const isLast = index === recipientLines.length - 1;
     blocks.push(
       letterBlock(line, metrics, {
         kind: 'recipient',
@@ -118,14 +119,17 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
     );
   }
 
-  letter.body.forEach((paragraph, index) => {
-    const isLast = index === letter.body.length - 1;
-    const hasClosing = Boolean(letter.closing || letter.signature);
+  const paragraphs = letter.body
+    .map((text, index) => ({ text, index }))
+    .filter((paragraph) => paragraph.text.trim().length > 0);
+  const hasClosing = Boolean(letter.closing || letter.signature);
+  paragraphs.forEach((paragraph, index) => {
+    const isLast = index === paragraphs.length - 1;
     blocks.push(
-      letterBlock(paragraph, metrics, {
+      letterBlock(paragraph.text, metrics, {
         kind: 'letterBody',
         sectionId: 'letter-body',
-        itemId: String(index),
+        itemId: String(paragraph.index),
         font: body,
         spaceBeforePt: 0,
         spaceAfterPt: isLast && hasClosing ? 0 : metrics.paragraphSpacingPt,

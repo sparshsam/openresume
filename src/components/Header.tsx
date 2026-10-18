@@ -1,14 +1,16 @@
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
 import type { SaveState } from '../hooks/useDraft';
+import type { DocumentKind } from '../types/document';
 
 interface HeaderProps {
-  view: 'import' | 'editor';
+  view: 'landing' | 'prepare' | 'workspace';
+  kind: DocumentKind | null;
   saveState: SaveState;
   message: string | null;
   formattingOpen: boolean;
+  onHome: () => void;
   onNew: () => void;
-  onImport: () => void;
   onToggleFormatting: () => void;
   onExportPdf: () => void;
   onExportDocx: () => void;
@@ -24,57 +26,54 @@ function statusText(saveState: SaveState, message: string | null): string {
 
 export function Header({
   view,
+  kind,
   saveState,
   message,
   formattingOpen,
+  onHome,
   onNew,
-  onImport,
   onToggleFormatting,
   onExportPdf,
   onExportDocx,
 }: HeaderProps) {
-  const isEditor = view === 'editor';
+  const isWorkspace = view === 'workspace' && kind !== null;
+  const kindLabel = kind === 'resume' ? 'Resume' : 'Cover Letter';
 
   return (
     <header className="app-header">
       <div className="header-inner">
-        <div className="brand">
+        <button
+          type="button"
+          className="brand brand-button"
+          onClick={onHome}
+          aria-label="Back to document selection"
+        >
           <img className="brand-mark" src="/icon-192.png" alt="" aria-hidden="true" />
-          <div className="brand-copy">
+          <span className="brand-copy">
             <span className="brand-name">OpenResume</span>
             <span className="brand-tagline">Structured text in. Precise documents out.</span>
-          </div>
-        </div>
+          </span>
+        </button>
 
-        {isEditor ? (
+        {isWorkspace ? (
           <>
+            <span className="document-label">{kindLabel}</span>
+
             <nav className="header-actions" aria-label="Document actions">
               <span className="header-status" role="status" aria-live="polite">
                 {statusText(saveState, message)}
               </span>
 
-              <div className="action-group">
-                <button
-                  type="button"
-                  className="button"
-                  onClick={onNew}
-                  aria-label="New resume"
-                  title="Start a new resume"
-                >
-                  <Icon name="plus" />
-                  <span className="button-label">New</span>
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  onClick={onImport}
-                  aria-label="Import resume"
-                  title="Import a resume"
-                >
-                  <Icon name="upload" />
-                  <span className="button-label">Import</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className="button"
+                onClick={onNew}
+                aria-label={`New ${kind === 'resume' ? 'resume' : 'cover letter'}`}
+                title={`Start a new ${kind === 'resume' ? 'resume' : 'cover letter'}`}
+              >
+                <Icon name="plus" />
+                <span className="button-label">New</span>
+              </button>
 
               <span className="action-divider" aria-hidden="true" />
 

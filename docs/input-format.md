@@ -2,13 +2,15 @@
 
 OpenResume parses a small, deterministic subset of Markdown. Structure comes from line markers, not indentation. Content is preserved exactly except for structural whitespace.
 
-## One document per import
+## One document at a time
 
-An import replaces the entire document. The dialog starts empty; use **Load current draft** if you want to edit the existing content as text.
+Building a document replaces that document after an explicit confirmation when a draft already exists. The other document is never touched.
 
-Text containing more than one top-level `#` heading is rejected with an error. This prevents concatenated resumes from being merged into a single, mixed document.
+Text containing more than one top-level `#` heading is rejected with an error. This prevents concatenated documents from being merged into a single, mixed file.
 
-## Canonical example
+## Resume format
+
+### Canonical example
 
 ```text
 # Jordan Avery
@@ -142,3 +144,80 @@ The parser returns warnings alongside the model:
 - An entry or bullet appeared before any section, so an `ADDITIONAL` section was created.
 
 Warnings never block import and never delete content.
+
+## Cover letter format
+
+### Canonical example
+
+```text
+# Jordan Avery
+Product-minded software generalist | jordan.avery@example.com | +1 555 0142 | Toronto, ON | linkedin.com/in/jordanavery
+
+## DATE
+October 18, 2026
+
+## RECIPIENT
+Morgan Lee
+Hiring Manager
+Brightline Labs
+123 Example Street
+Toronto, ON M5V 1A1
+
+## POSITION
+Senior Product Engineer
+
+## SALUTATION
+Dear Ms. Lee,
+
+## BODY
+First paragraph.
+
+Second paragraph.
+
+## CLOSING
+Sincerely,
+
+## SIGNATURE
+Jordan Avery
+```
+
+### Header and contact
+
+- The first line must be `# Full Name`.
+- The next non-empty line is optional contact information, split on `|` and classified as email, phone, link, location, or headline (same rules as the resume).
+- Do not add a second `#` heading.
+
+### Sections
+
+| Section    | Accepted titles                                                          | Content                                             |
+| ---------- | ------------------------------------------------------------------------ | --------------------------------------------------- |
+| Date       | `DATE`                                                                   | One or more lines, joined with spaces.              |
+| Recipient  | `RECIPIENT`, `RECIPIENT DETAILS`, `RECIPIENT ADDRESS`, `ADDRESSEE`       | One detail per line: name, title, company, address. |
+| Position   | `POSITION`, `ROLE`, `SUBJECT`, `RE`, `POSITION APPLIED FOR`, `JOB TITLE` | Subject or role line, rendered bold.                |
+| Salutation | `SALUTATION`, `GREETING`                                                 | Greeting line.                                      |
+| Body       | `BODY`, `LETTER`, `CONTENT`, `MESSAGE`                                   | Paragraphs separated by blank lines.                |
+| Closing    | `CLOSING`, `SIGN-OFF`, `SIGN OFF`                                        | Sign-off line.                                      |
+| Signature  | `SIGNATURE`, `SIGNED`                                                    | Signature/name line.                                |
+
+Unknown sections are appended to the body with a warning so content is not lost.
+
+### Required and optional fields
+
+- **Required:** applicant name and at least one body paragraph.
+- **Optional:** contact line, date, recipient details, position/subject, salutation, closing, and signature. Omit any section you do not have; no placeholder text is invented.
+- Blank optional sections are skipped in the preview, PDF, and DOCX.
+
+### Body paragraphs
+
+Lines within one paragraph are joined with a space. A blank line starts a new paragraph. Do not use bullets in the body.
+
+### Preservation and warnings
+
+- Case, punctuation, and spacing inside content are preserved.
+- Missing name or body blocks the build with a clear message.
+- Unknown sections are preserved in the body with a warning.
+- More than one top-level `#` heading is rejected.
+
+### AI instructions
+
+Use **Copy AI Instructions** in the cover letter preparation screen for a paste-ready template that matches this parser exactly. The same instructions are available for resumes.

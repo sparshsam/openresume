@@ -1,5 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DRAFT_KEY, clearDraft, isResume, loadDraft, saveDraft } from '../src/lib/storage';
+import {
+  COVER_LETTER_DRAFT_KEY,
+  DRAFT_KEY,
+  clearCoverLetterDraft,
+  clearDraft,
+  isCoverLetter,
+  isResume,
+  loadCoverLetterDraft,
+  loadDraft,
+  saveCoverLetterDraft,
+  saveDraft,
+} from '../src/lib/storage';
+import { createSampleCoverLetter } from '../src/lib/coverLetterSample';
 import { createSampleResume } from '../src/lib/sample';
 
 class MemoryStorage implements Storage {
@@ -93,6 +105,44 @@ describe('storage', () => {
     expect(loaded?.template.format.fontSize).toBe('standard');
     expect(loaded?.template.format.density).toBe('balanced');
     expect(loaded?.template.format.paragraphSpacing).toBe('standard');
+  });
+
+  it('saves and loads a cover letter', () => {
+    const letter = createSampleCoverLetter();
+    saveCoverLetterDraft(letter, storage);
+    expect(loadCoverLetterDraft(storage)).toEqual(letter);
+  });
+
+  it('returns null for corrupt or unsupported cover letter payloads', () => {
+    storage.setItem(COVER_LETTER_DRAFT_KEY, '{not json');
+    expect(loadCoverLetterDraft(storage)).toBeNull();
+
+    storage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify({ schemaVersion: 99, body: [] }));
+    expect(loadCoverLetterDraft(storage)).toBeNull();
+  });
+
+  it('keeps resume and cover letter drafts independent', () => {
+    const resume = createSampleResume();
+    const letter = createSampleCoverLetter();
+    saveDraft(resume, storage);
+    saveCoverLetterDraft(letter, storage);
+
+    clearDraft(storage);
+
+    expect(loadDraft(storage)).toBeNull();
+    expect(loadCoverLetterDraft(storage)).toEqual(letter);
+
+    saveDraft(resume, storage);
+    clearCoverLetterDraft(storage);
+
+    expect(loadDraft(storage)).toEqual(resume);
+    expect(loadCoverLetterDraft(storage)).toBeNull();
+  });
+
+  it('validates cover letter shape', () => {
+    expect(isCoverLetter(createSampleCoverLetter())).toBe(true);
+    expect(isCoverLetter({})).toBe(false);
+    expect(isCoverLetter(null)).toBe(false);
   });
 
   it('falls back safely for invalid stored formatting', () => {

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-export type IconName = 'plus' | 'upload' | 'sliders' | 'fileText' | 'fileWord' | 'sun' | 'moon';
+export type IconName =
+  'plus' | 'upload' | 'sliders' | 'fileText' | 'fileWord' | 'mail' | 'sun' | 'moon';
 
 const PATHS: Record<IconName, ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />,
@@ -31,6 +32,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <path d="M14 2v6h6" />
       <path d="m8 12 1.5 6L12 13l2.5 5L16 12" />
+    </>
+  ),
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
     </>
   ),
   sun: (

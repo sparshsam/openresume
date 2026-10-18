@@ -1,13 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
 import { Footer } from './components/Footer';
 import { FormattingPanel } from './components/FormattingPanel';
 import { Header } from './components/Header';
-import { ImportScreen } from './components/ImportScreen';
+import { LandingPage } from './components/LandingPage';
+import { PrepareScreen } from './components/PrepareScreen';
 import { Preview } from './components/Preview';
+import { useCoverLetterDraft } from './hooks/useCoverLetterDraft';
 import { useDraft } from './hooks/useDraft';
-import { resumeMeta } from './lib/documentMeta';
-import { resumeFilename } from './lib/filename';
+import {
+  addBodyParagraph,
+  removeBodyParagraph,
+  resetLetterTemplate,
+  updateApplicant,
+  updateApplicantContact,
+  updateBodyParagraph,
+  updateLetter,
+  updateLetterFormat,
+  updateLetterTemplate,
+} from './lib/coverLetterEdits';
+import { layoutCoverLetter } from './lib/coverLetterLayout';
+import { buildCoverLetterScaffold } from './lib/coverLetterScaffold';
+import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
+import { documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
 import {
   addBullet,
@@ -26,8 +42,8 @@ import {
   updateSection,
   updateTemplate,
 } from './lib/resumeEdits';
-import { serializeResume } from './lib/serialize';
-import { DEFAULT_TEMPLATE } from './types/resume';
+import type { CoverLetter } from './types/coverLetter';
+import type { DocumentKind } from './types/document';
 import type {
   FormatSettings,
   PageSize,
@@ -48,19 +64,40 @@ function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-type View = 'import' | 'editor';
-type ImportMode = 'new' | 'import';
+type View = 'landing' | 'prepare' | 'workspace';
+
+interface PrepareBack {
+  view: 'landing' | 'workspace';
+  kind: DocumentKind;
+}
 
 export default function App() {
-  const { resume, setResume, saveState } = useDraft();
-  const [view, setView] = useState<View>(resume ? 'editor' : 'import');
-  const [importMode, setImportMode] = useState<ImportMode>('new');
+  const { resume, setResume, saveState: resumeSaveState } = useDraft();
+  const { coverLetter, setCoverLetter, saveState: coverLetterSaveState } = useCoverLetterDraft();
+
+  const [view, setView] = useState<View>('landing');
+  const [activeKind, setActiveKind] = useState<DocumentKind>('resume');
+  const [prepareNonce, setPrepareNonce] = useState(0);
+  const [prepareText, setPrepareText] = useState<string | undefined>(undefined);
+  const [prepareFromResume, setPrepareFromResume] = useState(false);
+  const [prepareBack, setPrepareBack] = useState<PrepareBack>({
+    view: 'landing',
+    kind: 'resume',
+  });
   const [formattingOpen, setFormattingOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
-  const layout = useMemo(() => (resume ? layoutResume(resume) : null), [resume]);
-  const showEditor = view === 'editor' && resume !== null;
+  const activeSaveState = activeKind === 'resume' ? resumeSaveState : coverLetterSaveState;
+  const activeTemplate = activeKind === 'resume' ? resume?.template : coverLetter?.template;
+
+  const layout = useMemo(() => {
+    if (activeKind === 'resume' && resume) return layoutResume(resume);
+    if (activeKind === 'coverLetter' && coverLetter) {
+      return layoutCoverLetter(coverLetter);
+    }
+    return null;
+  }, [activeKind, resume, coverLetter]);
 
   useEffect(() => {
     if (!message) return;
@@ -68,41 +105,157 @@ export default function App() {
     return () => window.clearTimeout(id);
   }, [message]);
 
-  const updateResume = useCallback(
-    (updater: (current: Resume) => Resume) => {
-      setResume((current) => (current ? updater(current) : current));
-    },
-    [setResume],
-  );
-
   const onFocusTarget = useCallback((sectionId: string, itemId?: string) => {
     setFocusTarget({ sectionId, itemId, nonce: Date.now() });
   }, []);
 
-  const openImport = (mode: ImportMode) => {
-    setImportMode(mode);
-    setView('import');
+  const openPrepare = (
+    kind: DocumentKind,
+    back: PrepareBack,
+    text?: string,
+    reusedFromResume = false,
+  ) => {
+    setActiveKind(kind);
+    setPrepareText(text);
+    setPrepareFromResume(reusedFromResume);
+    setPrepareBack(back);
+    setPrepareNonce((value) => value + 1);
     setFormattingOpen(false);
+    setFocusTarget(null);
+    setView('prepare');
   };
 
-  const applyImport = (next: Resume, warnings: string[]) => {
+  const openDocument = (kind: DocumentKind) => {
+    setActiveKind(kind);
+    setFormattingOpen(false);
+    setFocusTarget(null);
+    const exists = kind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
+    if (exists) {
+      setView('workspace');
+      return;
+    }
+    openPrepare(kind, { view: 'landing', kind });
+  };
+
+  const goHome = () => {
+    setView('landing');
+    setFormattingOpen(false);
+    setFocusTarget(null);
+  };
+
+  const handleNew = () => {
+    const exists = activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
+    openPrepare(activeKind, {
+      view: exists ? 'workspace' : 'landing',
+      kind: activeKind,
+    });
+  };
+
+  const handlePrepareBack = () => {
+    if (prepareBack.view === 'workspace') {
+      const targetExists = prepareBack.kind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
+      if (targetExists) {
+        setActiveKind(prepareBack.kind);
+        setView('workspace');
+        return;
+      }
+    }
+    setView('landing');
+  };
+
+  const handleBuildResume = (next: Resume, warnings: string[]) => {
+    if (resume) {
+      const replace = window.confirm(
+        'Replace your current resume? This overwrites the saved resume draft.',
+      );
+      if (!replace) return;
+    }
     setResume((current) => ({
       ...next,
-      template: current?.template ?? DEFAULT_TEMPLATE,
+      template: current?.template ?? next.template,
     }));
-    setView('editor');
+    setActiveKind('resume');
+    setView('workspace');
     setMessage(
       warnings.length > 0
-        ? `Imported with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`
-        : 'Resume imported.',
+        ? `Resume built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`
+        : 'Resume built.',
     );
   };
 
+  const handleBuildCoverLetter = (next: CoverLetter, warnings: string[]) => {
+    if (coverLetter) {
+      const replace = window.confirm(
+        'Replace your current cover letter? This overwrites the saved cover letter draft.',
+      );
+      if (!replace) return;
+    }
+    setCoverLetter((current) => ({
+      ...next,
+      template: current?.template ?? resume?.template ?? next.template,
+    }));
+    setActiveKind('coverLetter');
+    setView('workspace');
+    setMessage(
+      warnings.length > 0
+        ? `Cover letter built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`
+        : 'Cover letter built.',
+    );
+  };
+
+  const handleCreateMatchingCoverLetter = () => {
+    if (!resume) return;
+    openPrepare(
+      'coverLetter',
+      { view: 'workspace', kind: 'resume' },
+      buildCoverLetterScaffold(resume),
+      true,
+    );
+  };
+
+  const handleBackToResume = () => {
+    setActiveKind('resume');
+    setView('workspace');
+    setFormattingOpen(false);
+    setFocusTarget(null);
+  };
+
+  const handlePageSize = (pageSize: PageSize) => {
+    if (activeKind === 'resume') {
+      setResume((current) => (current ? updateTemplate(current, { pageSize }) : current));
+    } else {
+      setCoverLetter((current) =>
+        current ? updateLetterTemplate(current, { pageSize }) : current,
+      );
+    }
+  };
+
+  const handleFormat = (patch: Partial<FormatSettings>) => {
+    if (activeKind === 'resume') {
+      setResume((current) => (current ? updateFormat(current, patch) : current));
+    } else {
+      setCoverLetter((current) => (current ? updateLetterFormat(current, patch) : current));
+    }
+  };
+
+  const handleResetFormatting = () => {
+    if (activeKind === 'resume') {
+      setResume((current) => (current ? resetTemplate(current) : current));
+    } else {
+      setCoverLetter((current) => (current ? resetLetterTemplate(current) : current));
+    }
+    setMessage('Formatting reset to defaults.');
+  };
+
   const handleExportPdf = async () => {
-    if (!resume || !layout) return;
+    if (!layout) return;
     try {
       const { exportPdf } = await import('./lib/exportPdf');
-      exportPdf(resumeMeta(resume), layout);
+      if (activeKind === 'resume' && resume) {
+        exportPdf(resumeMeta(resume), layout);
+      } else if (coverLetter) {
+        exportPdf(coverLetterMeta(coverLetter), layout);
+      }
       setMessage('PDF downloaded.');
     } catch {
       setMessage('PDF export failed.');
@@ -110,97 +263,163 @@ export default function App() {
   };
 
   const handleExportDocx = async () => {
-    if (!resume || !layout) return;
+    if (!layout) return;
     try {
-      const { exportDocx } = await import('./lib/exportDocx');
-      const blob = await exportDocx(resume, layout);
-      downloadBlob(blob, resumeFilename(resume.header.name, 'docx'));
+      if (activeKind === 'resume' && resume) {
+        const { exportDocx } = await import('./lib/exportDocx');
+        const blob = await exportDocx(resume, layout);
+        downloadBlob(blob, documentFilename(resume.header.name, 'resume', 'docx'));
+      } else if (coverLetter) {
+        const { exportCoverLetterDocx } = await import('./lib/exportDocx');
+        const blob = await exportCoverLetterDocx(coverLetter, layout);
+        downloadBlob(blob, documentFilename(coverLetter.applicant.name, 'coverLetter', 'docx'));
+      }
       setMessage('DOCX downloaded.');
     } catch {
       setMessage('DOCX export failed.');
     }
   };
 
-  const handlePageSize = (pageSize: PageSize) => {
-    updateResume((current) => updateTemplate(current, { pageSize }));
-  };
-
-  const handleFormat = (patch: Partial<FormatSettings>) => {
-    updateResume((current) => updateFormat(current, patch));
-  };
-
-  const handleResetFormatting = () => {
-    updateResume((current) => resetTemplate(current));
-    setMessage('Formatting reset to defaults.');
-  };
-
   const sectionHandlers = {
-    onAddSection: (kind: SectionKind) => updateResume((current) => addSection(current, kind)),
+    onAddSection: (kind: SectionKind) =>
+      setResume((current) => (current ? addSection(current, kind) : current)),
     onUpdateSection: (sectionId: string, patch: Partial<ResumeSection>) =>
-      updateResume((current) => updateSection(current, sectionId, patch)),
+      setResume((current) => (current ? updateSection(current, sectionId, patch) : current)),
     onRemoveSection: (sectionId: string) =>
-      updateResume((current) => removeSection(current, sectionId)),
+      setResume((current) => (current ? removeSection(current, sectionId) : current)),
     onMoveSection: (sectionId: string, direction: -1 | 1) =>
-      updateResume((current) => moveSection(current, sectionId, direction)),
-    onAddItem: (sectionId: string) => updateResume((current) => addItem(current, sectionId)),
+      setResume((current) => (current ? moveSection(current, sectionId, direction) : current)),
+    onAddItem: (sectionId: string) =>
+      setResume((current) => (current ? addItem(current, sectionId) : current)),
     onUpdateItem: (sectionId: string, itemId: string, patch: Partial<ResumeItem>) =>
-      updateResume((current) => updateItem(current, sectionId, itemId, patch)),
+      setResume((current) => (current ? updateItem(current, sectionId, itemId, patch) : current)),
     onRemoveItem: (sectionId: string, itemId: string) =>
-      updateResume((current) => removeItem(current, sectionId, itemId)),
+      setResume((current) => (current ? removeItem(current, sectionId, itemId) : current)),
     onAddBullet: (sectionId: string, itemId: string) =>
-      updateResume((current) => addBullet(current, sectionId, itemId)),
+      setResume((current) => (current ? addBullet(current, sectionId, itemId) : current)),
     onUpdateBullet: (sectionId: string, itemId: string, bulletIndex: number, value: string) =>
-      updateResume((current) => updateBullet(current, sectionId, itemId, bulletIndex, value)),
+      setResume((current) =>
+        current ? updateBullet(current, sectionId, itemId, bulletIndex, value) : current,
+      ),
     onRemoveBullet: (sectionId: string, itemId: string, bulletIndex: number) =>
-      updateResume((current) => removeBullet(current, sectionId, itemId, bulletIndex)),
+      setResume((current) =>
+        current ? removeBullet(current, sectionId, itemId, bulletIndex) : current,
+      ),
   };
+
+  const hasActiveDocument = activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
+  const renderView: View = view === 'workspace' && !hasActiveDocument ? 'landing' : view;
+
+  const skipTarget =
+    renderView === 'landing' ? '#main' : renderView === 'prepare' ? '#prepare-text' : '#editor';
 
   return (
     <div className="app">
-      <a className="skip-link" href={showEditor ? '#editor' : '#import-text'}>
-        {showEditor ? 'Skip to editor' : 'Skip to import'}
+      <a className="skip-link" href={skipTarget}>
+        {renderView === 'workspace' ? 'Skip to editor' : 'Skip to main content'}
       </a>
 
       <Header
-        view={showEditor ? 'editor' : 'import'}
-        saveState={saveState}
+        view={renderView}
+        kind={renderView === 'workspace' ? activeKind : null}
+        saveState={activeSaveState}
         message={message}
         formattingOpen={formattingOpen}
-        onNew={() => openImport('new')}
-        onImport={() => openImport('import')}
+        onHome={goHome}
+        onNew={handleNew}
         onToggleFormatting={() => setFormattingOpen((open) => !open)}
         onExportPdf={handleExportPdf}
         onExportDocx={handleExportDocx}
       />
 
-      {showEditor ? (
+      {renderView === 'landing' ? (
+        <LandingPage
+          hasResume={Boolean(resume)}
+          hasCoverLetter={Boolean(coverLetter)}
+          onResume={() => openDocument('resume')}
+          onCoverLetter={() => openDocument('coverLetter')}
+        />
+      ) : renderView === 'prepare' ? (
+        <PrepareScreen
+          key={`${activeKind}-${prepareNonce}`}
+          kind={activeKind}
+          initialText={prepareText}
+          hasExistingDraft={activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter)}
+          reusedFromResume={prepareFromResume}
+          resumeScaffold={
+            activeKind === 'coverLetter' && resume ? buildCoverLetterScaffold(resume) : undefined
+          }
+          onBuildResume={handleBuildResume}
+          onBuildCoverLetter={handleBuildCoverLetter}
+          onBack={handlePrepareBack}
+        />
+      ) : (
         <>
-          {formattingOpen ? (
+          {formattingOpen && activeTemplate ? (
             <FormattingPanel
-              template={resume.template}
+              kind={activeKind}
+              template={activeTemplate}
               onPageSize={handlePageSize}
               onFormat={handleFormat}
               onReset={handleResetFormatting}
             />
           ) : null}
+
           <main className="workspace" id="main">
-            <EditorPanel
-              resume={resume}
-              focusTarget={focusTarget}
-              onHeader={(patch) => updateResume((current) => updateHeader(current, patch))}
-              onContact={(patch) => updateResume((current) => updateContact(current, patch))}
-              {...sectionHandlers}
-            />
-            {layout ? <Preview layout={layout} onFocusTarget={onFocusTarget} /> : null}
+            {activeKind === 'resume' && resume ? (
+              <>
+                <EditorPanel
+                  resume={resume}
+                  focusTarget={focusTarget}
+                  onHeader={(patch) =>
+                    setResume((current) => (current ? updateHeader(current, patch) : current))
+                  }
+                  onContact={(patch) =>
+                    setResume((current) => (current ? updateContact(current, patch) : current))
+                  }
+                  onCreateMatchingCoverLetter={handleCreateMatchingCoverLetter}
+                  {...sectionHandlers}
+                />
+                {layout ? <Preview layout={layout} onFocusTarget={onFocusTarget} /> : null}
+              </>
+            ) : coverLetter ? (
+              <>
+                <CoverLetterEditor
+                  letter={coverLetter}
+                  focusTarget={focusTarget}
+                  onApplicant={(patch) =>
+                    setCoverLetter((current) =>
+                      current ? updateApplicant(current, patch) : current,
+                    )
+                  }
+                  onContact={(patch) =>
+                    setCoverLetter((current) =>
+                      current ? updateApplicantContact(current, patch) : current,
+                    )
+                  }
+                  onLetter={(patch) =>
+                    setCoverLetter((current) => (current ? updateLetter(current, patch) : current))
+                  }
+                  onBodyParagraph={(index, value) =>
+                    setCoverLetter((current) =>
+                      current ? updateBodyParagraph(current, index, value) : current,
+                    )
+                  }
+                  onAddParagraph={() =>
+                    setCoverLetter((current) => (current ? addBodyParagraph(current) : current))
+                  }
+                  onRemoveParagraph={(index) =>
+                    setCoverLetter((current) =>
+                      current ? removeBodyParagraph(current, index) : current,
+                    )
+                  }
+                  onBackToResume={resume ? handleBackToResume : undefined}
+                />
+                {layout ? <Preview layout={layout} onFocusTarget={onFocusTarget} /> : null}
+              </>
+            ) : null}
           </main>
         </>
-      ) : (
-        <ImportScreen
-          mode={importMode}
-          currentText={resume ? serializeResume(resume) : undefined}
-          onImport={applyImport}
-          onBack={resume ? () => setView('editor') : undefined}
-        />
       )}
 
       <Footer />

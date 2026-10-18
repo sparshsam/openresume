@@ -1,6 +1,6 @@
 # Privacy model
 
-OpenResume is designed so that a resume never has to leave the browser.
+OpenResume is designed so that a resume or cover letter never has to leave the browser.
 
 ## Guarantees
 
@@ -13,9 +13,11 @@ OpenResume is designed so that a resume never has to leave the browser.
 
 ## What is stored
 
-| Location                              | Data                       | Purpose                     |
-| ------------------------------------- | -------------------------- | --------------------------- |
-| `localStorage['openresume:draft.v1']` | The complete `Resume` JSON | Restore the draft on reload |
+| Location                                     | Data                            | Purpose                      |
+| -------------------------------------------- | ------------------------------- | ---------------------------- |
+| `localStorage['openresume:draft.v1']`        | The complete `Resume` JSON      | Restore the resume on reload |
+| `localStorage['openresume:cover-letter.v1']` | The complete `CoverLetter` JSON | Restore the letter on reload |
+| `localStorage['openresume-theme']`           | `light` or `dark`               | Restore the interface theme  |
 
 Nothing else is persisted. There are no cookies, IndexedDB databases, caches, or service workers.
 
@@ -30,9 +32,9 @@ Both are created in memory and downloaded. They are not uploaded anywhere.
 
 ## Deleting data
 
-- Use **Reset sample** to replace the draft and clear storage.
-- Or clear site data for the app's origin in the browser settings.
-- Uninstalling or clearing browser storage removes the draft permanently; there is no backup.
+- Clear site data for the app's origin in the browser settings.
+- Uninstalling or clearing browser storage removes both drafts and the theme permanently; there is no backup.
+- Replacing a document through **New** → build overwrites only that document, after confirmation.
 
 ## Threat model
 

@@ -32,9 +32,12 @@ function allLines(letter: CoverLetter): string {
       ]
     : [];
 
-  return [...headerLines, ...layout.pages.flatMap((page) => page.blocks).flatMap((block) =>
-    block.lines.map((line) => line.text),
-  )]
+  return [
+    ...headerLines,
+    ...layout.pages
+      .flatMap((page) => page.blocks)
+      .flatMap((block) => block.lines.map((line) => line.text)),
+  ]
     .join(' ')
     .replace(/\s+/g, ' ');
 }
@@ -122,8 +125,12 @@ describe('layoutCoverLetter', () => {
 
   it('applies paragraph spacing presets', () => {
     const letter = createSampleCoverLetter();
-    const compact = layoutCoverLetter(withTemplate(letter, 'letter', { paragraphSpacing: 'compact' }));
-    const relaxed = layoutCoverLetter(withTemplate(letter, 'letter', { paragraphSpacing: 'relaxed' }));
+    const compact = layoutCoverLetter(
+      withTemplate(letter, 'letter', { paragraphSpacing: 'compact' }),
+    );
+    const relaxed = layoutCoverLetter(
+      withTemplate(letter, 'letter', { paragraphSpacing: 'relaxed' }),
+    );
 
     const compactBody = compact.pages[0].blocks.find((block) => block.kind === 'letterBody')!;
     const relaxedBody = relaxed.pages[0].blocks.find((block) => block.kind === 'letterBody')!;

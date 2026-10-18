@@ -5,7 +5,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.2 tag and early-development pre-release are live; CI is green.
+- **Release:** v0.1.3 dual-document release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; default Vercel domain; no environment variables.
@@ -13,48 +13,55 @@ This file complements `CLAUDE.md`. Read both before changing code.
 
 **Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before making changes. Do not push, tag, release, or deploy without explicit permission.
 
-**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, `docs/formatting.md`, and `docs/deployment.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get SSO-protected previews.
+**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, `docs/formatting.md`, `docs/ai-instructions.md`, and `docs/deployment.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get SSO-protected previews.
 
 ## Mission
 
-Produce consistent, professional resumes from structured text with zero data leaving the browser. Optimize for fast repeated use, not multi-user features.
+Produce consistent, professional resumes and cover letters from structured text with zero data leaving the browser. Optimize for fast repeated use, not multi-user features.
 
 ## Invariants to preserve
 
-- The preview and the two exports share one `Layout`.
+- The preview and the two exports of each document share one `Layout`.
 - Pagination never duplicates or drops a line, and no blank pages are emitted.
 - Content is preserved unless the user edits it.
-- Imports replace the whole document; multiple top-level headings are rejected.
-- No draft means the import screen; the app never fabricates a document.
+- Preparation replaces the selected document; multiple top-level headings are rejected and replacement requires confirmation.
+- No draft means preparation; the app never fabricates a document.
+- Resume and cover letter drafts are independent, with separate storage keys and templates.
 - Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
-- Interface themes never change the resume page, PDF, or DOCX colors.
+- Interface themes never change document, PDF, or DOCX colors.
 - No runtime network calls and no storage beyond `localStorage`.
+- AI instructions are generated from parser aliases and must remain drift-tested.
 - PDF text is selectable; DOCX text is editable and contains every content string.
 
 ## Where to change what
 
-| Task                        | Touch                                                                            |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| Parsing rules or aliases    | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                |
-| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                |
-| Page geometry, typography   | `src/lib/metrics.ts`, `src/styles/tokens.css`                                    |
-| Document colors             | `src/lib/tokens.ts`                                                              |
-| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                                     |
-| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/paginate.test.ts`                                  |
-| Column composition          | `src/lib/layout.ts`                                                              |
-| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`                                |
-| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`                              |
-| Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/useDraft.ts`, `tests/storage.test.ts`           |
-| Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md` |
-| Import integrity            | `src/lib/parse.ts` (`documentCount`), `ImportScreen.tsx`, `tests/App.test.tsx`   |
-| Import-first shell          | `src/App.tsx`, `src/hooks/useDraft.ts`, `ImportScreen.tsx`, `Header.tsx`         |
-| Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`  |
-| Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`              |
-| Icons                       | `src/components/Icon.tsx` — inline SVG only                                      |
-| Deployment configuration    | `vercel.json`, `docs/deployment.md`                                              |
-| PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                               |
-| Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                            |
-| Header and import flow      | `src/components/Header.tsx`, `ImportScreen.tsx`                                  |
+| Task                        | Touch                                                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| Resume parsing or aliases   | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                       |
+| Cover letter parsing        | `src/lib/parseCoverLetter.ts`, `docs/input-format.md`, `tests/parseCoverLetter.test.ts` |
+| AI instruction templates    | `src/lib/aiInstructions.ts`, `tests/aiInstructions.test.ts`, `docs/ai-instructions.md`  |
+| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                       |
+| Page geometry, typography   | `src/lib/metrics.ts`, `src/styles/tokens.css`                                           |
+| Document colors             | `src/lib/tokens.ts`                                                                     |
+| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                                            |
+| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/paginate.test.ts`                                         |
+| Resume composition          | `src/lib/layout.ts`                                                                     |
+| Cover letter layout         | `src/lib/coverLetterLayout.ts`, `tests/coverLetterLayout.test.ts`                       |
+| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`, `tests/exportCoverLetter.test.ts`    |
+| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`, `tests/exportCoverLetter.test.ts`  |
+| Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/usePersistedDocument.ts`, `tests/storage.test.ts`      |
+| Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md`        |
+| Preparation validation      | `src/components/PrepareScreen.tsx`, `src/App.tsx`, `tests/App.test.tsx`                 |
+| Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                     |
+| Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                   |
+| Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                   |
+| Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`         |
+| Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`                     |
+| Icons                       | `src/components/Icon.tsx` — inline SVG only                                             |
+| Deployment configuration    | `vercel.json`, `docs/deployment.md`                                                     |
+| PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                                      |
+| Resume editor controls      | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                                   |
+| Document navigation         | `src/components/Header.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`                     |
 
 ## Verification before completion
 
@@ -66,13 +73,16 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 
 - PDF text can be selected.
 - DOCX opens and paragraphs are editable.
-- Page count matches the preview on US Letter, A4, and US Legal.
-- A second import replaces the first document entirely.
-- Formatting changes appear in the preview and both exports.
-- First launch shows the import screen; a saved draft opens the editor.
-- New/Import preserve the draft until a successful replacement.
-- Light, dark, and system themes work; the resume page keeps fixed colors.
-- Header and footer remain usable at 375px.
+- Page count matches the preview on US Letter, A4, and US Legal for both documents.
+- A second build replaces only the selected document, after confirmation.
+- Formatting changes appear in the preview and both exports, and document-specific controls are visible only where relevant.
+- First launch shows document selection; saved drafts open their workspaces.
+- Copy AI Instructions returns the complete template, and Load Example does not copy.
+- Create matching cover letter reuses identity/contact and leaves the resume unchanged.
+- Resume and cover letter drafts persist independently across reloads.
+- v0.1.2 resume drafts still load.
+- Light, dark, and system themes work; document pages keep fixed colors.
+- Header, landing, preparation, and footer remain usable at 375px.
 
 ## Change discipline
 

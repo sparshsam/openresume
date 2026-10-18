@@ -2,16 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.3] — 2026-10-18
 
 ### Added
 
-- Vercel production deployment configuration (`vercel.json`) with security headers and asset caching.
-- Deployment documentation and the production URL in the README.
+- Document-selection landing page with borderless Build Resume and Build Cover Letter options, saved-draft indicators, and responsive layout.
+- Cover letter document model, deterministic structured-text parser, fictional example, single-column layout, editor, and PDF/DOCX exports.
+- Reusable AI instruction templates for resumes and cover letters, generated from the parsers' supported headings and covered by drift tests.
+- Copy AI Instructions and Load Example actions on both preparation screens.
+- Create matching cover letter flow with applicant identity/contact reuse and a safe return to the resume.
+- Independent cover letter draft persistence under `openresume:cover-letter.v1`.
+- Paragraph spacing formatting control for cover letters.
+- Vercel production deployment configuration, security headers, asset caching, and deployment documentation.
+- Tests for landing/navigation, cover letter parsing and exports, AI instruction compatibility, independent drafts, matching flow, migration, formatting visibility, and theme persistence.
 
 ### Changed
 
-- No runtime changes; the application remains v0.1.2.
+- The first screen is now document selection instead of a resume-only import screen.
+- Preparation screens use clear Create your resume / Create your cover letter headings and remove the collapsible example format.
+- The header is context-aware, with New, Format, PDF, Word, and a document label in the workspace.
+- Existing v0.1.2 resume drafts load normally and gain the new paragraph-spacing default.
 
 ## [0.1.2] — 2026-10-18
 

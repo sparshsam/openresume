@@ -321,10 +321,7 @@ function pageTable(page: PageLayout, metrics: ResolvedMetrics): Table {
   });
 }
 
-function headerParagraphs(
-  identity: DocumentIdentity,
-  metrics: ResolvedMetrics,
-): Paragraph[] {
+function headerParagraphs(identity: DocumentIdentity, metrics: ResolvedMetrics): Paragraph[] {
   const paragraphs: Paragraph[] = [
     new Paragraph({
       children: [
@@ -452,10 +449,7 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
   return baseDocument(children, metrics, `${resume.header.name || 'Resume'} — Resume`);
 }
 
-export function createCoverLetterDocxDocument(
-  letter: CoverLetter,
-  layout: Layout,
-): Document {
+export function createCoverLetterDocxDocument(letter: CoverLetter, layout: Layout): Document {
   const { metrics } = layout;
   const children: (Paragraph | Table)[] = [
     ...headerParagraphs(
@@ -489,18 +483,12 @@ export async function exportDocx(resume: Resume, layout: Layout): Promise<Blob> 
   return Packer.toBlob(document);
 }
 
-export async function exportCoverLetterDocx(
-  letter: CoverLetter,
-  layout: Layout,
-): Promise<Blob> {
+export async function exportCoverLetterDocx(letter: CoverLetter, layout: Layout): Promise<Blob> {
   const document = createCoverLetterDocxDocument(letter, layout);
   return Packer.toBlob(document);
 }
 
-function textContentFrom(
-  identity: DocumentIdentity,
-  layout: Layout,
-): string[] {
+function textContentFrom(identity: DocumentIdentity, layout: Layout): string[] {
   const texts: string[] = [identity.name];
   if (identity.headline) texts.push(identity.headline);
   for (const value of [
@@ -532,10 +520,7 @@ export function docxTextContent(resume: Resume, layout: Layout): string[] {
   );
 }
 
-export function coverLetterDocxTextContent(
-  letter: CoverLetter,
-  layout: Layout,
-): string[] {
+export function coverLetterDocxTextContent(letter: CoverLetter, layout: Layout): string[] {
   return textContentFrom(
     {
       name: letter.applicant.name,

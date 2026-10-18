@@ -1,55 +1,79 @@
 # OpenResume
 
-A privacy-first, local-first resume builder that turns structured text into professionally formatted PDF and DOCX resumes.
+A privacy-first, local-first resume and cover letter builder that turns structured text into precise PDF and DOCX documents.
 
 ## Status
 
-**Early development — v0.1.2.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.3.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://openresume-sigma.vercel.app
+**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.3 is committed locally pending deployment approval)
 
 ## Description
 
-OpenResume exists because resume updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a fixed, two-column document with reliable pagination.
+OpenResume exists because document updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a precise resume or cover letter.
+
+Resumes use a fixed two-column layout. Cover letters use a calm single-column business-letter layout. Both support live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
 
 Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Drafts are stored in `localStorage`; exports are generated locally. The app never makes a network request at runtime.
 
-The workflow is deliberately import-first:
+The workflow is:
 
 ```
-Paste AI-generated resume text → Import → Review → Export
+Choose document → Prepare content → Build → Edit/Preview → Export
 ```
 
-No draft yet? OpenResume opens on a focused import screen. A saved draft opens directly in the editor, with **New** and **Import** always available.
+OpenResume opens on a document-selection screen. Saved drafts are marked, so you can continue a resume or cover letter without losing either.
 
-![OpenResume import screen](assets/hero/hero-light.png)
+![OpenResume document selection](assets/hero/hero-light.png)
 
 ## Features
 
-- **Import-first experience** with a large paste area, example input, and inline validation.
-- **Structured text input** with predefined and custom sections.
+- **Document-selection landing page** for a resume or a cover letter, with saved-draft indicators.
+- **Preparation screens** with a large paste area, Copy AI Instructions, Load Example, and inline validation.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
-- **Fixed two-column template** with configurable section ordering and column assignment.
+- **Resume workspace** preserving the fixed two-column template, section ordering, editing, and pagination.
+- **Cover letter workspace** with applicant details, date, recipient, position, salutation, body paragraphs, closing, and signature.
+- **Create matching cover letter** from a resume, reusing applicant identity and contact details without changing the resume.
+- **AI instruction templates** for both document types, generated from the parsers' supported headings and covered by drift tests.
+- **Independent local drafts** for resumes and cover letters, with safe v0.1.2 resume-draft migration.
 - **US Letter, A4, and US Legal** page sizes, switchable before export.
-- **Formatting controls** for margins, font size, line, section, bullet, and column spacing, plus content density.
-- **Clean replacement imports** that reject concatenated resumes instead of merging them.
+- **Document-specific formatting controls** for margins, font size, line spacing, section spacing, content density, and the controls relevant to each document type.
 - **Live, page-aware preview** rendered from the same layout coordinates as the exports.
-- **Reliable pagination** that keeps headings with content, never drops a line, and avoids blank pages.
+- **Reliable pagination** that keeps headings and signatures with content and avoids blank pages.
 - **Selectable-text PDF** generated with real text, not screenshots.
-- **Editable DOCX** with readable, naturally flowing paragraphs and real Word bullets.
-- **Local draft and formatting persistence** with a versioned storage key.
+- **Editable DOCX** with readable, naturally flowing paragraphs.
 - **Light, dark, and system themes** with a persistent, flash-free header toggle.
-- **Icon-led header actions** — New, Import, Format, PDF, and Word.
-- **Accessible editor** with labeled controls, keyboard focus, and reduced-motion support.
+- **Accessible editors** with labeled controls, keyboard focus, and reduced-motion support.
 - **No backend, auth, analytics, cloud storage, or AI.**
+
+## Cover letters
+
+The cover letter workspace uses a single-column business-letter layout:
+
+- Applicant name, optional headline, and contact information.
+- Date, recipient details, position or subject, and salutation.
+- Multiple editable body paragraphs.
+- Closing and signature.
+- The same page sizes, margins, font sizing, line spacing, section spacing, paragraph spacing, and content density as the resume.
+- Selectable-text PDF and editable DOCX exports.
+
+The resume template is unchanged. Formatting is stored with each document, so the two documents can use different settings.
+
+![OpenResume cover letter workspace](assets/screenshots/light/cover-letter.png)
+
+## AI instructions
+
+Both preparation screens include **Copy AI Instructions**. The copied template explains the exact structured format, supported headings and aliases, entry/paragraph rules, optional fields, and the factual-accuracy requirement. Paste it into ChatGPT, Claude, or another assistant, provide your details, and paste the result back into OpenResume.
+
+The templates live beside the parsers in `src/lib/aiInstructions.ts` and are generated from the parsers' supported headings. Tests fail if an alias exists in a parser but not in the instructions. See [docs/ai-instructions.md](docs/ai-instructions.md).
 
 ## Themes
 
 The header toggle switches between light and dark. With no stored choice, OpenResume follows the operating system preference and updates live when it changes. The choice persists under `openresume-theme`.
 
-The interface shell changes theme; **the resume document and its PDF/DOCX colors do not**. The preview page always keeps its professional white page and fixed typography colors.
+The interface shell changes theme; **the resume and cover letter documents and their PDF/DOCX colors do not**. The preview page always keeps its professional white page and fixed typography colors.
 
-![OpenResume in dark mode](assets/screenshots/dark/editor.png)
+![OpenResume in dark mode](assets/screenshots/dark/cover-letter.png)
 
 ## Architecture
 
@@ -58,11 +82,13 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the pipeline, module boundaries, inva
 The short version:
 
 ```
-structured text → parser → Resume model → layout engine → pages
-                                                     ├── live preview
-                                                     ├── PDF (jsPDF)
-                                                     └── DOCX (docx)
+structured text → parser → document model → layout engine → pages
+                                                          ├── live preview
+                                                          ├── PDF (jsPDF)
+                                                          └── DOCX (docx)
 ```
+
+Resume and cover letter models share contact parsing, metrics, pagination, preview components, and export primitives while keeping separate templates and layouts.
 
 ## Deployment
 
@@ -79,7 +105,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed local URL. With no saved draft, the app opens the import screen; **Load example** fills it with a fictional sample.
+Open the printed local URL. The app opens on the document-selection screen. Choose a document, then use **Load Example** on the preparation screen to start with a fictional sample.
 
 ### Commands
 
@@ -98,13 +124,15 @@ Helper scripts live in `scripts/` (`build.sh`, `test.sh`, `lint.sh`, `generate-i
 
 ### Keyboard
 
-- `Ctrl`/`⌘` + `Enter` imports from the import screen.
-- `Escape` returns to the current resume from the New/Import screen.
+- `Ctrl`/`⌘` + `Enter` builds from the preparation screen.
+- `Escape` returns to the previous workspace or the landing page.
 - All header actions are native buttons with focus-visible rings and accessible labels.
 
 ## Input format
 
-The canonical format and edge cases are documented in [docs/input-format.md](docs/input-format.md). A minimal example:
+The canonical formats and edge cases for both documents are documented in [docs/input-format.md](docs/input-format.md).
+
+A minimal resume example:
 
 ```text
 # Jordan Avery
@@ -119,37 +147,71 @@ One or two sentences of positioning.
 - Shipped a thing that mattered, with a number attached.
 ```
 
-Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. Import one resume at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
+A minimal cover letter example:
+
+```text
+# Jordan Avery
+Product-minded software generalist | jordan@example.com | Toronto, ON
+
+## DATE
+October 18, 2026
+
+## RECIPIENT
+Morgan Lee
+Hiring Manager
+Brightline Labs
+
+## POSITION
+Senior Product Engineer
+
+## SALUTATION
+Dear Ms. Lee,
+
+## BODY
+First paragraph.
+
+Second paragraph.
+
+## CLOSING
+Sincerely,
+
+## SIGNATURE
+Jordan Avery
+```
+
+Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. Prepare one document at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
 
 ## Page sizes and formatting
 
 The default is **US Letter (8.5 × 11 in)**. The **Formatting** panel also offers A4 (210 × 297 mm) and US Legal (8.5 × 14 in), plus:
 
-| Control         | Options                     |
-| --------------- | --------------------------- |
-| Page margins    | Narrow, Normal, Wide        |
-| Font size       | Small, Standard, Large      |
-| Line spacing    | Compact, Standard, Relaxed  |
-| Section spacing | Compact, Standard, Relaxed  |
-| Bullet spacing  | Compact, Standard, Relaxed  |
-| Column spacing  | Narrow, Standard, Wide      |
-| Content density | Compact, Balanced, Spacious |
+| Control           | Options                     | Shown for    |
+| ----------------- | --------------------------- | ------------ |
+| Page margins      | Narrow, Normal, Wide        | Both         |
+| Font size         | Small, Standard, Large      | Both         |
+| Line spacing      | Compact, Standard, Relaxed  | Both         |
+| Section spacing   | Compact, Standard, Relaxed  | Both         |
+| Paragraph spacing | Compact, Standard, Relaxed  | Cover letter |
+| Bullet spacing    | Compact, Standard, Relaxed  | Resume       |
+| Column spacing    | Narrow, Standard, Wide      | Resume       |
+| Content density   | Compact, Balanced, Spacious | Both         |
 
-Formatting applies to the preview, PDF, and DOCX, and is saved with the local draft. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
+Formatting applies to the preview, PDF, and DOCX, and is saved with each document's local draft. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
 
 ## Limitations
 
-- One fixed two-column template; page sizes and spacing are configurable.
+- One fixed two-column resume template and one fixed single-column letter template; page sizes and spacing are configurable.
 - Helvetica-family metrics only; custom font embedding is not supported.
 - DOCX flows text naturally inside each logical page. Editing in Word can re-flow individual pages; pagination is structurally consistent with the PDF rather than pixel-identical.
 - No import from PDF or existing DOCX; input is structured text only.
-- No cloud sync or backup. Clearing browser storage deletes the draft.
+- Cover letters are not generated. **Create matching cover letter** reuses identity and contact details and scaffolds the section markers; you write the body.
+- No cloud sync or backup. Clearing browser storage deletes the drafts.
 - Desktop-first. Editing works on smaller screens but is not the primary workflow.
 - The app icon is an intentional placeholder and will be replaced.
 
 ## Privacy model
 
-No network requests, no telemetry, no accounts. Drafts live under `openresume:draft.v1` in the browser's `localStorage`. See [docs/privacy-model.md](docs/privacy-model.md).
+No network requests, no telemetry, no accounts. Resume drafts live under `openresume:draft.v1`; cover letter drafts live under `openresume:cover-letter.v1`. Both stay in the browser's `localStorage`. See [docs/privacy-model.md](docs/privacy-model.md).
 
 ## Ecosystem role
 

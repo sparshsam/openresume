@@ -1,3 +1,4 @@
+import type { DocumentKind } from '../types/document';
 import type {
   ColumnSpacingPreset,
   DensityPreset,
@@ -87,13 +88,20 @@ const DENSITY_OPTIONS: SelectOption<DensityPreset>[] = [
 ];
 
 interface FormattingPanelProps {
+  kind: DocumentKind;
   template: ResumeTemplate;
   onPageSize: (pageSize: PageSize) => void;
   onFormat: (patch: Partial<FormatSettings>) => void;
   onReset: () => void;
 }
 
-export function FormattingPanel({ template, onPageSize, onFormat, onReset }: FormattingPanelProps) {
+export function FormattingPanel({
+  kind,
+  template,
+  onPageSize,
+  onFormat,
+  onReset,
+}: FormattingPanelProps) {
   const { format } = template;
 
   return (
@@ -134,20 +142,32 @@ export function FormattingPanel({ template, onPageSize, onFormat, onReset }: For
           options={SPACING_OPTIONS}
           onChange={(sectionSpacing) => onFormat({ sectionSpacing })}
         />
-        <SelectField
-          id="format-bullet-spacing"
-          label="Bullet spacing"
-          value={format.bulletSpacing}
-          options={SPACING_OPTIONS}
-          onChange={(bulletSpacing) => onFormat({ bulletSpacing })}
-        />
-        <SelectField
-          id="format-column-spacing"
-          label="Column spacing"
-          value={format.columnSpacing}
-          options={COLUMN_OPTIONS}
-          onChange={(columnSpacing) => onFormat({ columnSpacing })}
-        />
+        {kind === 'coverLetter' ? (
+          <SelectField
+            id="format-paragraph-spacing"
+            label="Paragraph spacing"
+            value={format.paragraphSpacing}
+            options={SPACING_OPTIONS}
+            onChange={(paragraphSpacing) => onFormat({ paragraphSpacing })}
+          />
+        ) : (
+          <>
+            <SelectField
+              id="format-bullet-spacing"
+              label="Bullet spacing"
+              value={format.bulletSpacing}
+              options={SPACING_OPTIONS}
+              onChange={(bulletSpacing) => onFormat({ bulletSpacing })}
+            />
+            <SelectField
+              id="format-column-spacing"
+              label="Column spacing"
+              value={format.columnSpacing}
+              options={COLUMN_OPTIONS}
+              onChange={(columnSpacing) => onFormat({ columnSpacing })}
+            />
+          </>
+        )}
         <SelectField
           id="format-density"
           label="Content density"

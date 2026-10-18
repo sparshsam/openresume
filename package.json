@@ -1,12 +1,12 @@
 {
   "name": "openresume",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22"
   },
-  "description": "Privacy-first, local-first resume builder that turns structured text into professionally formatted PDF and DOCX resumes.",
+  "description": "Privacy-first, local-first resume and cover letter builder that turns structured text into precise PDF and DOCX documents.",
   "license": "MIT",
   "author": "Sparsh Sam",
   "repository": {
@@ -17,6 +17,7 @@
   "keywords": [
     "resume",
     "resume-builder",
+    "cover-letter",
     "local-first",
     "privacy-first",
     "react",

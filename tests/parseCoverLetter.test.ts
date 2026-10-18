@@ -98,9 +98,17 @@ describe('parseCoverLetter', () => {
 
   it('detects concatenated letters', () => {
     const { documentCount, warnings } = parseCoverLetter(
-      ['# First Person', '', '## BODY', 'First.', '', '# Second Person', '', '## BODY', 'Second.'].join(
-        '\n',
-      ),
+      [
+        '# First Person',
+        '',
+        '## BODY',
+        'First.',
+        '',
+        '# Second Person',
+        '',
+        '## BODY',
+        'Second.',
+      ].join('\n'),
     );
     expect(documentCount).toBe(2);
     expect(warnings.some((warning) => warning.includes('additional cover letter heading'))).toBe(
@@ -116,9 +124,7 @@ describe('parseCoverLetter', () => {
 
   it('preserves punctuation and capitalization', () => {
     const { coverLetter } = parseCoverLetter(
-      ['# Ada Lovelace', '', '## BODY', 'I build things — carefully, with Two  spaces.'].join(
-        '\n',
-      ),
+      ['# Ada Lovelace', '', '## BODY', 'I build things — carefully, with Two  spaces.'].join('\n'),
     );
     expect(coverLetter.body[0]).toBe('I build things — carefully, with Two  spaces.');
   });

@@ -3,13 +3,7 @@ import { DEFAULT_FORMAT, DEFAULT_TEMPLATE } from '../types/resume';
 import type { CoverLetter, CoverLetterParseResult } from '../types/coverLetter';
 
 export type CoverLetterSection =
-  | 'DATE'
-  | 'RECIPIENT'
-  | 'POSITION'
-  | 'SALUTATION'
-  | 'BODY'
-  | 'CLOSING'
-  | 'SIGNATURE';
+  'DATE' | 'RECIPIENT' | 'POSITION' | 'SALUTATION' | 'BODY' | 'CLOSING' | 'SIGNATURE';
 
 export const COVER_LETTER_SECTION_ALIASES: Record<string, CoverLetterSection> = {
   date: 'DATE',

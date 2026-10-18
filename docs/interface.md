@@ -1,71 +1,108 @@
 # Interface
 
-OpenResume is a document production workspace, not a form-first resume builder. Importing is the primary path; manual editing remains fully available after import.
+OpenResume is a document production workspace for two document types: a resume and a cover letter. Importing structured text is the primary preparation path; manual editing remains fully available after building.
 
-## First launch
+## Landing
 
-With no saved draft, the app opens on the import screen:
+The first screen offers two borderless options:
 
-- A large heading and a short explanation of the ChatGPT/AI-assistant workflow.
-- A comfortable, focused textarea for structured resume text.
-- **Import & Preview** as the primary action.
-- **Load example** to fill the fictional sample.
-- A collapsible example of the input format.
-- Inline validation for empty input, missing name headings, and concatenated resumes.
+- **Build Resume** — a precise, two-column resume.
+- **Build Cover Letter** — a calm, single-column business letter.
 
-Nothing is uploaded. Nothing is saved until the import succeeds.
+If a draft exists, the option says **Draft saved · Continue** and opens that workspace. With no draft, it opens the matching preparation screen. Both documents can be saved independently; choosing one never changes the other.
 
-## Returning users
+## Preparation
 
-A valid draft opens directly in the editor. The header always offers:
+Each document has a preparation screen with:
 
-| Action     | Behavior                                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------------------- |
-| **New**    | Opens the import screen for a new resume; the current draft stays saved until a new import replaces it. |
-| **Import** | Opens the import screen; use **Load current draft** to edit the existing content as text.               |
-| **Format** | Toggles the formatting panel.                                                                           |
-| **PDF**    | Downloads a selectable-text PDF.                                                                        |
-| **Word**   | Downloads an editable DOCX.                                                                             |
-| **Theme**  | Switches light/dark; far right of the header.                                                           |
+- **Create your resume** / **Create your cover letter**.
+- A large structured-text area.
+- **Build Resume** / **Build Cover Letter** as the primary action.
+- **Copy AI Instructions** — copies the complete, parser-compatible template.
+- **Load Example** — fills the fictional example for that document type.
+- **Use resume details** on the cover letter screen when a resume exists.
+- Back navigation to the previous workspace or the landing page.
 
-New and Import do not discard content. The import screen shows **Back to current resume** whenever a draft exists.
+The old collapsible example-format interaction has been removed. The AI instructions are the canonical format reference and are copied from the same source that tests check against the parsers.
 
-## Import validation
+Building over an existing draft shows an explicit confirmation before replacing it. Canceling leaves the saved document untouched.
 
-- Empty text → "Paste resume text before importing."
-- No top-level `#` heading → asks for a single name line.
-- More than one top-level `#` heading → rejects the import so two documents cannot be mixed.
-- Valid text replaces the whole document and preserves the current page size and formatting.
+## Header
 
-## Themes
+- **Brand** returns to document selection.
+- In a workspace, a small label shows **Resume** or **Cover Letter**.
+- **New** opens preparation for the current document type.
+- **Format** toggles document-specific formatting controls.
+- **PDF** and **Word** export the current document.
+- **Theme** toggles light/dark and stays far right.
 
-- Light is the default when the system preference is unavailable or light.
-- With no explicit choice, the system `prefers-color-scheme` is used and live changes apply.
-- The header toggle stores an explicit `light` or `dark` choice under `openresume-theme`.
-- An inline script resolves the theme before styles load, so there is no flash of the wrong theme.
-- The resume page and both exports keep fixed colors; only the application shell changes.
+Landing and preparation screens show only the brand and theme controls. All actions are native buttons with accessible names, titles, and focus-visible rings.
 
-## Footer
+## Resume workspace
 
-The footer follows Kovina conventions: a light closing strip with product name, version, Kovina ecosystem attribution, and minimal links (GitHub, input format, MIT license). It uses the same theme tokens and stacks on narrow screens.
+The existing resume editor remains: identity, contact links, sections, entries, bullets, section ordering, column assignment, and live preview. **Create matching cover letter** appears as a quiet action in the identity section.
+
+## Cover letter workspace
+
+Fields:
+
+- Applicant name, optional headline, email, phone, location, and links.
+- Date.
+- Recipient details, one line per row.
+- Position or subject.
+- Salutation.
+- Multiple body paragraphs with add/remove controls.
+- Closing and signature.
+
+The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes page size, margins, font size, line spacing, section spacing, paragraph spacing, and content density. Bullet and column spacing are hidden because they do not apply.
+
+When a resume exists, **Back to resume** returns to the resume workspace without touching either draft.
+
+## Matching cover letter
+
+From the resume workspace, **Create matching cover letter** opens the cover letter preparation screen with:
+
+- The applicant's name.
+- The applicant's headline and contact information.
+- Empty date, recipient, position, salutation, body, and closing sections.
+- The applicant's name as the signature.
+
+No letter body is generated. The user writes it. The resume is never modified, and **Back** returns to the resume workspace. Building the letter preserves the resume and creates or replaces the independent cover-letter draft (with confirmation if one exists).
+
+## Drafts and migration
+
+| Document     | Storage key                  |
+| ------------ | ---------------------------- |
+| Resume       | `openresume:draft.v1`        |
+| Cover letter | `openresume:cover-letter.v1` |
+| Theme        | `openresume-theme`           |
+
+- v0.1.2 resume drafts load unchanged; the new paragraph-spacing default is added during normalization.
+- Building one document never deletes or overwrites the other.
+- No destructive action runs without confirmation when an existing draft would be replaced.
+
+## Themes and footer
+
+Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The resume and cover letter documents keep fixed colors in both themes.
+
+The footer remains the Kovina-compliant strip with version, attribution, and minimal links.
 
 ## Keyboard and accessibility
 
-- `Ctrl`/`⌘` + `Enter` imports from the import screen.
-- `Escape` returns to the current resume when the New/Import screen has a draft to return to.
-- Import textarea is focused on entry.
-- Header actions are native buttons with `aria-label`, `title`, and focus-visible rings.
-- Icons are decorative (`aria-hidden`) and never carry the only accessible name.
-- Form fields are labeled; the preview exposes a page count and is readable by assistive technology.
+- `Ctrl`/`⌘` + `Enter` builds from the preparation screen.
+- `Escape` returns to the previous workspace or landing page.
+- The preparation textarea is focused on entry.
+- Fields are labeled; sections use headings and native controls.
+- Icons are decorative and never carry the only accessible name.
 
 ## Responsive behavior
 
 | Width      | Behavior                                                                |
 | ---------- | ----------------------------------------------------------------------- |
 | ≥ 1041px   | Editor rail and preview side by side                                    |
-| 721–1040px | Editor above preview; formatting grid becomes two columns at ≤ 900px    |
+| 721–1040px | Editor above preview                                                    |
 | ≤ 720px    | Header becomes two rows: brand + theme, then icon-only document actions |
-| ≤ 560px    | Formatting controls stack; footer stacks                                |
-| ≤ 480px    | Import screen uses tighter padding                                      |
+| ≤ 760px    | Landing options stack; preparation textarea shrinks                     |
+| ≤ 560px    | Formatting controls and footer stack                                    |
 
-At every width the resume page scales to fit; text remains selectable and the document is never inverted for dark mode.
+At every width the document page scales to fit; text remains selectable and the document is never inverted for dark mode.
