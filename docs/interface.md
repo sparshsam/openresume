@@ -74,7 +74,8 @@ No letter body is generated. The user writes it. The resume is never modified, a
 ## Session behavior and feedback
 
 - Resume and cover letter content lives in memory for the current application session.
-- Navigating between the landing page, preparation screens, and workspaces preserves both documents.
+- Navigating between the landing page, preparation screens, workspaces, and public information pages preserves both documents.
+- Browser Back and Forward operate on the information-page paths without reloading the application.
 - Reloading, closing, or leaving the page discards them. No document content is written to `localStorage` or `sessionStorage`.
 - The interface theme remains persisted under `openresume-theme`.
 - Toasts confirm builds, clipboard copy, formatting reset, and PDF/Word exports. Toasts can be dismissed and time out automatically.
@@ -82,11 +83,19 @@ No letter body is generated. The user writes it. The resume is never modified, a
 - Native browser `alert`, `confirm`, and `prompt` dialogs are not used.
 - Earlier draft keys are removed on startup only when their values validate as OpenResume documents.
 
+## Public pages
+
+`/about`, `/privacy`, and `/terms` render inside the same header, footer, theme provider, and responsive shell as the builder.
+
+- Each page has a single `h1`, ordered `h2` sections, a comfortable reading column, and a **Back to builder** action at the top and bottom.
+- The footer links to About, Privacy, and Terms on every screen.
+- Internal links use client-side history navigation, so the builder's in-memory resume and cover letter survive a round trip.
+- Direct loads and refreshes are served by separate static HTML shells with the page's own title, description, canonical URL, Open Graph tags, and Twitter card.
+- The footer remains visually quiet: About, Privacy, Terms, GitHub, and MIT license.
+
 ## Themes and footer
 
-Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The resume and cover letter documents keep fixed colors in both themes.
-
-The footer remains the Kovina-compliant strip with version, attribution, and minimal links.
+Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The resume and cover letter documents keep fixed colors in both themes. All four page types share the same header and footer.
 
 ## Keyboard and accessibility
 

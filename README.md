@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.6.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.7.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.5; the v0.1.6 branding update is committed locally pending publication). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.6; the v0.1.7 information pages are committed locally pending publication). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -34,6 +34,14 @@ OpenResume opens on a document-selection screen with two cards: **Resume** and *
 ![OpenResume document selection](assets/hero/hero-light.png)
 
 Documents are session-only. Reloading or closing the page may discard them; nothing is written to `localStorage` except the interface theme. A new build replaces the previous document of the same type without a confirmation dialog.
+
+## Public pages
+
+- [About](https://resume.kovina.org/about) — why OpenResume exists and how the workflow fits together.
+- [Privacy Policy](https://resume.kovina.org/privacy) — the actual local processing, session storage, and hosting model.
+- [Terms of Use](https://resume.kovina.org/terms) — free use, document ownership, and the MIT license.
+
+These pages share the application header, footer, themes, and responsive layout. Moving between them does not reload the application or discard session documents.
 
 ## Features
 
@@ -106,7 +114,7 @@ Resume and cover letter models share contact parsing, metrics, pagination, previ
 
 The original Vercel deployment address is retained at https://openresume-sigma.vercel.app.
 
-Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. HTTP requests are redirected to HTTPS automatically by Vercel with a `308`. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
+Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. HTTP requests are redirected to HTTPS automatically by Vercel with a `308`. `cleanUrls` exposes the static About, Privacy, and Terms pages at their extensionless URLs. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
 
 ## Branding
 
@@ -227,7 +235,7 @@ Formatting applies to the preview, PDF, and DOCX, and stays with each document f
 
 ## Privacy model
 
-No network requests, no telemetry, no accounts. Resume and cover letter content stays in memory for the current session and is never written to `localStorage`. Only the interface theme preference is stored, under `openresume-theme`. See [docs/privacy-model.md](docs/privacy-model.md).
+No network requests, no telemetry, no accounts. Resume and cover letter content stays in memory for the current session and is never written to `localStorage`. Only the interface theme preference is stored, under `openresume-theme`. See the public [Privacy Policy](https://resume.kovina.org/privacy) and [docs/privacy-model.md](docs/privacy-model.md).
 
 ## Ecosystem role
 

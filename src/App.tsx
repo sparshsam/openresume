@@ -4,6 +4,7 @@ import { EditorPanel, type FocusTarget } from './components/EditorPanel';
 import { Footer } from './components/Footer';
 import { FormattingPanel } from './components/FormattingPanel';
 import { Header } from './components/Header';
+import { AboutPage, PrivacyPage, TermsPage } from './components/InfoPages';
 import { LandingPage } from './components/LandingPage';
 import { PrepareScreen } from './components/PrepareScreen';
 import { Preview } from './components/Preview';
@@ -24,6 +25,7 @@ import { buildCoverLetterScaffold } from './lib/coverLetterScaffold';
 import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
 import { documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
+import { applyPageMeta, infoPageFromPath, navigate, type InfoPageKey } from './lib/publicPages';
 import { clearLegacyDrafts } from './lib/storage';
 import {
   addBullet,
@@ -76,6 +78,9 @@ export default function App() {
   const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
 
   const [view, setView] = useState<View>('landing');
+  const [infoPage, setInfoPage] = useState<InfoPageKey | null>(() =>
+    infoPageFromPath(window.location.pathname),
+  );
   const [activeKind, setActiveKind] = useState<DocumentKind>('resume');
   const [prepareNonce, setPrepareNonce] = useState(0);
   const [prepareText, setPrepareText] = useState<string | undefined>(undefined);
@@ -102,6 +107,16 @@ export default function App() {
   useEffect(() => {
     clearLegacyDrafts();
   }, []);
+
+  useEffect(() => {
+    const syncInfoPage = () => setInfoPage(infoPageFromPath(window.location.pathname));
+    window.addEventListener('popstate', syncInfoPage);
+    return () => window.removeEventListener('popstate', syncInfoPage);
+  }, []);
+
+  useEffect(() => {
+    applyPageMeta(infoPage);
+  }, [infoPage]);
 
   const notify = useCallback((message: string, tone: ToastTone = 'success') => {
     nextToastId.current += 1;
@@ -141,6 +156,7 @@ export default function App() {
   };
 
   const goHome = () => {
+    navigate('/');
     setView('landing');
     setFormattingOpen(false);
     setFocusTarget(null);
@@ -300,19 +316,26 @@ export default function App() {
 
   const hasActiveDocument = activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
   const renderView: View = view === 'workspace' && !hasActiveDocument ? 'landing' : view;
+  const showingInfo = infoPage !== null;
+  const headerView: View = showingInfo ? 'landing' : renderView;
 
-  const skipTarget =
-    renderView === 'landing' ? '#main' : renderView === 'prepare' ? '#prepare-text' : '#editor';
+  const skipTarget = showingInfo
+    ? '#main'
+    : renderView === 'landing'
+      ? '#main'
+      : renderView === 'prepare'
+        ? '#prepare-text'
+        : '#editor';
 
   return (
     <div className="app">
       <a className="skip-link" href={skipTarget}>
-        {renderView === 'workspace' ? 'Skip to editor' : 'Skip to main content'}
+        {renderView === 'workspace' && !showingInfo ? 'Skip to editor' : 'Skip to main content'}
       </a>
 
       <Header
-        view={renderView}
-        kind={renderView === 'workspace' ? activeKind : null}
+        view={headerView}
+        kind={headerView === 'workspace' ? activeKind : null}
         formattingOpen={formattingOpen}
         onHome={goHome}
         onNew={handleNew}
@@ -321,7 +344,13 @@ export default function App() {
         onExportDocx={handleExportDocx}
       />
 
-      {renderView === 'landing' ? (
+      {infoPage === 'about' ? (
+        <AboutPage />
+      ) : infoPage === 'privacy' ? (
+        <PrivacyPage />
+      ) : infoPage === 'terms' ? (
+        <TermsPage />
+      ) : renderView === 'landing' ? (
         <LandingPage
           hasResume={Boolean(resume)}
           hasCoverLetter={Boolean(coverLetter)}

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
 import { ThemeProvider } from '../src/components/ThemeProvider';
@@ -18,6 +18,11 @@ function renderApp() {
       <App />
     </ThemeProvider>,
   );
+}
+
+function renderAt(path: string) {
+  window.history.replaceState({}, '', path);
+  return renderApp();
 }
 
 function installClipboardMock() {
@@ -92,6 +97,7 @@ async function goHome(user: ReturnType<typeof userEvent.setup>) {
 }
 
 beforeEach(() => {
+  window.history.replaceState({}, '', '/');
   localStorage.clear();
   document.documentElement.removeAttribute('data-theme');
   document.documentElement.style.colorScheme = '';
@@ -474,6 +480,122 @@ describe('feedback and AI instructions', () => {
   });
 });
 
+describe('public information pages', () => {
+  it('renders About, Privacy, and Terms directly with their metadata', () => {
+    const about = renderAt('/about');
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Your documents. Your words. Your next opportunity.',
+      }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('About OpenResume');
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://resume.kovina.org/about',
+    );
+    about.unmount();
+
+    const privacy = renderAt('/privacy');
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
+    expect(document.title).toBe('Privacy Policy — OpenResume');
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://resume.kovina.org/privacy',
+    );
+    privacy.unmount();
+
+    renderAt('/terms');
+    expect(screen.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeInTheDocument();
+    expect(document.title).toBe('Terms of Use — OpenResume');
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://resume.kovina.org/terms',
+    );
+  });
+
+  it('keeps header and footer on every information page', () => {
+    renderAt('/about');
+
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'OpenResume home' })).toBeInTheDocument();
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).getByRole('link', { name: 'About' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(footer).getByRole('link', { name: 'Privacy' })).toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: 'Terms' })).toBeInTheDocument();
+  });
+
+  it('navigates between information pages without reloading and preserves theme', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderAt('/about');
+    await user.click(screen.getByRole('button', { name: /switch to dark mode/i }));
+
+    await user.click(
+      within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Privacy' }),
+    );
+    expect(window.location.pathname).toBe('/privacy');
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+
+    await user.click(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Terms' }));
+    expect(window.location.pathname).toBe('/terms');
+    expect(screen.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeInTheDocument();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+  });
+
+  it('supports back and forward between the builder and information pages', () => {
+    window.history.replaceState({}, '', '/about');
+    renderApp();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Your documents. Your words.',
+    );
+
+    act(() => {
+      window.history.pushState({}, '', '/privacy');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
+
+    act(() => {
+      window.history.pushState({}, '', '/about');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Your documents. Your words.',
+    );
+  });
+
+  it('preserves in-memory documents across information-page navigation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    const name = screen.getByLabelText('Name');
+    await user.clear(name);
+    await user.type(name, 'Session Builder');
+
+    await user.click(screen.getByRole('link', { name: 'About' }));
+    expect(window.location.pathname).toBe('/about');
+
+    await user.click(screen.getAllByRole('link', { name: /Back to builder/ })[0]);
+    expect(window.location.pathname).toBe('/');
+    expect(screen.getByLabelText('Name')).toHaveValue('Session Builder');
+
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
+  it('keeps the footer available from preparation and workspace views', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await openPrepare(user, 'resume');
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Privacy' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^← Back$/ }));
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'About' })).toBeInTheDocument();
+  });
+});
+
 describe('header, theme, and footer', () => {
   it('shows context actions and the document label in the workspace', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
@@ -558,8 +680,10 @@ describe('header, theme, and footer', () => {
     const footer = screen.getByRole('contentinfo');
     expect(footer).toHaveTextContent(`v${APP_VERSION}`);
     expect(footer).toHaveTextContent(/Kovina/);
+    expect(within(footer).getByRole('link', { name: 'About' })).toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: 'Privacy' })).toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: 'Terms' })).toBeInTheDocument();
     expect(within(footer).getByRole('link', { name: 'GitHub' })).toBeInTheDocument();
-    expect(within(footer).getByRole('link', { name: 'Input format' })).toBeInTheDocument();
     expect(within(footer).getByRole('link', { name: 'MIT license' })).toBeInTheDocument();
   });
 });

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" data-favicon="32" />
+    <link rel="icon" type="image/png" href="/favicon-16.png" sizes="16x16" data-favicon="16" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
+    <meta name="msapplication-TileColor" content="#1a2818" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f5f2" />
+    <meta
+      name="description"
+      content="How OpenResume handles your documents: local processing, session-only memory, no accounts, no analytics, and local exports."
+    />
+    <link rel="canonical" href="https://resume.kovina.org/privacy" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Privacy Policy — OpenResume" />
+    <meta
+      property="og:description"
+      content="How OpenResume handles your documents: local processing, session-only memory, no accounts, no analytics, and local exports."
+    />
+    <meta property="og:url" content="https://resume.kovina.org/privacy" />
+    <meta property="og:image" content="https://resume.kovina.org/openresume-social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Privacy Policy — OpenResume" />
+    <meta
+      name="twitter:description"
+      content="How OpenResume handles your documents: local processing, session-only memory, no accounts, no analytics, and local exports."
+    />
+    <meta name="twitter:image" content="https://resume.kovina.org/openresume-social.png" />
+    <title>Privacy Policy — OpenResume</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('openresume-theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.style.colorScheme = theme;
+          var themeColor = document.querySelector('meta[name="theme-color"]');
+          if (themeColor) {
+            themeColor.setAttribute('content', theme === 'dark' ? '#0f1210' : '#f4f5f2');
+          }
+          var favicons = document.querySelectorAll('link[data-favicon]');
+          for (var index = 0; index < favicons.length; index += 1) {
+            var size = favicons[index].getAttribute('data-favicon');
+            favicons[index].setAttribute(
+              'href',
+              '/favicon-' + size + (theme === 'dark' ? '-dark' : '') + '.png',
+            );
+          }
+        } catch (error) {
+          /* The app falls back to light if storage or matchMedia is unavailable. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

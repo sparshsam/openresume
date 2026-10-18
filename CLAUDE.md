@@ -21,7 +21,7 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.6 branding and housekeeping release, committed locally. Production still serves v0.1.5 at https://resume.kovina.org until publication approval.
+- **Version:** v0.1.7 public information pages, committed locally. Production still serves v0.1.6 at https://resume.kovina.org until publication approval.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
 - **README:** includes the canonical Kovina Collection footer.
@@ -47,6 +47,10 @@ npm run check        # everything above, in release order
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
 - `src/components/LandingPage.tsx` — two-card document selection with Build and session Open actions.
 - `src/components/ToastRegion.tsx` — dismissible success and error notifications.
+- `src/components/InfoPages.tsx` — About, Privacy, and Terms content.
+- `src/components/InternalLink.tsx` / `src/lib/publicPages.ts` — history-based public-page navigation and metadata.
+- `about.html`, `privacy.html`, `terms.html` — static public shells with page-specific SEO metadata.
+- `public/robots.txt` / `public/sitemap.xml` — canonical-only discovery files.
 - `src/components/PrepareScreen.tsx` — shared preparation, validation, AI copy, examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
@@ -92,11 +96,13 @@ Full design: `ARCHITECTURE.md`.
 12. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Interface icons are inline SVG. Justify anything else.
 13. **Brand assets are generated.** Never hand-edit files in `public/` or `assets/app-icon/`. Update the authoritative masters only with approval, then run `scripts/generate-icons.py`.
 14. **No SVG icon fabrication.** The masters are raster; do not wrap them in SVGs or invent vector versions.
+15. **Public navigation never reloads the builder.** Use `InternalLink`/`navigate` for `/about`, `/privacy`, and `/terms`; session documents must survive the round trip. Direct loads rely on the static shells and Vercel `cleanUrls`.
+16. **Every page shares the shell and metadata.** Header, footer, theme controls, canonical URL, and page-specific title/description must remain consistent across the builder and information pages.
 
 ## Working agreement
 
 - Make focused changes and run `npm run check` before claiming completion.
-- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
+- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.

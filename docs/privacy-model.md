@@ -21,6 +21,12 @@ Nothing else is persisted. Documents are lost on reload, navigation away, or clo
 
 Earlier releases stored documents under `openresume:draft.v1` and `openresume:cover-letter.v1`. On startup, OpenResume checks those two keys and removes them only when their contents validate as OpenResume documents. Other values in local storage are left untouched and are never read as documents.
 
+## Hosting
+
+The application is served as static files by Vercel. Vercel and other infrastructure providers may process ordinary technical information such as IP addresses and HTTP request metadata to deliver and secure the site. OpenResume does not add analytics, advertising, tracking cookies, or document-content collection.
+
+The public policy is at https://resume.kovina.org/privacy. Questions can be sent to **sparshsam@gmail.com**, the verified public Kovina contact.
+
 ## What leaves the browser
 
 Only what you explicitly export:

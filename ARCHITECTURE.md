@@ -14,6 +14,7 @@ OpenResume is a client-only React application. Its correctness lives in a pure, 
 8. **Interface theme never touches the document.** Light/dark tokens style the shell only. The resume and cover letter pages and exports keep fixed colors.
 9. **Independent session documents.** Resume and cover letter models are separate in-memory state and can use different formatting. Building one never changes the other.
 10. **AI instructions cannot drift.** Templates are generated from parser constants and tested against every alias.
+11. **Public pages do not reload the builder.** Internal information-page navigation uses the History API, so both session documents survive. Direct loads use static HTML shells with page-specific metadata.
 
 ## Pipeline
 
@@ -43,6 +44,9 @@ flowchart LR
 | ---------------------------------- | ---------------------------------------------------- | ---------------------------- |
 | `src/components/LandingPage.tsx`   | Document selection and session Open actions          | Own document state           |
 | `src/components/ToastRegion.tsx`   | Dismissible success and error notifications          | Hold document state          |
+| `src/components/InfoPages.tsx`     | About, Privacy, and Terms content                    | Own application state        |
+| `src/components/InternalLink.tsx`  | History-based internal navigation without reloads    | Bypass the app router        |
+| `src/lib/publicPages.ts`           | Path resolution, page metadata, and history push     | Persist documents            |
 | `src/components/PrepareScreen.tsx` | Shared preparation, validation, AI copy, examples    | Parse with a wrong parser    |
 | `src/components/Header.tsx`        | Brand, context actions, status, theme slot           | Own document state           |
 | `src/components/ThemeProvider.tsx` | Resolve and persist light/dark theme                 | Affect document colors       |
@@ -66,7 +70,7 @@ flowchart LR
 | `src/lib/exportDocx.ts`            | Resume tables and single-column letter documents     | Rasterize or flatten text    |
 | `src/lib/storage.ts`               | Validate and remove identified legacy draft entries  | Touch unrelated storage      |
 | `src/lib/resumeEdits.ts`           | Pure immutable resume edit helpers                   | Mutate inputs                |
-| `src/App.tsx`                      | Landing/prepare/workspace state and both documents   | Contain layout logic         |
+| `src/App.tsx`                      | Builder view, public-page route, and both documents  | Contain layout logic         |
 
 ## Data model
 
@@ -120,13 +124,15 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 
 ## Views and workflow
 
-`App` owns a three-value view state and an active document kind:
+`App` owns a three-value builder view, an active document kind, and an optional public-page route:
 
 | View        | When                                   | Content                                              |
 | ----------- | -------------------------------------- | ---------------------------------------------------- |
 | `landing`   | App start, Home, or no active document | `LandingPage` with Build Resume / Build Cover Letter |
 | `prepare`   | New, replacement, or first build       | `PrepareScreen` for the active kind                  |
 | `workspace` | A session document exists              | Resume or cover letter editor and live preview       |
+
+The pathname `/about`, `/privacy`, or `/terms` renders `InfoPages` inside the same header, footer, and theme provider instead of the builder view. The builder view and both documents stay mounted in React state while a public page is open. Internal links use `history.pushState` and a synthetic `popstate`; browser Back and Forward use the same listener. A full reload is never used for internal navigation, so session documents survive. Each public path has a static Vite HTML shell with page-specific metadata and a direct URL; Vercel `cleanUrls` exposes the extensionless paths.
 
 - `App` owns nullable resume and cover letter state initialized to `null`; neither fabricates a sample.
 - The landing card's primary action always opens preparation, with or without a session document.
@@ -173,7 +179,8 @@ No state library, router, CSS framework, parser library, or storage wrapper. Pil
 - The long-resume and long-letter tests assert every bullet or paragraph appears exactly once across pages.
 - Export tests assert `%PDF`, page count, real text presence, ZIP magic bytes, text inclusion, and resume/letter single-vs-two-column structure.
 - AI instruction tests assert every parser alias appears in the matching template and that the bundled examples parse.
-- Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, toast feedback, examples, coexisting session documents, matching-letter reuse, replacement without confirmation, legacy cleanup, no document persistence, and theme persistence.
+- Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, toast feedback, examples, coexisting session documents, matching-letter reuse, replacement without confirmation, legacy cleanup, no document persistence, theme persistence, public-page rendering, metadata, footer links, and history navigation.
+- Public-page tests check static HTML metadata, direct path mapping, robots/sitemap contents, and the Vercel clean-URL configuration.
 
 ## Extension points
 

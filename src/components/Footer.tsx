@@ -1,4 +1,5 @@
 import { APP_VERSION } from '../lib/appMeta';
+import { InternalLink } from './InternalLink';
 
 export function Footer() {
   return (
@@ -17,19 +18,15 @@ export function Footer() {
           .
         </p>
         <nav className="footer-links" aria-label="Footer">
+          <InternalLink href="/about">About</InternalLink>
+          <InternalLink href="/privacy">Privacy</InternalLink>
+          <InternalLink href="/terms">Terms</InternalLink>
           <a
             href="https://github.com/sparshsam/openresume"
             target="_blank"
             rel="noopener noreferrer"
           >
             GitHub
-          </a>
-          <a
-            href="https://github.com/sparshsam/openresume/blob/main/docs/input-format.md"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Input format
           </a>
           <a
             href="https://github.com/sparshsam/openresume/blob/main/LICENSE"

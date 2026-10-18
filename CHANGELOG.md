@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] — 2026-10-18
+
+### Added
+
+- Public About, Privacy Policy, and Terms of Use pages with shared header, footer, theme, and responsive layout.
+- Client-side navigation between the builder and information pages that preserves in-memory documents.
+- Direct URL support for `/about`, `/privacy`, and `/terms` through static Vite pages and Vercel clean URLs.
+- Page-specific titles, descriptions, canonical URLs, Open Graph metadata, Twitter cards, and homepage software structured data.
+- `robots.txt` and `sitemap.xml` using `https://resume.kovina.org` as the canonical origin, with `noindex` reserved for the original Vercel host.
+- About/Privacy/Terms links in the shared footer.
+
+### Changed
+
+- The footer now prioritizes the public information pages and the GitHub source link.
+- The application shell uses the current pathname to determine whether the builder, About, Privacy, or Terms page is active.
+- README, deployment, architecture, interface, CLAUDE, and AGENTS documentation updated for the public pages and routing.
+
+### Fixed
+
+- Internal documentation navigation no longer causes a reload that would discard the session documents.
+- Page metadata now updates on client-side navigation.
+
 ## [0.1.6] — 2026-10-18
 
 ### Added
