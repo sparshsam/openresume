@@ -60,6 +60,18 @@ describe('resolveMetrics', () => {
     expect(compact.bodyLinePt).toBeLessThan(relaxed.bodyLinePt);
   });
 
+  it('changes paragraph spacing independently and composes with density', () => {
+    const compact = resolveMetrics(template({ paragraphSpacing: 'compact' }));
+    const relaxed = resolveMetrics(template({ paragraphSpacing: 'relaxed' }));
+    const compactDense = resolveMetrics(
+      template({ paragraphSpacing: 'relaxed', density: 'compact' }),
+    );
+
+    expect(compact.paragraphSpacingPt).toBeLessThan(relaxed.paragraphSpacingPt);
+    expect(compactDense.paragraphSpacingPt).toBeLessThan(relaxed.paragraphSpacingPt);
+    expect(compactDense.bodyLinePt).toBe(relaxed.bodyLinePt);
+  });
+
   it('changes section, bullet, and column spacing independently', () => {
     const compact = resolveMetrics(
       template({ sectionSpacing: 'compact', bulletSpacing: 'compact', columnSpacing: 'narrow' }),
@@ -110,6 +122,7 @@ describe('normalize', () => {
   it('fills missing format settings with defaults', () => {
     expect(normalizeFormat(undefined)).toEqual(DEFAULT_FORMAT);
     expect(normalizeFormat({})).toEqual(DEFAULT_FORMAT);
+    expect(normalizeFormat({}).paragraphSpacing).toBe('standard');
   });
 
   it('keeps valid settings and rejects invalid ones', () => {

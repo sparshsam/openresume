@@ -1,3 +1,4 @@
+import { parseContactLine } from './contact';
 import {
   DEFAULT_FORMAT,
   DEFAULT_TEMPLATE,
@@ -9,7 +10,7 @@ import {
   type SectionKind,
 } from '../types/resume';
 
-const ALIASES: Record<string, SectionKind> = {
+export const RESUME_SECTION_ALIASES: Record<string, SectionKind> = {
   summary: 'summary',
   objective: 'summary',
   profile: 'summary',
@@ -44,7 +45,7 @@ const ALIASES: Record<string, SectionKind> = {
   hobbies: 'interests',
 };
 
-const DISPLAY_TITLE: Record<SectionKind, string> = {
+export const RESUME_SECTION_TITLES: Record<SectionKind, string> = {
   summary: 'SUMMARY',
   experience: 'EXPERIENCE',
   education: 'EDUCATION',
@@ -79,10 +80,6 @@ export const LIST_KINDS = new Set<SectionKind>([
   'interests',
 ]);
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[+()\d][\d\s().-]{6,}$/;
-const URL_RE = /^(https?:\/\/|www\.)/i;
-const BARE_URL_RE = /^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i;
 const DATE_RE =
   /\b(19|20)\d{2}\b|\bpresent\b|\bcurrent\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b/i;
 
@@ -99,7 +96,7 @@ function normalizeHeading(title: string): string {
 }
 
 function kindForTitle(title: string): SectionKind {
-  return ALIASES[normalizeHeading(title)] ?? 'custom';
+  return RESUME_SECTION_ALIASES[normalizeHeading(title)] ?? 'custom';
 }
 
 function splitTitle(raw: string): { title: string; subtitle?: string } {
@@ -112,48 +109,6 @@ function splitTitle(raw: string): { title: string; subtitle?: string } {
     }
   }
   return { title: raw.trim() };
-}
-
-function toUrl(value: string): string {
-  return URL_RE.test(value) ? value : `https://${value}`;
-}
-
-function parseContactLine(line: string, resume: Resume): void {
-  const { contact } = resume;
-  const parts = line
-    .split('|')
-    .map((part) => part.trim())
-    .filter(Boolean);
-  let sawContactDetail = false;
-
-  for (const part of parts) {
-    if (!contact.email && EMAIL_RE.test(part)) {
-      contact.email = part;
-      sawContactDetail = true;
-      continue;
-    }
-    if (!contact.phone && PHONE_RE.test(part)) {
-      contact.phone = part;
-      sawContactDetail = true;
-      continue;
-    }
-    if (URL_RE.test(part) || BARE_URL_RE.test(part)) {
-      contact.links.push({ label: part.replace(/^https?:\/\//i, ''), url: toUrl(part) });
-      sawContactDetail = true;
-      continue;
-    }
-    if (!resume.header.headline && !sawContactDetail) {
-      resume.header.headline = part;
-      continue;
-    }
-    if (!contact.location) {
-      contact.location = part;
-      continue;
-    }
-    if (!resume.header.headline) {
-      resume.header.headline = part;
-    }
-  }
 }
 
 function emptyResume(): Resume {
@@ -186,7 +141,7 @@ export function parseResume(input: string): ParseResult {
     const section: ResumeSection = {
       id: `sec-${sectionIndex}`,
       kind,
-      title: kind === 'custom' ? title.trim() || 'CUSTOM' : DISPLAY_TITLE[kind],
+      title: kind === 'custom' ? title.trim() || 'CUSTOM' : RESUME_SECTION_TITLES[kind],
       column: DEFAULT_COLUMN[kind],
       enabled: true,
       items: [],
@@ -277,7 +232,9 @@ export function parseResume(input: string): ParseResult {
     }
 
     if (awaitingContact && !sawContactLine) {
-      parseContactLine(trimmed, resume);
+      const parsedContact = parseContactLine(trimmed);
+      if (parsedContact.headline) resume.header.headline = parsedContact.headline;
+      resume.contact = parsedContact.contact;
       sawContactLine = true;
       awaitingContact = false;
       continue;

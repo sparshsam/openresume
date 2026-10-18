@@ -63,6 +63,12 @@ const BULLET_SPACING: Record<SpacingPreset, number> = {
   relaxed: 2.6,
 };
 
+const PARAGRAPH_SPACING: Record<SpacingPreset, number> = {
+  compact: 4,
+  standard: 8,
+  relaxed: 14,
+};
+
 const WORD_LINE_TWIPS: Record<SpacingPreset, number> = {
   compact: 240,
   standard: 276,
@@ -97,6 +103,7 @@ export interface ResolvedMetrics {
   sectionAfterPt: number;
   itemBeforePt: number;
   paragraphAfterPt: number;
+  paragraphSpacingPt: number;
   bulletAfterPt: number;
   densityFactor: number;
   wordLineTwips: number;
@@ -152,6 +159,7 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
     sectionAfterPt: section.afterPt * density,
     itemBeforePt: 7 * density,
     paragraphAfterPt: 3 * density,
+    paragraphSpacingPt: PARAGRAPH_SPACING[normalized.format.paragraphSpacing] * density,
     bulletAfterPt: BULLET_SPACING[normalized.format.bulletSpacing] * density,
     densityFactor: density,
     wordLineTwips: WORD_LINE_TWIPS[normalized.format.lineSpacing],

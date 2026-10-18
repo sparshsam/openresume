@@ -92,6 +92,7 @@ describe('storage', () => {
     expect(loaded?.template.pageSize).toBe('legal');
     expect(loaded?.template.format.fontSize).toBe('standard');
     expect(loaded?.template.format.density).toBe('balanced');
+    expect(loaded?.template.format.paragraphSpacing).toBe('standard');
   });
 
   it('falls back safely for invalid stored formatting', () => {

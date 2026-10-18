@@ -30,6 +30,7 @@ export function normalizeFormat(value: unknown): FormatSettings {
     fontSize: pick(source.fontSize, FONT_SIZES, DEFAULT_FORMAT.fontSize),
     lineSpacing: pick(source.lineSpacing, SPACING, DEFAULT_FORMAT.lineSpacing),
     sectionSpacing: pick(source.sectionSpacing, SPACING, DEFAULT_FORMAT.sectionSpacing),
+    paragraphSpacing: pick(source.paragraphSpacing, SPACING, DEFAULT_FORMAT.paragraphSpacing),
     bulletSpacing: pick(source.bulletSpacing, SPACING, DEFAULT_FORMAT.bulletSpacing),
     columnSpacing: pick(source.columnSpacing, COLUMN_SPACING, DEFAULT_FORMAT.columnSpacing),
     density: pick(source.density, DENSITY, DEFAULT_FORMAT.density),

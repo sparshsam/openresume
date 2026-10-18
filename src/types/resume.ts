@@ -25,6 +25,7 @@ export interface FormatSettings {
   fontSize: FontSizePreset;
   lineSpacing: SpacingPreset;
   sectionSpacing: SpacingPreset;
+  paragraphSpacing: SpacingPreset;
   bulletSpacing: SpacingPreset;
   columnSpacing: ColumnSpacingPreset;
   density: DensityPreset;
@@ -35,6 +36,7 @@ export const DEFAULT_FORMAT: FormatSettings = {
   fontSize: 'standard',
   lineSpacing: 'standard',
   sectionSpacing: 'standard',
+  paragraphSpacing: 'standard',
   bulletSpacing: 'standard',
   columnSpacing: 'standard',
   density: 'balanced',
