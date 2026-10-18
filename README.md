@@ -6,7 +6,7 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 **Early development — v0.1.5.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.5 is committed locally pending deployment approval)
+**Live:** https://resume.kovina.org (production, v0.1.5). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -94,7 +94,9 @@ Resume and cover letter models share contact parsing, metrics, pagination, previ
 
 ## Deployment
 
-**Production:** https://openresume-sigma.vercel.app
+**Production:** https://resume.kovina.org
+
+The original Vercel deployment address is retained at https://openresume-sigma.vercel.app.
 
 Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
 
@@ -217,7 +219,7 @@ No network requests, no telemetry, no accounts. Resume and cover letter content 
 
 ## Ecosystem role
 
-OpenResume is part of the [Kovina](https://kovina.org) ecosystem of owned, local-first tools. It follows the [ecosystem standards](https://github.com/sparshsam/ecosystem-standards) and the [Kovina standards](https://github.com/sparshsam/kovina/tree/main/standards) where they do not conflict.
+OpenResume is part of the [Kovina](https://kovina.org) ecosystem of owned, local-first tools. It follows shared Kovina ecosystem standards and the public [Kovina standards](https://github.com/sparshsam/kovina/tree/main/standards) where they do not conflict.
 
 ## License
 
@@ -263,4 +265,4 @@ OpenResume is part of the [Kovina](https://kovina.org) ecosystem of owned, local
 
 ---
 
-_This repository follows the [ecosystem standards](https://github.com/sparshsam/ecosystem-standards)._
+_This repository follows the shared Kovina ecosystem standards._

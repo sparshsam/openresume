@@ -2,21 +2,39 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.5 session-based UX release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.5.
+> **Deployment status:** production serves v0.1.5 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Production
 
-| Item                  | Value                                      |
-| --------------------- | ------------------------------------------ |
-| Production URL        | https://openresume-sigma.vercel.app        |
-| Vercel project        | `openresume` (team: Sparsh Sam's projects) |
-| GitHub repository     | `sparshsam/openresume`                     |
-| Production branch     | `main`                                     |
-| Preview deployments   | Enabled for pull requests                  |
-| Domain                | Vercel default; no custom domain           |
-| Environment variables | None                                       |
+| Item                  | Value                                          |
+| --------------------- | ---------------------------------------------- |
+| Production URL        | https://resume.kovina.org                      |
+| Vercel deployment URL | https://openresume-sigma.vercel.app            |
+| Vercel project        | `openresume` (team: Sparsh Sam's projects)     |
+| GitHub repository     | `sparshsam/openresume`                         |
+| Production branch     | `main`                                         |
+| Preview deployments   | Enabled for pull requests                      |
+| Domain                | Custom `resume.kovina.org` plus Vercel default |
+| Environment variables | None                                           |
 
-Pushing to `main` triggers a production deployment. Pull requests get preview deployments; previews are protected by Vercel Authentication, while production is public.
+Pushing to `main` triggers a production deployment. Pull requests get preview deployments; previews are protected by Vercel Authentication, while production is public. Both production hostnames serve the same deployment; no redirect is configured between them.
+
+## Custom domain
+
+`resume.kovina.org` is attached to the `openresume` Vercel project as a production domain. The `kovina.org` zone is managed in Cloudflare; Vercel owns the project domain and certificate.
+
+| Item                 | Value                                      |
+| -------------------- | ------------------------------------------ |
+| DNS record           | `CNAME`                                    |
+| DNS name             | `resume` (`resume.kovina.org`)             |
+| DNS target           | `f813a105c6923adb.vercel-dns-017.com.`     |
+| Cloudflare proxy     | DNS only                                   |
+| TTL                  | Auto                                       |
+| Vercel configuration | `CNAME` recognized; `misconfigured: false` |
+| Certificate          | Let's Encrypt, CN `resume.kovina.org`      |
+| Domain verification  | Verified in Vercel                         |
+
+The target is a project-specific Vercel DNS target. Do not replace it with the generic `cname.vercel-dns.com` unless the project-specific target stops being returned by Vercel.
 
 ## Build
 
@@ -63,16 +81,17 @@ The deployed app remains fully client-side:
 
 After a deployment:
 
-1. Load the production URL and confirm the document-selection screen appears with no console errors.
-2. Build a resume and a cover letter from the examples, then verify editing and live previews.
-3. Use **Copy AI Instructions** and confirm the complete template reaches the clipboard.
-4. Create a matching cover letter from a resume and confirm the resume is unchanged.
-5. Toggle light/dark and reload: the theme persists, while both documents are cleared.
-6. Export PDF and DOCX for both documents and confirm text is selectable/editable.
-7. Check the layout at desktop and phone widths.
-8. Inspect the network panel: only same-origin document and asset requests.
-9. Confirm the security and cache headers with `curl -I`.
-10. Confirm GitHub Actions CI is green.
+1. Load https://resume.kovina.org and https://openresume-sigma.vercel.app; both must serve the same version with no console errors.
+2. Confirm the custom-domain certificate and HTTPS response with `curl -I` and `openssl s_client`.
+3. Build a resume and a cover letter from the examples, then verify editing and live previews.
+4. Use **Copy AI Instructions** and confirm the complete template reaches the clipboard.
+5. Create a matching cover letter from a resume and confirm the resume is unchanged.
+6. Toggle light/dark and reload: the theme persists, while both documents are cleared.
+7. Export PDF and DOCX for both documents and confirm text is selectable/editable.
+8. Check the layout at desktop and phone widths.
+9. Inspect the network panel: only same-origin document and asset requests.
+10. Confirm the security and cache headers with `curl -I`.
+11. Confirm GitHub Actions CI is green.
 
 ## Rollback
 

@@ -5,10 +5,10 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.5 session-based UX release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
+- **Release:** v0.1.5 is tagged, published as a GitHub pre-release, and deployed to production at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
-- **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; default Vercel domain; no environment variables.
+- **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.
 
 **Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before making changes. Do not push, tag, release, or deploy without explicit permission.

@@ -21,11 +21,11 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.5 session-based UX release, committed locally. Production is still v0.1.2 until deployment approval.
+- **Version:** v0.1.5 session-based UX release, deployed to production.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
 - **README:** includes the canonical Kovina Collection footer.
-- **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; default Vercel domain; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
+- **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
 
 **For future sessions:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before editing, committing, pushing, tagging, releasing, or deploying. Do not push or deploy without explicit approval.
 
