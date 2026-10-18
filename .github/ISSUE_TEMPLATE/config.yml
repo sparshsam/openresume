@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ecosystem Standards
+    url: https://github.com/sparshsam/ecosystem-standards
+    about: Governance, documentation, and security standards for this ecosystem.
+  - name: Questions and ideas
+    url: https://github.com/sparshsam/openresume/discussions
+    about: Ask a question or share a workflow instead of filing a bug.

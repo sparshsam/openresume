@@ -1,0 +1,29 @@
+:root {
+  color-scheme: light;
+
+  --color-bg: #f2f4f0;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f8f5;
+  --color-text: #1a1a1a;
+  --color-muted: #555555;
+  --color-border: #d6dcd5;
+  --color-border-strong: #b9c3b8;
+  --color-accent: #14532d;
+  --color-accent-soft: #e8f0e9;
+  --color-danger: #8a2b2b;
+  --color-focus: #0b6b3a;
+
+  --font-ui:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, 'Liberation Sans',
+    sans-serif;
+  --font-document: Helvetica, Arial, 'Liberation Sans', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --editor-width: 408px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  /* Page geometry must mirror src/lib/tokens.ts. */
+  --page-width: 595.28pt;
+  --page-height: 841.89pt;
+}

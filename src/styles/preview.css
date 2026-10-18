@@ -1,0 +1,82 @@
+.pages {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  transform-origin: top left;
+}
+
+.page {
+  position: relative;
+  background: #ffffff;
+  color: #1a1a1a;
+  overflow: hidden;
+  box-shadow: 0 10px 34px rgba(20, 32, 24, 0.16);
+  font-family: var(--font-document);
+  flex: 0 0 auto;
+}
+
+.page-line {
+  position: absolute;
+  white-space: pre;
+  display: block;
+  cursor: text;
+  letter-spacing: 0;
+}
+
+.page-line:hover {
+  background: rgba(20, 83, 45, 0.07);
+}
+
+.page-rule {
+  position: absolute;
+}
+
+.page-label {
+  position: absolute;
+  right: 18px;
+  bottom: 10px;
+  font-family: var(--font-ui);
+  font-size: 8pt;
+  color: #9aa39a;
+  pointer-events: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .toolbar,
+  .editor,
+  .preview-meta,
+  .skip-link {
+    display: none !important;
+  }
+
+  .workspace,
+  .preview-region,
+  .preview-scaler {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .pages {
+    transform: none !important;
+    gap: 0;
+  }
+
+  .page {
+    box-shadow: none;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
