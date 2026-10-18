@@ -25,11 +25,11 @@ A client-only React + TypeScript + Vite resume builder. Structured text is impor
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; 106 tests at v0.1.2.
 - **README:** includes the canonical Kovina Collection footer.
-- **Deployment:** none. Vercel is intentionally deferred; no backend, accounts, analytics, or cloud storage.
+- **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; default Vercel domain; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
 
 **For future sessions:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before editing, committing, pushing, tagging, releasing, or deploying. Do not push or deploy without explicit approval.
 
-**Known notes:** `/releases/latest` returns 404 while the only release is a pre-release; this is expected until a stable release exists. The repository wiki is enabled but empty.
+**Known notes:** `/releases/latest` returns 404 while the only release is a pre-release; this is expected until a stable release exists. The repository wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get preview deployments, which are SSO-protected while production is public.
 
 ## Commands
 

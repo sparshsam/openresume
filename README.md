@@ -6,6 +6,8 @@ A privacy-first, local-first resume builder that turns structured text into prof
 
 **Early development — v0.1.2.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
+**Live:** https://openresume-sigma.vercel.app
+
 ## Description
 
 OpenResume exists because resume updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a fixed, two-column document with reliable pagination.
@@ -61,6 +63,12 @@ structured text → parser → Resume model → layout engine → pages
                                                      ├── PDF (jsPDF)
                                                      └── DOCX (docx)
 ```
+
+## Deployment
+
+**Production:** https://openresume-sigma.vercel.app
+
+Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
 
 ## Getting started
 

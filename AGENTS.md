@@ -8,11 +8,12 @@ This file complements `CLAUDE.md`. Read both before changing code.
 - **Release:** v0.1.2 tag and early-development pre-release are live; CI is green.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
-- **Deployment:** no Vercel deployment, backend, authentication, analytics, or cloud storage.
+- **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; default Vercel domain; no environment variables.
+- **Architecture:** no backend, authentication, analytics, or cloud storage.
 
 **Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before making changes. Do not push, tag, release, or deploy without explicit permission.
 
-**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, and `docs/formatting.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty.
+**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, `docs/formatting.md`, and `docs/deployment.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get SSO-protected previews.
 
 ## Mission
 
@@ -50,6 +51,7 @@ Produce consistent, professional resumes from structured text with zero data lea
 | Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`  |
 | Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`              |
 | Icons                       | `src/components/Icon.tsx` — inline SVG only                                      |
+| Deployment configuration    | `vercel.json`, `docs/deployment.md`                                              |
 | PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                               |
 | Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                            |
 | Header and import flow      | `src/components/Header.tsx`, `ImportScreen.tsx`                                  |

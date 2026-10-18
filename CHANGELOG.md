@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Vercel production deployment configuration (`vercel.json`) with security headers and asset caching.
+- Deployment documentation and the production URL in the README.
+
+### Changed
+
+- No runtime changes; the application remains v0.1.2.
+
 ## [0.1.2] — 2026-10-18
 
 ### Added
