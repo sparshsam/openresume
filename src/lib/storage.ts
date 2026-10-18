@@ -1,3 +1,4 @@
+import { normalizeTemplate } from './normalize';
 import type { Resume } from '../types/resume';
 
 export const DRAFT_KEY = 'openresume:draft.v1';
@@ -12,7 +13,7 @@ export function isResume(value: unknown): value is Resume {
   if (!isRecord(value.header) || typeof value.header.name !== 'string') return false;
   if (!isRecord(value.contact)) return false;
   if (!Array.isArray(value.sections)) return false;
-  if (!isRecord(value.template)) return false;
+  if (value.template !== undefined && !isRecord(value.template)) return false;
   return value.sections.every(
     (section) =>
       isRecord(section) &&
@@ -30,7 +31,8 @@ export function loadDraft(storage: Storage = localStorage): Resume | null {
     const raw = storage.getItem(DRAFT_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isResume(parsed) ? parsed : null;
+    if (!isResume(parsed)) return null;
+    return { ...parsed, template: normalizeTemplate(parsed.template) };
   } catch {
     return null;
   }

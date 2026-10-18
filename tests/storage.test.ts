@@ -79,4 +79,33 @@ describe('storage', () => {
     expect(isResume({})).toBe(false);
     expect(isResume(null)).toBe(false);
   });
+
+  it('upgrades a v0.1.0 draft with no format settings', () => {
+    const legacy = createSampleResume();
+    const withoutFormat = {
+      ...legacy,
+      template: { pageSize: 'legal', accent: '#14532D' },
+    };
+    storage.setItem(DRAFT_KEY, JSON.stringify(withoutFormat));
+
+    const loaded = loadDraft(storage);
+    expect(loaded?.template.pageSize).toBe('legal');
+    expect(loaded?.template.format.fontSize).toBe('standard');
+    expect(loaded?.template.format.density).toBe('balanced');
+  });
+
+  it('falls back safely for invalid stored formatting', () => {
+    const resume = createSampleResume();
+    storage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        ...resume,
+        template: { pageSize: 'tabloid', accent: '#14532D', format: { fontSize: 'huge' } },
+      }),
+    );
+
+    const loaded = loadDraft(storage);
+    expect(loaded?.template.pageSize).toBe('letter');
+    expect(loaded?.template.format.fontSize).toBe('standard');
+  });
 });
