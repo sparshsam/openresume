@@ -2,6 +2,18 @@
 
 This file complements `CLAUDE.md`. Read both before changing code.
 
+## Current state (2026-10-18)
+
+- **Published:** https://github.com/sparshsam/openresume — public, MIT.
+- **Release:** v0.1.2 tag and early-development pre-release are live; CI is green.
+- **README:** includes the full Kovina Collection footer.
+- **Repository:** all work is committed and the working tree is clean.
+- **Deployment:** no Vercel deployment, backend, authentication, analytics, or cloud storage.
+
+**Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before making changes. Do not push, tag, release, or deploy without explicit permission.
+
+**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, and `docs/formatting.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty.
+
 ## Mission
 
 Produce consistent, professional resumes from structured text with zero data leaving the browser. Optimize for fast repeated use, not multi-user features.
@@ -40,7 +52,7 @@ Produce consistent, professional resumes from structured text with zero data lea
 | Icons                       | `src/components/Icon.tsx` — inline SVG only                                      |
 | PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                               |
 | Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                            |
-| Toolbar and import flow     | `src/components/Toolbar.tsx`, `ImportDialog.tsx`                                 |
+| Header and import flow      | `src/components/Header.tsx`, `ImportScreen.tsx`                                  |
 
 ## Verification before completion
 
