@@ -9,26 +9,32 @@ Produce consistent, professional resumes from structured text with zero data lea
 ## Invariants to preserve
 
 - The preview and the two exports share one `Layout`.
-- Pagination never duplicates or drops a line.
+- Pagination never duplicates or drops a line, and no blank pages are emitted.
 - Content is preserved unless the user edits it.
+- Imports replace the whole document; multiple top-level headings are rejected.
+- Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
 - No runtime network calls and no storage beyond `localStorage`.
-- PDF text is selectable; DOCX text is editable.
+- PDF text is selectable; DOCX text is editable and contains every content string.
 
 ## Where to change what
 
-| Task                        | Touch                                                                  |
-| --------------------------- | ---------------------------------------------------------------------- |
-| Parsing rules or aliases    | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`      |
-| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                      |
-| Typography, margins, colors | `src/lib/tokens.ts`, `src/styles/tokens.css`                           |
-| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                           |
-| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/paginate.test.ts`                        |
-| Column composition          | `src/lib/layout.ts`                                                    |
-| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`                      |
-| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`                    |
-| Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/useDraft.ts`, `tests/storage.test.ts` |
-| Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                  |
-| Toolbar and import flow     | `src/components/Toolbar.tsx`, `ImportDialog.tsx`                       |
+| Task                        | Touch                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| Parsing rules or aliases    | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                |
+| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                |
+| Page geometry, typography   | `src/lib/metrics.ts`, `src/styles/tokens.css`                                    |
+| Document colors             | `src/lib/tokens.ts`                                                              |
+| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                                     |
+| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/paginate.test.ts`                                  |
+| Column composition          | `src/lib/layout.ts`                                                              |
+| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`                                |
+| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`                              |
+| Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/useDraft.ts`, `tests/storage.test.ts`           |
+| Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md` |
+| Import integrity            | `src/lib/parse.ts` (`documentCount`), `ImportDialog.tsx`, `tests/App.test.tsx`   |
+| PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                               |
+| Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                            |
+| Toolbar and import flow     | `src/components/Toolbar.tsx`, `ImportDialog.tsx`                                 |
 
 ## Verification before completion
 
@@ -40,7 +46,9 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 
 - PDF text can be selected.
 - DOCX opens and paragraphs are editable.
-- Page count matches the preview.
+- Page count matches the preview on US Letter, A4, and US Legal.
+- A second import replaces the first document entirely.
+- Formatting changes appear in the preview and both exports.
 
 ## Change discipline
 

@@ -31,13 +31,17 @@ npm run check        # everything above, in release order
 
 ## Architecture map
 
-- `src/lib/parse.ts` — text → `Resume` (pure, deterministic).
+- `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
 - `src/lib/serialize.ts` — `Resume` → text (round-trip).
+- `src/lib/normalize.ts` — legacy draft/template upgrade and preset validation.
+- `src/lib/metrics.ts` — page sizes and formatting presets → geometry and typography.
 - `src/lib/measure.ts` — Helvetica AFM widths and wrapping.
-- `src/lib/paginate.ts` — line-boundary pagination.
+- `src/lib/paginate.ts` — line-boundary pagination with keep-with-next.
 - `src/lib/layout.ts` — flow blocks, header, page assembly.
+- `src/lib/content.ts` — content strings for PDF/DOCX parity checks.
 - `src/lib/exportPdf.ts` / `exportDocx.ts` — render the same `Layout`.
 - `src/lib/storage.ts` — versioned `localStorage` draft.
+- `src/components/FormattingPanel.tsx` — page size and spacing controls.
 - `src/App.tsx` — state wiring only.
 
 Full design: `ARCHITECTURE.md`.
@@ -49,7 +53,9 @@ Full design: `ARCHITECTURE.md`.
 3. **Preserve content.** The parser must not summarize or rewrite text.
 4. **No I/O.** No network, backend, auth, analytics, cloud storage, or AI. The only persistence is `localStorage`.
 5. **Real text exports.** Never rasterize a page.
-6. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Justify anything else.
+6. **Imports replace, never merge.** Keep the empty-dialog behavior and the multiple-heading rejection.
+7. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.
+8. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Justify anything else.
 
 ## Working agreement
 

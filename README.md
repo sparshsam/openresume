@@ -4,7 +4,7 @@ A privacy-first, local-first resume builder that turns structured text into prof
 
 ## Status
 
-**Early development — v0.1.0.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.1.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
 ## Description
 
@@ -21,11 +21,14 @@ The initial release optimizes for repeated production: parse once, edit inline, 
 - **Structured text input** with predefined and custom sections.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
 - **Fixed two-column template** with configurable section ordering and column assignment.
+- **US Letter, A4, and US Legal** page sizes, switchable before export.
+- **Formatting controls** for margins, font size, line, section, bullet, and column spacing, plus content density.
+- **Clean replacement imports** that reject concatenated resumes instead of merging them.
 - **Live, page-aware preview** rendered from the same layout coordinates as the exports.
-- **Reliable pagination** that splits at line boundaries and never drops content.
+- **Reliable pagination** that keeps headings with content, never drops a line, and avoids blank pages.
 - **Selectable-text PDF** generated with real text, not screenshots.
-- **Editable DOCX** with a two-column table per logical page.
-- **Local draft persistence** with a versioned storage key.
+- **Editable DOCX** with readable, naturally flowing paragraphs and real Word bullets.
+- **Local draft and formatting persistence** with a versioned storage key.
 - **Accessible editor** with labeled controls, keyboard focus, and reduced-motion support.
 - **No backend, auth, analytics, cloud storage, or AI.**
 
@@ -85,13 +88,29 @@ One or two sentences of positioning.
 - Shipped a thing that mattered, with a number attached.
 ```
 
-Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace.
+Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. Import one resume at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
+
+## Page sizes and formatting
+
+The default is **US Letter (8.5 × 11 in)**. The **Formatting** panel also offers A4 (210 × 297 mm) and US Legal (8.5 × 14 in), plus:
+
+| Control         | Options                     |
+| --------------- | --------------------------- |
+| Page margins    | Narrow, Normal, Wide        |
+| Font size       | Small, Standard, Large      |
+| Line spacing    | Compact, Standard, Relaxed  |
+| Section spacing | Compact, Standard, Relaxed  |
+| Bullet spacing  | Compact, Standard, Relaxed  |
+| Column spacing  | Narrow, Standard, Wide      |
+| Content density | Compact, Balanced, Spacious |
+
+Formatting applies to the preview, PDF, and DOCX, and is saved with the local draft. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
 
 ## Limitations
 
-- One fixed template and page size (A4) in v0.1.0.
+- One fixed two-column template; page sizes and spacing are configurable.
 - Helvetica-family metrics only; custom font embedding is not supported.
-- DOCX mirrors the PDF page model. Editing text in Word can re-flow individual pages.
+- DOCX flows text naturally inside each logical page. Editing in Word can re-flow individual pages; pagination is structurally consistent with the PDF rather than pixel-identical.
 - No import from PDF or existing DOCX; input is structured text only.
 - No cloud sync or backup. Clearing browser storage deletes the draft.
 - Desktop-first. Editing works on smaller screens but is not the primary workflow.

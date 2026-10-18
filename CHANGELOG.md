@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] — 2026-10-18
+
+### Added
+
+- US Letter (default), A4, and US Legal page sizes, selectable before export.
+- Formatting panel for page margins, font size, line spacing, section spacing, bullet spacing, column spacing, and content density.
+- Reset to Defaults action and local persistence of page size and formatting preferences.
+- Page size and estimated page count in the preview header.
+- Import guard that rejects text containing more than one top-level resume heading.
+- "Load current draft" and "Clear" actions in the import dialog.
+- Regression coverage for repeated imports, page sizes, formatting combinations, pagination, and PDF/DOCX content parity.
+
+### Changed
+
+- Default page size is now US Letter.
+- DOCX output builds one paragraph per logical block instead of one per wrapped line, uses real Word bullets, natural line spacing, keep-with-next/keep-lines, and formatting-derived spacing.
+- Headings and entry headers now stay with the next two lines of content.
+- PDF page dimensions follow the selected page size.
+
+### Fixed
+
+- Importing a new resume no longer appends to the previous document. The import dialog starts empty, and concatenated resumes are rejected before they can be applied.
+- Stale, duplicated, missing, and mixed resume content no longer flows into exports.
+- DOCX text no longer appears compressed or awkwardly wrapped.
+- Orphaned headings, split title/employer/date blocks, unnecessary blank pages, and truncated content are prevented.
+- PDF and DOCX now carry identical content strings for the same document.
+
 ## [0.1.0] — 2026-10-18
 
 ### Added

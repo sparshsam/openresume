@@ -2,6 +2,12 @@
 
 OpenResume parses a small, deterministic subset of Markdown. Structure comes from line markers, not indentation. Content is preserved exactly except for structural whitespace.
 
+## One document per import
+
+An import replaces the entire document. The dialog starts empty; use **Load current draft** if you want to edit the existing content as text.
+
+Text containing more than one top-level `#` heading is rejected with an error. This prevents concatenated resumes from being merged into a single, mixed document.
+
 ## Canonical example
 
 ```text

@@ -107,18 +107,18 @@ export interface ResolvedMetrics {
 export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics;
 ```
 
-| Preset | Values |
-|---|---|
-| Pages | letter 612×792; a4 595.28×841.89; legal 612×1008 |
-| Margins | narrow 28/30/30; normal 44/40/40; wide 58/52/52 (x/top/bottom) |
-| Font scale | small 0.93; standard 1.0; large 1.08 |
-| Line factor | compact 1.22; standard 1.37; relaxed 1.52 |
-| Column gap | narrow 14; standard 22; wide 32 |
-| Density | compact 0.82; balanced 1.0; spacious 1.22 |
-| Section before/after | compact 10/3; standard 14/4; relaxed 19/6 (× density) |
-| Bullet after | compact 0.5; standard 1.2; relaxed 2.6 (× density) |
-| Item before | 7 × density |
-| Paragraph after | 3 × density |
+| Preset               | Values                                                         |
+| -------------------- | -------------------------------------------------------------- |
+| Pages                | letter 612×792; a4 595.28×841.89; legal 612×1008               |
+| Margins              | narrow 28/30/30; normal 44/40/40; wide 58/52/52 (x/top/bottom) |
+| Font scale           | small 0.93; standard 1.0; large 1.08                           |
+| Line factor          | compact 1.22; standard 1.37; relaxed 1.52                      |
+| Column gap           | narrow 14; standard 22; wide 32                                |
+| Density              | compact 0.82; balanced 1.0; spacious 1.22                      |
+| Section before/after | compact 10/3; standard 14/4; relaxed 19/6 (× density)          |
+| Bullet after         | compact 0.5; standard 1.2; relaxed 2.6 (× density)             |
+| Item before          | 7 × density                                                    |
+| Paragraph after      | 3 × density                                                    |
 
 Columns: `contentWidth = pageWidth - 2×marginX`; `mainWidth = contentWidth × 0.6308`; `sideWidth = contentWidth - mainWidth - gap`. Clamp `sideWidth` to at least 100 pt by shrinking the gap first.
 
@@ -226,12 +226,12 @@ Columns: `contentWidth = pageWidth - 2×marginX`; `mainWidth = contentWidth × 0
 
 ## QA matrix
 
-| Area | Cases |
-|---|---|
-| Imports | fresh import, repeated import, concatenated resumes, empty input |
-| Page sizes | Letter, A4, Legal — preview bounds, PDF dimensions, DOCX pgSz |
-| Formatting | each control individually, combined extremes, reset |
-| Content | short, standard, long; bullets, paragraphs, custom sections |
-| Pagination | orphan heading, title chain, blank pages, every line once |
-| Exports | PDF text selectable, no images; DOCX editable, merged paragraphs |
-| Persistence | format survives reload, import, and reset |
+| Area        | Cases                                                            |
+| ----------- | ---------------------------------------------------------------- |
+| Imports     | fresh import, repeated import, concatenated resumes, empty input |
+| Page sizes  | Letter, A4, Legal — preview bounds, PDF dimensions, DOCX pgSz    |
+| Formatting  | each control individually, combined extremes, reset              |
+| Content     | short, standard, long; bullets, paragraphs, custom sections      |
+| Pagination  | orphan heading, title chain, blank pages, every line once        |
+| Exports     | PDF text selectable, no images; DOCX editable, merged paragraphs |
+| Persistence | format survives reload, import, and reset                        |
