@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { THEME_KEY, ThemeContext, getInitialTheme, type Theme } from '../lib/theme';
+import { faviconForTheme } from '../lib/themeAssets';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -13,8 +14,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     document.querySelectorAll<HTMLLinkElement>('link[data-favicon]').forEach((link) => {
       const size = link.dataset.favicon;
-      if (!size) return;
-      link.href = `/favicon-${size}${theme === 'dark' ? '-dark' : ''}.png`;
+      if (size !== '16' && size !== '32') return;
+      link.href = faviconForTheme(size === '16' ? 16 : 32, theme);
     });
   }, [theme]);
 

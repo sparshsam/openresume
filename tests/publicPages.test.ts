@@ -65,6 +65,15 @@ describe('public page routing and metadata', () => {
     ]);
   });
 
+  it('preloads the reversed favicon assignment for the light default', () => {
+    for (const file of ['index.html', 'about.html', 'privacy.html', 'terms.html']) {
+      const html = read(file);
+      expect(html).toContain('href="/favicon-32-dark.png"');
+      expect(html).toContain('href="/favicon-16-dark.png"');
+      expect(html).toContain("theme === 'dark' ? '' : '-dark'");
+    }
+  });
+
   it('provides homepage structured data', () => {
     const html = read('index.html');
     expect(html).toContain('"@type": "SoftwareApplication"');

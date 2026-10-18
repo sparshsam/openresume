@@ -49,6 +49,7 @@ function letterBlock(
 
 export function layoutCoverLetter(letter: CoverLetter): Layout {
   const metrics = resolveMetrics(letter.template);
+  const accent = letter.template.accent || COLORS.accent;
   const { header, heightPt: headerHeightPt } = buildDocumentHeader(
     {
       name: letter.applicant.name,
@@ -56,6 +57,7 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
       contact: letter.applicant.contact,
     },
     metrics,
+    accent,
   );
 
   const blocks: FlowBlock[] = [];
@@ -205,5 +207,6 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
     pageHeightPt: metrics.pageHeightPt,
     pageSizeLabel: metrics.pageSizeLabel,
     metrics,
+    accent,
   };
 }

@@ -1,3 +1,4 @@
+import { DOCUMENT_ACCENTS, documentAccentName } from '../lib/tokens';
 import type { DocumentKind } from '../types/document';
 import type {
   ColumnSpacingPreset,
@@ -92,6 +93,7 @@ interface FormattingPanelProps {
   template: ResumeTemplate;
   onPageSize: (pageSize: PageSize) => void;
   onFormat: (patch: Partial<FormatSettings>) => void;
+  onAccent: (accent: string) => void;
   onReset: () => void;
 }
 
@@ -100,12 +102,43 @@ export function FormattingPanel({
   template,
   onPageSize,
   onFormat,
+  onAccent,
   onReset,
 }: FormattingPanelProps) {
   const { format } = template;
+  const selectedAccent = documentAccentName(template.accent) ?? 'Custom';
 
   return (
     <section className="formatting-panel" id="formatting-panel" aria-label="Document formatting">
+      <div className="formatting-accent">
+        <span className="formatting-label" id="format-accent-label">
+          Accent Colour
+        </span>
+        <div className="accent-options" role="radiogroup" aria-labelledby="format-accent-label">
+          {DOCUMENT_ACCENTS.map((accent) => (
+            <label className="accent-swatch" key={accent.value} title={accent.name}>
+              <input
+                className="accent-input"
+                type="radio"
+                name="accent-colour"
+                value={accent.value}
+                checked={template.accent.toLowerCase() === accent.value.toLowerCase()}
+                onChange={() => onAccent(accent.value)}
+                aria-label={accent.name}
+              />
+              <span
+                className="accent-dot"
+                style={{ backgroundColor: accent.value }}
+                aria-hidden="true"
+              />
+            </label>
+          ))}
+          <span className="accent-name" aria-live="polite">
+            {selectedAccent}
+          </span>
+        </div>
+      </div>
+
       <div className="formatting-grid">
         <SelectField
           id="format-page-size"

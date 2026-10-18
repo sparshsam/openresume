@@ -51,6 +51,8 @@ flowchart LR
 | `src/components/Header.tsx`        | Brand, context actions, status, theme slot           | Own document state           |
 | `src/components/ThemeProvider.tsx` | Resolve and persist light/dark theme                 | Affect document colors       |
 | `src/lib/theme.ts`                 | Theme context, key, and system detection             | Render UI                    |
+| `src/lib/themeAssets.ts`           | Reversed light/dark header and favicon mapping       | Alter generated artwork      |
+| `src/lib/tokens.ts`                | Document accent palette and fixed neutral colors     | Read UI theme tokens         |
 | `src/components/Footer.tsx`        | Kovina attribution, links, and version               | Invent branding              |
 | `src/lib/appMeta.ts`               | Build-time application version                       | Read the network             |
 | `src/lib/parse.ts`                 | Deterministic text → `Resume`; warnings, no throwing | Know about React or layout   |
@@ -104,12 +106,13 @@ Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have se
 - `paginateColumn` places atomic blocks whole, splits paragraphs and bullet runs at line boundaries, and honours `keepWithNext` for headings, titles, subtitles, and metadata. A heading keeps with the first two lines of the next block.
 - Page count is `max(mainPages, sidePages)`. Fully blank and trailing blank pages are removed.
 - Cover letters use one full-width column. The letterhead is shared with the resume; blocks are date, recipient lines, subject, salutation, body paragraphs, closing, and signature. Closing keeps with signature, and salutation keeps with the first body paragraph. Empty optional blocks are skipped.
+- The document accent comes from `template.accent` (one of the nine palette values). It colors the header name, header rule, and resume section headings. `Layout.accent` carries the value to both exporters; the preview and PDF also read the accent directly from the absolute line/rule colors.
 
 ## Exports
 
 **PDF.** jsPDF in `pt` units using the layout's page dimensions, Helvetica normal/bold, no compression, real text runs at the computed baselines. Page count always equals `Layout.pages.length`.
 
-**DOCX.** For resumes, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For cover letters, it builds one full-width paragraph flow per logical page. Each flow block becomes one paragraph, so wrapped lines are rejoined and Word handles wrapping naturally. Bullets use Word numbering (resume only); headings, titles, metadata, letter closing/signature, and salutation use `keepNext`/`keepLines`; spacing derives from the same metrics. Page size, margins, and table widths follow the selected settings. Text remains editable, though Word may re-flow within a page after edits.
+**DOCX.** For resumes, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For cover letters, it builds one full-width paragraph flow per logical page. Each flow block becomes one paragraph, so wrapped lines are rejoined and Word handles wrapping naturally. Bullets use Word numbering (resume only); headings, titles, metadata, letter closing/signature, and salutation use `keepNext`/`keepLines`; spacing derives from the same metrics. Page size, margins, and table widths follow the selected settings. Heading colors come from the layout lines, and the header name uses `Layout.accent`, so PDF and DOCX share one semantic accent. Text remains editable, though Word may re-flow within a page after edits.
 
 Both exporters are loaded with dynamic `import()` so the initial bundle stays small.
 
@@ -150,7 +153,7 @@ The pathname `/about`, `/privacy`, or `/terms` renders `InfoPages` inside the sa
 - With no stored choice, the system preference is used and live `prefers-color-scheme` changes apply.
 - An inline script in `index.html` resolves the theme before the stylesheet loads, preventing a flash.
 - Tokens in `src/styles/tokens.css` follow the OpenPalette naming convention (`--bg-base`, `--bg-surface`, `--text-primary`, `--border-default`, `--accent`).
-- The resume and cover letter pages, PDF, and DOCX use `COLORS` and fixed values in `preview.css`; they are never derived from UI theme tokens.
+- The resume and cover letter pages, PDF, and DOCX use fixed neutral colors plus the document's chosen accent; they are never derived from UI theme tokens.
 - Header icons are inline SVGs in `Icon.tsx`, avoiding a new runtime dependency.
 - The pre-hydration script and `ThemeProvider` also switch the theme-color metadata and light/dark favicon links; `Header` selects the matching app mark.
 - App icons and social assets are generated from the two authoritative PNG masters in `assets/branding/source-assets/` by `scripts/generate-icons.py`; generated files are never hand-edited. The runtime loads only same-origin PNGs.

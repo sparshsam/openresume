@@ -12,10 +12,13 @@ All notable changes to this project will be documented in this file.
 - Page-specific titles, descriptions, canonical URLs, Open Graph metadata, Twitter cards, and homepage software structured data.
 - `robots.txt` and `sitemap.xml` using `https://resume.kovina.org` as the canonical origin, with `noindex` reserved for the original Vercel host.
 - About/Privacy/Terms links in the shared footer.
+- Accent Colour formatting control with Green, Blue, Navy, Teal, Purple, Red, Orange, Brown, and Charcoal presets, applied consistently to the preview, PDF, and DOCX.
+- Per-document accent state that survives navigation, resets with formatting, and is never persisted.
 
 ### Changed
 
 - The footer now prioritizes the public information pages and the GitHub source link.
+- Light and dark logo display is reversed: the light interface now uses the dark-background artwork and the dark interface uses the light-background artwork, including favicons and the header mark. File names and generated assets are unchanged.
 - The application shell uses the current pathname to determine whether the builder, About, Privacy, or Terms page is active.
 - README, deployment, architecture, interface, CLAUDE, and AGENTS documentation updated for the public pages and routing.
 

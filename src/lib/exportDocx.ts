@@ -59,7 +59,7 @@ function styleFor(block: PlacedBlock, metrics: ResolvedMetrics): BlockStyle {
     case 'heading':
       return {
         bold: true,
-        color: COLORS.accent,
+        color: block.lines[0]?.color ?? COLORS.accent,
         sizeHalfPt: heading,
         beforeTwip: Math.round(metrics.sectionBeforePt * PT_TO_TWIP),
         afterTwip: Math.round(metrics.sectionAfterPt * PT_TO_TWIP),
@@ -321,7 +321,11 @@ function pageTable(page: PageLayout, metrics: ResolvedMetrics): Table {
   });
 }
 
-function headerParagraphs(identity: DocumentIdentity, metrics: ResolvedMetrics): Paragraph[] {
+function headerParagraphs(
+  identity: DocumentIdentity,
+  metrics: ResolvedMetrics,
+  accent: string,
+): Paragraph[] {
   const paragraphs: Paragraph[] = [
     new Paragraph({
       children: [
@@ -329,7 +333,7 @@ function headerParagraphs(identity: DocumentIdentity, metrics: ResolvedMetrics):
           text: identity.name,
           bold: true,
           size: Math.round(metrics.namePt * 2),
-          color: hexColor(COLORS.accent),
+          color: hexColor(accent),
           font: 'Helvetica',
         }),
       ],
@@ -438,6 +442,7 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
         contact: resume.contact,
       },
       metrics,
+      layout.accent,
     ),
   ];
 
@@ -459,6 +464,7 @@ export function createCoverLetterDocxDocument(letter: CoverLetter, layout: Layou
         contact: letter.applicant.contact,
       },
       metrics,
+      layout.accent,
     ),
   ];
 

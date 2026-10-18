@@ -43,6 +43,18 @@ function allLines(letter: CoverLetter): string {
 }
 
 describe('layoutCoverLetter', () => {
+  it('applies the letter accent to the header and rule', () => {
+    const letter = createSampleCoverLetter();
+    const layout = layoutCoverLetter({
+      ...letter,
+      template: { ...letter.template, accent: '#991B1B' },
+    });
+
+    expect(layout.accent).toBe('#991B1B');
+    expect(layout.pages[0].header?.name.color).toBe('#991B1B');
+    expect(layout.pages[0].header?.rule.color).toBe('#991B1B');
+  });
+
   it('renders header and letter blocks in reading order', () => {
     const layout = layoutCoverLetter(createSampleCoverLetter());
     expect(layout.kind).toBe('coverLetter');

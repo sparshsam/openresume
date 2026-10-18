@@ -26,8 +26,31 @@ The preview header shows the selected size and the estimated page count.
 | Bullet spacing    | Compact / Standard / Relaxed  | Resume       | Space after each bullet                                                    |
 | Column spacing    | Narrow / Standard / Wide      | Resume       | Gap between the main and side columns: 14 / 22 / 32 pt                     |
 | Content density   | Compact / Balanced / Spacious | Both         | Multiplies vertical spacing by 0.82 / 1.00 / 1.22                          |
+| Accent Colour     | Nine professional presets     | Both         | Name, headings, decorative header rule, and other accent text              |
 
 Only controls relevant to the selected document are shown. Cover letters are single-column and have no bullets, so those controls are hidden; paragraph spacing is shown only for letters.
+
+### Accent colour
+
+Choose from a restrained, print-friendly palette:
+
+| Name            | Value     |
+| --------------- | --------- |
+| Green (default) | `#14532D` |
+| Blue            | `#1D4ED8` |
+| Navy            | `#1E3A5F` |
+| Teal            | `#0F766E` |
+| Purple          | `#5B21B6` |
+| Red             | `#991B1B` |
+| Orange          | `#9A3412` |
+| Brown           | `#78350F` |
+| Charcoal        | `#374151` |
+
+The swatch group is a native radio group with accessible colour names, arrow-key navigation, a visible selected marker, and a focus ring that works in both interface themes. The selected colour name is also displayed in text.
+
+The accent is stored in each document's `template.accent`. `layoutResume` and `layoutCoverLetter` use that value for the header name, header rule, and resume section headings. The preview and PDF read the resulting `Layout` line colours directly; DOCX uses the same `Layout.accent` and heading line colours. There is no separate export palette.
+
+The accent is independent per document and remains with the in-memory document during navigation and replacement builds. It is not persisted. **Reset to defaults** restores Green along with the other formatting presets.
 
 ### Density composition
 
@@ -48,7 +71,7 @@ Formatting lives in each document's `template` in memory:
 - It does not survive a reload, and it is never written to `localStorage` along with the document.
 - Loading a legacy stored document is no longer part of the application; the old draft entries are removed when identified.
 
-**Reset to defaults** restores US Letter and every standard preset for the active document.
+**Reset to defaults** restores US Letter, the Green accent, and every standard preset for the active document.
 
 ## Legacy templates
 

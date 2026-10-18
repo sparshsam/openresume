@@ -36,6 +36,7 @@ export interface Layout {
   pageHeightPt: number;
   pageSizeLabel: string;
   metrics: ResolvedMetrics;
+  accent: string;
 }
 
 export interface DocumentIdentity {
@@ -65,13 +66,14 @@ function headingFont(metrics: ResolvedMetrics): FontSpec {
 export function buildDocumentHeader(
   identity: DocumentIdentity,
   metrics: ResolvedMetrics,
+  accent: string = COLORS.accent,
 ): { header: HeaderLayout; heightPt: number } {
   const name: HeaderLine = {
     text: identity.name,
     xPt: metrics.marginXPt,
     yPt: metrics.marginTopPt,
     font: { sizePt: metrics.namePt, bold: true },
-    color: COLORS.accent,
+    color: accent,
   };
 
   let cursor = metrics.marginTopPt + metrics.nameLinePt;
@@ -124,7 +126,7 @@ export function buildDocumentHeader(
         x2Pt: metrics.pageWidthPt - metrics.marginXPt,
         y2Pt: ruleY,
         widthPt: 1.2,
-        color: COLORS.accent,
+        color: accent,
       },
     },
     heightPt: columnTop - metrics.marginTopPt,
@@ -194,7 +196,12 @@ function bulletBlock(
   };
 }
 
-function headingBlock(section: ResumeSection, first: boolean, metrics: ResolvedMetrics): FlowBlock {
+function headingBlock(
+  section: ResumeSection,
+  first: boolean,
+  metrics: ResolvedMetrics,
+  accent: string,
+): FlowBlock {
   return {
     sectionId: section.id,
     kind: 'heading',
@@ -208,7 +215,7 @@ function headingBlock(section: ResumeSection, first: boolean, metrics: ResolvedM
         text: section.title.toUpperCase(),
         xOffsetPt: 0,
         font: headingFont(metrics),
-        color: COLORS.accent,
+        color: accent,
       },
     ],
   };
@@ -371,6 +378,7 @@ function buildColumnBlocks(
   resume: Resume,
   column: ColumnId,
   metrics: ResolvedMetrics,
+  accent: string,
 ): FlowBlock[] {
   const widthPt = column === 'main' ? metrics.mainWidthPt : metrics.sideWidthPt;
   const blocks: FlowBlock[] = [];
@@ -379,7 +387,7 @@ function buildColumnBlocks(
   for (const section of resume.sections) {
     if (!section.enabled || section.column !== column || !hasContent(section)) continue;
 
-    blocks.push(headingBlock(section, first, metrics));
+    blocks.push(headingBlock(section, first, metrics, accent));
     first = false;
 
     if (section.kind === 'summary' || section.kind === 'custom') {
@@ -428,6 +436,7 @@ export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: numbe
 
 export function layoutResume(resume: Resume): Layout {
   const metrics = resolveMetrics(resume.template);
+  const accent = resume.template.accent || COLORS.accent;
   const { header, heightPt: headerHeightPt } = buildDocumentHeader(
     {
       name: resume.header.name,
@@ -435,14 +444,15 @@ export function layoutResume(resume: Resume): Layout {
       contact: resume.contact,
     },
     metrics,
+    accent,
   );
 
   const firstCapacityPt =
     metrics.pageHeightPt - metrics.marginTopPt - headerHeightPt - metrics.marginBottomPt;
   const restCapacityPt = metrics.pageHeightPt - metrics.marginTopPt - metrics.marginBottomPt;
 
-  const mainBlocks = buildColumnBlocks(resume, 'main', metrics);
-  const sideBlocks = buildColumnBlocks(resume, 'side', metrics);
+  const mainBlocks = buildColumnBlocks(resume, 'main', metrics, accent);
+  const sideBlocks = buildColumnBlocks(resume, 'side', metrics, accent);
 
   const mainPages = paginateColumn(
     mainBlocks,
@@ -490,5 +500,6 @@ export function layoutResume(resume: Resume): Layout {
     pageHeightPt: metrics.pageHeightPt,
     pageSizeLabel: metrics.pageSizeLabel,
     metrics,
+    accent,
   };
 }

@@ -8,9 +8,15 @@ import { APP_VERSION } from '../src/lib/appMeta';
 import { SAMPLE_COVER_LETTER_TEXT, createSampleCoverLetter } from '../src/lib/coverLetterSample';
 import { createSampleResume, SAMPLE_RESUME_TEXT } from '../src/lib/sample';
 import { COVER_LETTER_DRAFT_KEY, DRAFT_KEY } from '../src/lib/storage';
+import { DEFAULT_DOCUMENT_ACCENT, DOCUMENT_ACCENTS } from '../src/lib/tokens';
 import { THEME_KEY } from '../src/lib/theme';
 
 const writeText = vi.fn();
+
+function rgb(hex: string): string {
+  const value = hex.replace('#', '');
+  return `rgb(${Number.parseInt(value.slice(0, 2), 16)}, ${Number.parseInt(value.slice(2, 4), 16)}, ${Number.parseInt(value.slice(4, 6), 16)})`;
+}
 
 function renderApp() {
   return render(
@@ -290,6 +296,97 @@ describe('resume workflow', () => {
     expect(screen.getByLabelText('Bullet spacing')).toBeInTheDocument();
     expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
     expect(screen.queryByLabelText('Paragraph spacing')).not.toBeInTheDocument();
+    expect(screen.getByText('Accent Colour')).toBeInTheDocument();
+    expect(screen.getAllByRole('radio')).toHaveLength(DOCUMENT_ACCENTS.length);
+    expect(screen.getByRole('radio', { name: 'Green' })).toBeChecked();
+  });
+
+  it('selects every accent colour and updates the preview', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    const previewName = within(screen.getByLabelText('Resume preview')).getByText('Jordan Avery');
+
+    for (const accent of DOCUMENT_ACCENTS) {
+      const radio = screen.getByRole('radio', { name: accent.name });
+      await user.click(radio);
+      expect(radio).toBeChecked();
+      expect(document.querySelector('.accent-name')).toHaveTextContent(accent.name);
+      expect(previewName.style.color).toBe(rgb(accent.value));
+    }
+  });
+
+  it('resets the document accent to green', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Blue' }));
+    expect(screen.getByRole('radio', { name: 'Blue' })).toBeChecked();
+
+    await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+
+    expect(screen.getByRole('radio', { name: 'Green' })).toBeChecked();
+    expect(
+      within(screen.getByLabelText('Resume preview')).getByText('Jordan Avery').style.color,
+    ).toBe(rgb(DEFAULT_DOCUMENT_ACCENT));
+  });
+
+  it('keeps resume and cover letter accent colours independent', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Blue' }));
+
+    await goHome(user);
+    await buildDocument(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Red' }));
+
+    await goHome(user);
+    await user.click(screen.getByRole('button', { name: 'Open resume' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Blue' })).toBeChecked();
+
+    await goHome(user);
+    await user.click(screen.getByRole('button', { name: 'Open cover letter' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Red' })).toBeChecked();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
+  it('does not persist accent colours across a remount', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const first = renderApp();
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Purple' }));
+    expect(screen.getByRole('radio', { name: 'Purple' })).toBeChecked();
+
+    first.unmount();
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Green' })).toBeChecked();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
+  it('preserves accent colour across information-page navigation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Teal' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    await user.click(screen.getByRole('link', { name: 'About' }));
+    await user.click(screen.getByRole('link', { name: 'Privacy' }));
+    await user.click(screen.getAllByRole('link', { name: /Back to builder/ })[0]);
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Teal' })).toBeChecked();
+    expect(
+      within(screen.getByLabelText('Resume preview')).getByText('Jordan Avery').style.color,
+    ).toBe(rgb(DOCUMENT_ACCENTS.find((accent) => accent.name === 'Teal')!.value));
   });
 
   it('rejects concatenated resumes with inline validation', async () => {
@@ -359,6 +456,8 @@ describe('cover letter workflow', () => {
     expect(screen.getByLabelText('Paragraph spacing')).toBeInTheDocument();
     expect(screen.queryByLabelText('Bullet spacing')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Column spacing')).not.toBeInTheDocument();
+    expect(screen.getByText('Accent Colour')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Green' })).toBeChecked();
   });
 
   it('validates a cover letter without a body', async () => {
@@ -636,18 +735,25 @@ describe('header, theme, and footer', () => {
     const { container } = renderApp();
     const mark = container.querySelector('.brand-mark') as HTMLImageElement;
 
-    expect(favicon.href).toContain('/favicon-32.png');
+    expect(favicon.href).toContain('/favicon-32-dark.png');
     expect(themeColor.content).toBe('#f4f5f2');
-    expect(mark.getAttribute('src')).toBe('/icon-192.png');
+    expect(mark.getAttribute('src')).toBe('/icon-192-dark.png');
 
     await user.click(screen.getByRole('button', { name: /switch to dark mode/i }));
 
-    expect(favicon.href).toContain('/favicon-32-dark.png');
+    expect(favicon.href).toContain('/favicon-32.png');
     expect(themeColor.content).toBe('#0f1210');
-    expect(mark.getAttribute('src')).toBe('/icon-192-dark.png');
+    expect(mark.getAttribute('src')).toBe('/icon-192.png');
 
     favicon.remove();
     themeColor.remove();
+  });
+
+  it('uses the light artwork when the system theme is dark', () => {
+    mockSystemTheme(true);
+    const { container } = renderApp();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(container.querySelector('.brand-mark')?.getAttribute('src')).toBe('/icon-192.png');
   });
 
   it('restores a stored theme and follows the system when unset', () => {

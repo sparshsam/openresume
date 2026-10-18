@@ -74,6 +74,17 @@ describe('DOCX export', () => {
     }
   });
 
+  it('uses the selected document accent in header and headings', async () => {
+    const sample = createSampleResume();
+    const resume: Resume = {
+      ...sample,
+      template: { ...sample.template, accent: '#1D4ED8' },
+    };
+    const { xml } = await documentXml(resume);
+    expect(xml).toContain('w:color w:val="1D4ED8"');
+    expect(xml).not.toContain('w:color w:val="14532D"');
+  });
+
   it('contains every content string', async () => {
     const resume = asciiResume();
     const { xml } = await documentXml(resume);

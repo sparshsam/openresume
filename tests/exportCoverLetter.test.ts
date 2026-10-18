@@ -83,6 +83,17 @@ describe('cover letter exports', () => {
     expect(output).toContain('Brightline Labs');
   });
 
+  it('uses the selected document accent colour in the PDF', () => {
+    const sample = createSampleCoverLetter();
+    const letter: CoverLetter = {
+      ...sample,
+      template: { ...sample.template, accent: '#991B1B' },
+    };
+    const output = createPdfDocument(coverLetterMeta(letter), layoutCoverLetter(letter)).output();
+    expect(output).toMatch(/0\.6\d* 0\.10\d* 0\.10\d* rg/);
+    expect(output).not.toMatch(/0\.078\d* 0\.325\d* 0\.176\d* rg/);
+  });
+
   it('uses the selected PDF page size', () => {
     const cases: Array<[PageSize, number, number]> = [
       ['letter', 612, 792],
@@ -108,6 +119,17 @@ describe('cover letter exports', () => {
       expect(pageSize(xml), size).toEqual({ width, height });
       expect(xml).not.toContain('<w:tbl>');
     }
+  });
+
+  it('uses the selected document accent in the DOCX header', async () => {
+    const sample = createSampleCoverLetter();
+    const letter: CoverLetter = {
+      ...sample,
+      template: { ...sample.template, accent: '#991B1B' },
+    };
+    const xml = await documentXml(letter);
+    expect(xml).toContain('w:color w:val="991B1B"');
+    expect(xml).not.toContain('w:color w:val="14532D"');
   });
 
   it('contains every content string in PDF and DOCX', async () => {

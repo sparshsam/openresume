@@ -1,6 +1,7 @@
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from '../lib/theme';
+import { headerMarkForTheme } from '../lib/themeAssets';
 import type { DocumentKind } from '../types/document';
 
 interface HeaderProps {
@@ -37,12 +38,7 @@ export function Header({
           onClick={onHome}
           aria-label={view === 'workspace' ? 'Back to document selection' : 'OpenResume home'}
         >
-          <img
-            className="brand-mark"
-            src={theme === 'dark' ? '/icon-192-dark.png' : '/icon-192.png'}
-            alt=""
-            aria-hidden="true"
-          />
+          <img className="brand-mark" src={headerMarkForTheme(theme)} alt="" aria-hidden="true" />
           <span className="brand-copy">
             <span className="brand-name">OpenResume</span>
             <span className="brand-tagline">Structured text in. Precise documents out.</span>

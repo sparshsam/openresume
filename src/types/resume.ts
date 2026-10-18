@@ -1,3 +1,5 @@
+import { DEFAULT_DOCUMENT_ACCENT } from '../lib/tokens';
+
 export type SectionKind =
   | 'summary'
   | 'experience'
@@ -86,7 +88,7 @@ export interface ResumeTemplate {
 
 export const DEFAULT_TEMPLATE: ResumeTemplate = {
   pageSize: 'letter',
-  accent: '#14532D',
+  accent: DEFAULT_DOCUMENT_ACCENT,
   format: DEFAULT_FORMAT,
 };
 

@@ -245,6 +245,14 @@ export default function App() {
     }
   };
 
+  const handleAccent = (accent: string) => {
+    if (activeKind === 'resume') {
+      setResume((current) => (current ? updateTemplate(current, { accent }) : current));
+    } else {
+      setCoverLetter((current) => (current ? updateLetterTemplate(current, { accent }) : current));
+    }
+  };
+
   const handleResetFormatting = () => {
     if (activeKind === 'resume') {
       setResume((current) => (current ? resetTemplate(current) : current));
@@ -381,6 +389,7 @@ export default function App() {
               template={activeTemplate}
               onPageSize={handlePageSize}
               onFormat={handleFormat}
+              onAccent={handleAccent}
               onReset={handleResetFormatting}
             />
           ) : null}

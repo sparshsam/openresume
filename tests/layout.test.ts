@@ -78,6 +78,27 @@ describe('wrapText', () => {
 });
 
 describe('layoutResume', () => {
+  it('applies the document accent to the header, rule, and section headings', () => {
+    const sample = createSampleResume();
+    const resume: Resume = {
+      ...sample,
+      template: { ...sample.template, accent: '#1D4ED8' },
+    };
+    const layout = layoutResume(resume);
+
+    expect(layout.accent).toBe('#1D4ED8');
+    expect(layout.pages[0].header?.name.color).toBe('#1D4ED8');
+    expect(layout.pages[0].header?.rule.color).toBe('#1D4ED8');
+
+    const headings = layout.pages
+      .flatMap((page) => page.blocks)
+      .filter((block) => block.kind === 'heading');
+    expect(headings.length).toBeGreaterThan(0);
+    for (const heading of headings) {
+      expect(heading.lines[0].color).toBe('#1D4ED8');
+    }
+  });
+
   it('renders the sample with a header on page zero only', () => {
     const layout = layoutResume(createSampleResume());
     expect(layout.pages.length).toBeGreaterThanOrEqual(1);

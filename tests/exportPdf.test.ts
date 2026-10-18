@@ -68,6 +68,17 @@ describe('PDF export', () => {
     expect(doc.getNumberOfPages()).toBe(layout.pages.length);
   });
 
+  it('uses the selected document accent colour', () => {
+    const sample = createSampleResume();
+    const resume: Resume = {
+      ...sample,
+      template: { ...sample.template, accent: '#1D4ED8' },
+    };
+    const output = createPdfDocument(resumeMeta(resume), layoutResume(resume)).output();
+    expect(output).toMatch(/0\.11\d* 0\.30\d* 0\.84\d* rg/);
+    expect(output).not.toMatch(/0\.078\d* 0\.325\d* 0\.176\d* rg/);
+  });
+
   it('uses the selected page dimensions', () => {
     const cases: Array<[PageSize, number, number]> = [
       ['letter', 612, 792],

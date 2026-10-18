@@ -53,6 +53,9 @@ npm run check        # everything above, in release order
 - `public/robots.txt` / `public/sitemap.xml` — canonical-only discovery files.
 - `src/components/PrepareScreen.tsx` — shared preparation, validation, AI copy, examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
+- `src/lib/themeAssets.ts` — intentionally reversed light/dark logo assignment for the header and favicons.
+- `src/lib/tokens.ts` — document accent palette and fixed neutral document colors.
+- `src/components/FormattingPanel.tsx` — document formatting, including the accessible accent swatch group.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
 - `src/components/Footer.tsx` / `src/lib/appMeta.ts` — Kovina attribution and version.
 - `assets/branding/source-assets/` — authoritative light/dark logo masters.
@@ -98,6 +101,8 @@ Full design: `ARCHITECTURE.md`.
 14. **No SVG icon fabrication.** The masters are raster; do not wrap them in SVGs or invent vector versions.
 15. **Public navigation never reloads the builder.** Use `InternalLink`/`navigate` for `/about`, `/privacy`, and `/terms`; session documents must survive the round trip. Direct loads rely on the static shells and Vercel `cleanUrls`.
 16. **Every page shares the shell and metadata.** Header, footer, theme controls, canonical URL, and page-specific title/description must remain consistent across the builder and information pages.
+17. **One document accent model.** `template.accent` feeds `Layout`; preview, PDF, and DOCX must read the same value. Never introduce an independent export palette.
+18. **Logo cross-assignment is intentional.** Light interface → dark-background asset; dark interface → light-background asset. Use `themeAssets.ts`; do not rename or alter the generated masters.
 
 ## Working agreement
 

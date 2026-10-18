@@ -55,6 +55,7 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Session-based documents** for resumes and cover letters; navigating within the app preserves both, while reloads start clean.
 - **US Letter, A4, and US Legal** page sizes, switchable before export.
 - **Document-specific formatting controls** for margins, font size, line spacing, section spacing, content density, and the controls relevant to each document type.
+- **Accent colour** selection from nine professional presets, applied consistently to the preview, PDF, and DOCX.
 - **Live, page-aware preview** rendered from the same layout coordinates as the exports.
 - **Reliable pagination** that keeps headings and signatures with content and avoids blank pages.
 - **Selectable-text PDF** generated with real text, not screenshots.
@@ -209,16 +210,19 @@ Parsing is deterministic: markers define structure, and content is preserved exa
 
 The default is **US Letter (8.5 × 11 in)**. The **Formatting** panel also offers A4 (210 × 297 mm) and US Legal (8.5 × 14 in), plus:
 
-| Control           | Options                     | Shown for    |
-| ----------------- | --------------------------- | ------------ |
-| Page margins      | Narrow, Normal, Wide        | Both         |
-| Font size         | Small, Standard, Large      | Both         |
-| Line spacing      | Compact, Standard, Relaxed  | Both         |
-| Section spacing   | Compact, Standard, Relaxed  | Both         |
-| Paragraph spacing | Compact, Standard, Relaxed  | Cover letter |
-| Bullet spacing    | Compact, Standard, Relaxed  | Resume       |
-| Column spacing    | Narrow, Standard, Wide      | Resume       |
-| Content density   | Compact, Balanced, Spacious | Both         |
+| Control           | Options                                                       | Shown for    |
+| ----------------- | ------------------------------------------------------------- | ------------ |
+| Page margins      | Narrow, Normal, Wide                                          | Both         |
+| Font size         | Small, Standard, Large                                        | Both         |
+| Line spacing      | Compact, Standard, Relaxed                                    | Both         |
+| Section spacing   | Compact, Standard, Relaxed                                    | Both         |
+| Paragraph spacing | Compact, Standard, Relaxed                                    | Cover letter |
+| Bullet spacing    | Compact, Standard, Relaxed                                    | Resume       |
+| Column spacing    | Narrow, Standard, Wide                                        | Resume       |
+| Content density   | Compact, Balanced, Spacious                                   | Both         |
+| Accent Colour     | Green, Blue, Navy, Teal, Purple, Red, Orange, Brown, Charcoal | Both         |
+
+Choose from a selection of professional accent colours for your resume or cover letter. The accent applies to document headings, the name, and the header rule in the live preview, PDF, and DOCX. Each document keeps its own accent for the session; **Reset to defaults** restores Green.
 
 Formatting applies to the preview, PDF, and DOCX, and stays with each document for the current session. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
 

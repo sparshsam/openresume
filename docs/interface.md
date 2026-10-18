@@ -40,6 +40,17 @@ Building replaces the previous document of that type in the current session imme
 
 Landing and preparation screens show only the brand and theme controls. All actions are native buttons with accessible names, titles, and focus-visible rings.
 
+## Formatting
+
+The workspace formatting panel contains page size, margins, font size, spacing, density, and **Accent Colour**.
+
+- Accent Colour is a native radio group of nine swatches: Green (default), Blue, Navy, Teal, Purple, Red, Orange, Brown, and Charcoal.
+- Each swatch has an accessible colour name, keyboard operation, a clear selected ring, and a focus indicator.
+- The selected colour name is shown in text.
+- The accent updates the live document header, rule, and resume section headings. The same value flows into PDF and DOCX.
+- Accent is per document and survives navigation for the session. It is not stored in the browser.
+- **Reset to defaults** restores Green and the standard formatting presets.
+
 ## Resume workspace
 
 The existing resume editor remains: identity, contact links, sections, entries, bullets, section ordering, column assignment, and live preview. **Create matching cover letter** appears as a quiet action in the identity section.
@@ -56,7 +67,7 @@ Fields:
 - Multiple body paragraphs with add/remove controls.
 - Closing and signature.
 
-The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes page size, margins, font size, line spacing, section spacing, paragraph spacing, and content density. Bullet and column spacing are hidden because they do not apply.
+The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes page size, margins, font size, line spacing, section spacing, paragraph spacing, content density, and Accent Colour. Bullet and column spacing are hidden because they do not apply.
 
 When a resume exists, **Back to resume** returns to the resume workspace without changing either document.
 
@@ -95,7 +106,7 @@ No letter body is generated. The user writes it. The resume is never modified, a
 
 ## Themes and footer
 
-Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The resume and cover letter documents keep fixed colors in both themes. All four page types share the same header and footer.
+Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The generated artwork is cross-assigned: the light interface shows the dark-background asset and the dark interface shows the light-background asset. The resume and cover letter documents keep fixed neutral colors plus their own accent in both themes. All four page types share the same header and footer.
 
 ## Keyboard and accessibility
 

@@ -61,6 +61,7 @@ export function AboutPage() {
         Word file.
       </p>
       <p>We provide the design and formatting. You remain in control of what your documents say.</p>
+      <p>Choose from a selection of professional accent colours for your resume or cover letter.</p>
       <p>
         OpenResume is built by Kovina with a simple idea: useful tools should be accessible, easy to
         use, and respectful of your privacy.
