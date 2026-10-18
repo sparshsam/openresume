@@ -21,7 +21,7 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.3 dual-document release, committed locally. Production is still v0.1.2 until deployment approval.
+- **Version:** v0.1.4 landing and navigation release, committed locally. Production is still v0.1.2 until deployment approval.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
 - **README:** includes the canonical Kovina Collection footer.
@@ -45,7 +45,7 @@ npm run check        # everything above, in release order
 ## Architecture map
 
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
-- `src/components/LandingPage.tsx` — Build Resume / Build Cover Letter selection.
+- `src/components/LandingPage.tsx` — two-card document selection with Build and Continue Saved actions.
 - `src/components/PrepareScreen.tsx` — shared preparation, validation, AI copy, examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
@@ -80,7 +80,7 @@ Full design: `ARCHITECTURE.md`.
 4. **No I/O.** No network, backend, auth, analytics, cloud storage, or AI. The only persistence is `localStorage`.
 5. **Real text exports.** Never rasterize a page.
 6. **Preparation replaces, never merges.** Keep the multiple-heading rejection and confirmation before replacing an existing draft.
-7. **Document selection first, never fabricated.** No draft means preparation, never a sample document.
+7. **Document selection first, never fabricated.** Build always opens preparation. Continue Saved is the only path from the landing page into an existing workspace.
 8. **Independent documents.** Resume and cover letter drafts use separate keys and templates. Building one must not change the other.
 9. **AI instructions are generated.** Never hand-maintain a second template; update parser aliases and let the drift tests verify.
 10. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.

@@ -125,16 +125,11 @@ export default function App() {
     setView('prepare');
   };
 
-  const openDocument = (kind: DocumentKind) => {
+  const openWorkspace = (kind: DocumentKind) => {
     setActiveKind(kind);
     setFormattingOpen(false);
     setFocusTarget(null);
-    const exists = kind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
-    if (exists) {
-      setView('workspace');
-      return;
-    }
-    openPrepare(kind, { view: 'landing', kind });
+    setView('workspace');
   };
 
   const goHome = () => {
@@ -336,8 +331,10 @@ export default function App() {
         <LandingPage
           hasResume={Boolean(resume)}
           hasCoverLetter={Boolean(coverLetter)}
-          onResume={() => openDocument('resume')}
-          onCoverLetter={() => openDocument('coverLetter')}
+          onResume={() => openPrepare('resume', { view: 'landing', kind: 'resume' })}
+          onCoverLetter={() => openPrepare('coverLetter', { view: 'landing', kind: 'coverLetter' })}
+          onContinueResume={() => openWorkspace('resume')}
+          onContinueCoverLetter={() => openWorkspace('coverLetter')}
         />
       ) : renderView === 'prepare' ? (
         <PrepareScreen

@@ -46,7 +46,7 @@ export function Header({
           type="button"
           className="brand brand-button"
           onClick={onHome}
-          aria-label="Back to document selection"
+          aria-label={view === 'workspace' ? 'Back to document selection' : 'OpenResume home'}
         >
           <img className="brand-mark" src="/icon-192.png" alt="" aria-hidden="true" />
           <span className="brand-copy">

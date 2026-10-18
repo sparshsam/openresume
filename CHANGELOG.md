@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] — 2026-10-18
+
+### Changed
+
+- Redesigned the landing page around two substantial, independently floating document cards with generous radii, soft elevation, stronger typography, and responsive stacking.
+- Updated landing copy to the new OpenResume eyebrow, headline, supporting text, and document descriptions.
+- Build Resume and Build Cover Letter now always open their preparation screens, even when a saved draft exists.
+- Added separate Continue Saved Resume and Continue Saved Cover Letter actions for saved drafts.
+- Refined the preparation screens with a matching elevated input panel and clearer brand-home labeling.
+- Saved drafts never determine the primary landing destination and are never discarded by starting a new build.
+
+### Added
+
+- Regression tests for build-versus-continue navigation with no drafts, one draft, and both drafts.
+- Regression tests confirming that leaving preparation preserves the saved draft.
+
+### Fixed
+
+- A saved resume or cover letter no longer bypasses preparation when its card is selected from the landing page.
+
 ## [0.1.3] — 2026-10-18
 
 ### Added

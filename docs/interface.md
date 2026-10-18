@@ -1,15 +1,17 @@
 # Interface
 
-OpenResume is a document production workspace for two document types: a resume and a cover letter. Importing structured text is the primary preparation path; manual editing remains fully available after building.
+OpenResume is a document production workspace for two document types: a resume and a cover letter. Structured text is the primary preparation path; manual editing remains fully available after building.
 
 ## Landing
 
-The first screen offers two borderless options:
+The first screen presents two substantial, independently floating cards:
 
-- **Build Resume** — a precise, two-column resume.
-- **Build Cover Letter** — a calm, single-column business letter.
+- **Resume** — **Build Resume** starts a precise, two-column resume.
+- **Cover Letter** — **Build Cover Letter** starts a calm, single-column business letter.
 
-If a draft exists, the option says **Draft saved · Continue** and opens that workspace. With no draft, it opens the matching preparation screen. Both documents can be saved independently; choosing one never changes the other.
+The cards sit side by side on desktop and stack on smaller screens. Each is a single clickable surface with a visible primary action; the whole card opens the matching preparation screen.
+
+A saved document never changes that destination. If a draft exists, the card shows a **Saved draft** badge and a separate **Continue Saved Resume** or **Continue Saved Cover Letter** action. Build always means preparation; Continue Saved is the only way to reopen an existing workspace from the landing page. Both documents can be saved independently, and choosing one never changes the other.
 
 ## Preparation
 
@@ -29,7 +31,7 @@ Building over an existing draft shows an explicit confirmation before replacing 
 
 ## Header
 
-- **Brand** returns to document selection.
+- **Brand** is labeled **OpenResume home** on the landing and preparation screens, and **Back to document selection** in a workspace; both return to the landing page.
 - In a workspace, a small label shows **Resume** or **Cover Letter**.
 - **New** opens preparation for the current document type.
 - **Format** toggles document-specific formatting controls.
@@ -102,7 +104,7 @@ The footer remains the Kovina-compliant strip with version, attribution, and min
 | ≥ 1041px   | Editor rail and preview side by side                                    |
 | 721–1040px | Editor above preview                                                    |
 | ≤ 720px    | Header becomes two rows: brand + theme, then icon-only document actions |
-| ≤ 760px    | Landing options stack; preparation textarea shrinks                     |
+| ≤ 760px    | Landing cards stack; preparation textarea shrinks                       |
 | ≤ 560px    | Formatting controls and footer stack                                    |
 
 At every width the document page scales to fit; text remains selectable and the document is never inverted for dark mode.

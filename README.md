@@ -4,9 +4,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.3.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.4.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.3 is committed locally pending deployment approval)
+**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.4 is committed locally pending deployment approval)
 
 ## Description
 
@@ -22,13 +22,15 @@ The workflow is:
 Choose document → Prepare content → Build → Edit/Preview → Export
 ```
 
-OpenResume opens on a document-selection screen. Saved drafts are marked, so you can continue a resume or cover letter without losing either.
+OpenResume opens on a document-selection screen with two cards: **Resume** and **Cover Letter**. Each card starts a new build in its preparation screen. When a saved draft exists, the card also offers a separate **Continue Saved** action, so starting a new document never bypasses preparation or overwrites saved work.
 
 ![OpenResume document selection](assets/hero/hero-light.png)
 
+Saved drafts never redirect the primary action: **Build Resume** and **Build Cover Letter** always open preparation, while **Continue Saved Resume** and **Continue Saved Cover Letter** open the existing workspace.
+
 ## Features
 
-- **Document-selection landing page** for a resume or a cover letter, with saved-draft indicators.
+- **Two-card document-selection landing page** for a resume or a cover letter, with separate Build and Continue Saved actions.
 - **Preparation screens** with a large paste area, Copy AI Instructions, Load Example, and inline validation.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
 - **Resume workspace** preserving the fixed two-column template, section ordering, editing, and pagination.

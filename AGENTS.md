@@ -5,7 +5,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.3 dual-document release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
+- **Release:** v0.1.4 landing and navigation release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; default Vercel domain; no environment variables.
@@ -26,6 +26,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 - Content is preserved unless the user edits it.
 - Preparation replaces the selected document; multiple top-level headings are rejected and replacement requires confirmation.
 - No draft means preparation; the app never fabricates a document.
+- Build always means preparation; a saved draft is reached only through Continue Saved.
 - Resume and cover letter drafts are independent, with separate storage keys and templates.
 - Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
 - Interface themes never change document, PDF, or DOCX colors.
@@ -53,6 +54,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 | Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md`        |
 | Preparation validation      | `src/components/PrepareScreen.tsx`, `src/App.tsx`, `tests/App.test.tsx`                 |
 | Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                     |
+| Landing cards and copy      | `src/components/LandingPage.tsx`, `src/styles/globals.css`, `src/styles/tokens.css`     |
 | Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                   |
 | Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                   |
 | Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`         |
@@ -76,7 +78,8 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - Page count matches the preview on US Letter, A4, and US Legal for both documents.
 - A second build replaces only the selected document, after confirmation.
 - Formatting changes appear in the preview and both exports, and document-specific controls are visible only where relevant.
-- First launch shows document selection; saved drafts open their workspaces.
+- First launch shows document selection; Build opens preparation regardless of saved drafts.
+- Continue Saved opens the matching workspace without changing the draft.
 - Copy AI Instructions returns the complete template, and Load Example does not copy.
 - Create matching cover letter reuses identity/contact and leaves the resume unchanged.
 - Resume and cover letter drafts persist independently across reloads.

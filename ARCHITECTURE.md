@@ -8,7 +8,7 @@ OpenResume is a client-only React application. Its correctness lives in a pure, 
 2. **Points are the unit.** Page geometry, typography, and coordinates are expressed in PostScript points. CSS renders the same numbers with `pt` units; jsPDF consumes them directly.
 3. **Content is preserved.** Both parsers never rewrite, summarize, or normalize user text beyond structural whitespace. Only explicit edits change content.
 4. **Preparation replaces, never merges.** A new document fully replaces that document's model; concatenated documents are rejected.
-5. **Document-selection first, never fabricated.** The landing page lets the user choose a resume or cover letter. Saved drafts are continued; no sample document is invented.
+5. **Document-selection first, never fabricated.** The landing page lets the user choose a resume or cover letter. Build always opens preparation; saved drafts are reached only through Continue Saved. No sample document is invented.
 6. **No hidden I/O.** There are no runtime network calls, no server, and no telemetry. The only persistence is `localStorage`.
 7. **Exports contain real text and identical content.** Pages are never rasterized. PDF text is selectable; DOCX paragraphs are editable; both carry every content string.
 8. **Interface theme never touches the document.** Light/dark tokens style the shell only. The resume and cover letter pages and exports keep fixed colors.
@@ -128,7 +128,8 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 | `workspace` | An active draft exists                    | Resume or cover letter editor and live preview       |
 
 - `useDraft` and `useCoverLetterDraft` each return a nullable document. Neither fabricates a sample.
-- The landing option opens the workspace when a draft exists, otherwise preparation.
+- The landing card's primary action always opens preparation, with or without a draft.
+- A separate Continue Saved action opens an existing workspace and is rendered only when that draft exists.
 - `PrepareScreen` requires exactly one top-level `#` heading and validates the selected parser's required fields. Zero or multiple headings produce a clear error and no state change.
 - A successful build replaces that model, preserves its template (or reuses the resume template for a first cover letter), and switches to the workspace.
 - New returns to preparation without discarding the draft; Back returns to the previous workspace or landing.
@@ -179,6 +180,6 @@ No state library, router, CSS framework, parser library, or storage wrapper. Add
 - **Fonts.** Replace the embedded width tables with a font embedded in both the browser and the PDF, keeping measurement and rendering identical.
 - **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, storage key, and preparation validation.
 
-## Non-goals for v0.1.3
+## Non-goals for v0.1.4
 
 Multi-user accounts, cloud sync, AI content generation, PDF/DOCX import, and multi-template galleries.

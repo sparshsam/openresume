@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.3 dual-document release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.3.
+> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.4 landing and navigation release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.4.
 
 ## Production
 
