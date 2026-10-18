@@ -5,15 +5,16 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.6 is tagged, published as a GitHub pre-release, and deployed to production at https://resume.kovina.org. v0.1.7 public information pages are committed locally pending publication. The original Vercel address remains at https://openresume-sigma.vercel.app.
+- **Release:** v0.1.7 is tagged at `cc179019b955ed1cdf45c33be399c91faa4deda6`, published as a GitHub pre-release, and deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
+- **Branch protection:** active ruleset `main-protection` (`25359494`) requires a PR, conversation resolution, and the `check` CI status with up-to-date branches; blocks direct pushes, force-pushes, and deletion; 0 required approvals; no bypass actors.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.
 
-**Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before making changes. Do not push, tag, release, or deploy without explicit permission.
+**Handoff:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, inspect the working tree and recent commits, then **wait for Sparsh's instructions** before making changes. Land changes through a PR into protected `main`; do not direct-push, tag, release, or deploy without explicit permission.
 
-**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, `docs/formatting.md`, `docs/ai-instructions.md`, and `docs/deployment.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get SSO-protected previews.
+**Start here:** `ARCHITECTURE.md`, `docs/interface.md`, `docs/input-format.md`, `docs/formatting.md`, `docs/ai-instructions.md`, `docs/branding.md`, and `docs/deployment.md`. `/releases/latest` is expected to return 404 while the only release is a pre-release; the wiki is enabled but empty. Merging a PR to `main` triggers a Vercel production deployment; PRs get SSO-protected previews. Direct pushes to `main` are rejected by the ruleset.
 
 ## Mission
 
@@ -114,4 +115,5 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - Prefer adding a test to editing an existing one.
 - Do not introduce abstractions for hypothetical templates or backends.
 - Record limitations rather than hiding them.
-- Do not push, tag, or deploy without explicit permission.
+- Use a feature branch and PR for every change to `main`; wait for the `check` status and required up-to-date state before merging.
+- Do not attempt direct pushes, force-pushes, branch deletion, tags, releases, or deployment without explicit permission.
