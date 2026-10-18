@@ -499,6 +499,35 @@ describe('header, theme, and footer', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
   });
 
+  it('switches the favicon, theme colour, and header mark with the theme', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.dataset.favicon = '32';
+    document.head.append(favicon);
+
+    const themeColor = document.createElement('meta');
+    themeColor.name = 'theme-color';
+    themeColor.content = '#f4f5f2';
+    document.head.append(themeColor);
+
+    const { container } = renderApp();
+    const mark = container.querySelector('.brand-mark') as HTMLImageElement;
+
+    expect(favicon.href).toContain('/favicon-32.png');
+    expect(themeColor.content).toBe('#f4f5f2');
+    expect(mark.getAttribute('src')).toBe('/icon-192.png');
+
+    await user.click(screen.getByRole('button', { name: /switch to dark mode/i }));
+
+    expect(favicon.href).toContain('/favicon-32-dark.png');
+    expect(themeColor.content).toBe('#0f1210');
+    expect(mark.getAttribute('src')).toBe('/icon-192-dark.png');
+
+    favicon.remove();
+    themeColor.remove();
+  });
+
   it('restores a stored theme and follows the system when unset', () => {
     localStorage.setItem(THEME_KEY, 'dark');
     const { unmount } = renderApp();

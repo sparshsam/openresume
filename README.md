@@ -1,12 +1,19 @@
 # OpenResume
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/app-icon/dark/icon-192.png">
+    <img src="assets/app-icon/light/icon-192.png" width="80" height="80" alt="OpenResume app icon">
+  </picture>
+</p>
+
 A privacy-first, local-first resume and cover letter builder that turns structured text into precise PDF and DOCX documents.
 
 ## Status
 
-**Early development — v0.1.5.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.6.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.5). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.5; the v0.1.6 branding update is committed locally pending publication). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -46,6 +53,7 @@ Documents are session-only. Reloading or closing the page may discard them; noth
 - **Editable DOCX** with readable, naturally flowing paragraphs.
 - **Light, dark, and system themes** with a persistent, flash-free header toggle.
 - **Accessible editors** with labeled controls, keyboard focus, and reduced-motion support.
+- **Theme-aware branding** with light and dark app icons, favicons, and social preview assets generated from the authoritative logo masters.
 - **No backend, auth, analytics, cloud storage, or AI.**
 
 ## Cover letters
@@ -98,7 +106,11 @@ Resume and cover letter models share contact parsing, metrics, pagination, previ
 
 The original Vercel deployment address is retained at https://openresume-sigma.vercel.app.
 
-Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
+Vercel builds the standard Vite output (`npm run build` → `dist`) from `main` with no environment variables. Pull requests receive preview deployments, and the production domain is public. HTTP requests are redirected to HTTPS automatically by Vercel with a `308`. See [docs/deployment.md](docs/deployment.md) for configuration, headers, caching, and verification.
+
+## Branding
+
+The application icon is generated from the authoritative light and dark PNG masters in [`assets/branding/source-assets`](assets/branding/source-assets/). The reproducible pipeline and complete asset inventory are documented in [docs/branding.md](docs/branding.md).
 
 ## Getting started
 

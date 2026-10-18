@@ -15,7 +15,7 @@ Contributions are welcome in the form of bug reports, documentation fixes, acces
 
 ## Standards
 
-All contributions follow the [ecosystem standards](https://github.com/sparshsam/ecosystem-standards) for structure, documentation, tone, and security, and the [Kovina standards](https://github.com/sparshsam/kovina/tree/main/standards) where they do not conflict.
+All contributions follow shared Kovina ecosystem standards for structure, documentation, tone, and security, and the public [Kovina standards](https://github.com/sparshsam/kovina/tree/main/standards) where they do not conflict.
 
 ## Coding expectations
 

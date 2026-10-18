@@ -21,7 +21,7 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.5 session-based UX release, deployed to production.
+- **Version:** v0.1.6 branding and housekeeping release, committed locally. Production still serves v0.1.5 at https://resume.kovina.org until publication approval.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
 - **README:** includes the canonical Kovina Collection footer.
@@ -51,6 +51,9 @@ npm run check        # everything above, in release order
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
 - `src/components/Footer.tsx` / `src/lib/appMeta.ts` — Kovina attribution and version.
+- `assets/branding/source-assets/` — authoritative light/dark logo masters.
+- `scripts/generate-icons.py` — reproduces every icon and social asset from those masters.
+- `docs/branding.md` — asset inventory, standards, and generation pipeline.
 - `src/components/Icon.tsx` — inline SVG icons; no icon dependency.
 - `docs/interface.md` — workflow, navigation, theme, responsive, and accessibility rules.
 - `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
@@ -86,12 +89,14 @@ Full design: `ARCHITECTURE.md`.
 9. **AI instructions are generated.** Never hand-maintain a second template; update parser aliases and let the drift tests verify.
 10. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.
 11. **Theme is interface-only.** Use tokens from `styles/tokens.css`; never theme document pages, PDF, or DOCX.
-12. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Icons are inline SVG. Justify anything else.
+12. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Interface icons are inline SVG. Justify anything else.
+13. **Brand assets are generated.** Never hand-edit files in `public/` or `assets/app-icon/`. Update the authoritative masters only with approval, then run `scripts/generate-icons.py`.
+14. **No SVG icon fabrication.** The masters are raster; do not wrap them in SVGs or invent vector versions.
 
 ## Working agreement
 
 - Make focused changes and run `npm run check` before claiming completion.
-- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, matching-letter reuse, legacy cleanup, and theme persistence are the critical surfaces.
+- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.

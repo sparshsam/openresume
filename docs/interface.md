@@ -84,7 +84,7 @@ No letter body is generated. The user writes it. The resume is never modified, a
 
 ## Themes and footer
 
-Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The resume and cover letter documents keep fixed colors in both themes.
+Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The resume and cover letter documents keep fixed colors in both themes.
 
 The footer remains the Kovina-compliant strip with version, attribution, and minimal links.
 

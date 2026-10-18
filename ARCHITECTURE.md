@@ -146,6 +146,8 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 - Tokens in `src/styles/tokens.css` follow the OpenPalette naming convention (`--bg-base`, `--bg-surface`, `--text-primary`, `--border-default`, `--accent`).
 - The resume and cover letter pages, PDF, and DOCX use `COLORS` and fixed values in `preview.css`; they are never derived from UI theme tokens.
 - Header icons are inline SVGs in `Icon.tsx`, avoiding a new runtime dependency.
+- The pre-hydration script and `ThemeProvider` also switch the theme-color metadata and light/dark favicon links; `Header` selects the matching app mark.
+- App icons and social assets are generated from the two authoritative PNG masters in `assets/branding/source-assets/` by `scripts/generate-icons.py`; generated files are never hand-edited. The runtime loads only same-origin PNGs.
 
 ## State and persistence
 
@@ -163,7 +165,7 @@ Runtime dependencies are limited to:
 - `jspdf` — text-based PDF generation.
 - `docx` — editable document generation.
 
-No state library, router, CSS framework, parser library, or storage wrapper. Add a dependency only when it removes more code than it introduces and does not compromise the invariants above.
+No state library, router, CSS framework, parser library, or storage wrapper. Pillow is used only by the local icon-generation script and is not a runtime dependency. Add a dependency only when it removes more code than it introduces and does not compromise the invariants above.
 
 ## Testing
 
@@ -180,6 +182,6 @@ No state library, router, CSS framework, parser library, or storage wrapper. Add
 - **Fonts.** Replace the embedded width tables with a font embedded in both the browser and the PDF, keeping measurement and rendering identical.
 - **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, in-memory state, and preparation validation.
 
-## Non-goals for v0.1.5
+## Non-goals for v0.1.6
 
 Multi-user accounts, cloud sync, AI content generation, PDF/DOCX import, and multi-template galleries.

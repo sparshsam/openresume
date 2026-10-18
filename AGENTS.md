@@ -5,7 +5,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.5 is tagged, published as a GitHub pre-release, and deployed to production at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app.
+- **Release:** v0.1.5 is tagged, published as a GitHub pre-release, and deployed to production at https://resume.kovina.org. v0.1.6 branding is committed locally pending publication. The original Vercel address remains at https://openresume-sigma.vercel.app.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
@@ -33,6 +33,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 - Interface themes never change document, PDF, or DOCX colors.
 - No runtime network calls and no document storage.
 - AI instructions are generated from parser aliases and must remain drift-tested.
+- Application icons are generated from the two authoritative masters; never hand-edit generated assets or fabricate SVGs.
 - PDF text is selectable; DOCX text is editable and contains every content string.
 
 ## Where to change what
@@ -57,6 +58,8 @@ Produce consistent, professional resumes and cover letters from structured text 
 | Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                     |
 | Landing cards and copy      | `src/components/LandingPage.tsx`, `src/styles/globals.css`, `src/styles/tokens.css`     |
 | Feedback and toasts         | `src/components/ToastRegion.tsx`, `src/App.tsx`, `src/styles/globals.css`               |
+| Brand masters and icons     | `assets/branding/source-assets/`, `scripts/generate-icons.py`, `docs/branding.md`       |
+| Theme-aware favicon/brand   | `index.html`, `src/components/ThemeProvider.tsx`, `src/components/Header.tsx`           |
 | Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                   |
 | Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                   |
 | Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`         |
@@ -89,6 +92,8 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - Toasts and inline validation replace all native alerts; dismiss notifications with the keyboard.
 - Light, dark, and system themes work; document pages keep fixed colors.
 - Header, landing, preparation, and footer remain usable at 375px.
+- Generated icon dimensions, the multi-resolution ICO, and the preserved masters pass `tests/assets.test.ts`.
+- Light/dark favicons and the header mark follow the selected theme.
 
 ## Change discipline
 

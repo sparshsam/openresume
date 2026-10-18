@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] — 2026-10-18
+
+### Added
+
+- Authoritative OpenResume light and dark logo masters under `assets/branding/source-assets/`, preserved byte-for-byte.
+- Reproducible icon generation from those masters with light and dark favicons, application icons, Apple touch icons, Microsoft tile, and social preview assets.
+- Theme-aware favicon and header brand mark selection, including the pre-hydration theme script.
+- Branding documentation, source-master provenance, and automated asset checks for dimensions, file validity, and the multi-resolution ICO.
+
+### Changed
+
+- Replaced the placeholder generated icon with the supplied OpenResume identity.
+- Updated the document description, Open Graph metadata, Twitter card, and theme-color metadata.
+- Verified Vercel's automatic HTTP-to-HTTPS `308` redirect for the production domain.
+- Removed inaccessible public links to the private ecosystem-standards repository from CONTRIBUTING, SECURITY, the issue-template configuration, and the README.
+- Restored the standard `.env.example` safety header.
+
+### Fixed
+
+- Browser and application icons now match the OpenResume brand and switch with the interface theme.
+
 ## [0.1.5] — 2026-10-18
 
 ### Changed

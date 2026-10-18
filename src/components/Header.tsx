@@ -1,5 +1,6 @@
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from '../lib/theme';
 import type { DocumentKind } from '../types/document';
 
 interface HeaderProps {
@@ -23,6 +24,7 @@ export function Header({
   onExportPdf,
   onExportDocx,
 }: HeaderProps) {
+  const { theme } = useTheme();
   const isWorkspace = view === 'workspace' && kind !== null;
   const kindLabel = kind === 'resume' ? 'Resume' : 'Cover Letter';
 
@@ -35,7 +37,12 @@ export function Header({
           onClick={onHome}
           aria-label={view === 'workspace' ? 'Back to document selection' : 'OpenResume home'}
         >
-          <img className="brand-mark" src="/icon-192.png" alt="" aria-hidden="true" />
+          <img
+            className="brand-mark"
+            src={theme === 'dark' ? '/icon-192-dark.png' : '/icon-192.png'}
+            alt=""
+            aria-hidden="true"
+          />
           <span className="brand-copy">
             <span className="brand-name">OpenResume</span>
             <span className="brand-tagline">Structured text in. Precise documents out.</span>

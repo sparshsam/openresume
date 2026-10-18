@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** production serves v0.1.5 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+> **Deployment status:** production serves v0.1.5 at https://resume.kovina.org. The v0.1.6 branding and documentation update is committed locally and is not deployed until publication is approved. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Production
 
@@ -33,6 +33,7 @@ Pushing to `main` triggers a production deployment. Pull requests get preview de
 | Vercel configuration | `CNAME` recognized; `misconfigured: false` |
 | Certificate          | Let's Encrypt, CN `resume.kovina.org`      |
 | Domain verification  | Verified in Vercel                         |
+| HTTP → HTTPS         | Automatic Vercel `308`, no configuration   |
 
 The target is a project-specific Vercel DNS target. Do not replace it with the generic `cname.vercel-dns.com` unless the project-specific target stops being returned by Vercel.
 
@@ -82,7 +83,7 @@ The deployed app remains fully client-side:
 After a deployment:
 
 1. Load https://resume.kovina.org and https://openresume-sigma.vercel.app; both must serve the same version with no console errors.
-2. Confirm the custom-domain certificate and HTTPS response with `curl -I` and `openssl s_client`.
+2. Confirm the custom-domain certificate and HTTPS response with `curl -I` and `openssl s_client`, and confirm `http://resume.kovina.org` returns a `308` to `https://resume.kovina.org` without a loop.
 3. Build a resume and a cover letter from the examples, then verify editing and live previews.
 4. Use **Copy AI Instructions** and confirm the complete template reaches the clipboard.
 5. Create a matching cover letter from a resume and confirm the resume is unchanged.

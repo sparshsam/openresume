@@ -7,6 +7,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.colorScheme = theme;
+
+    const themeColor = theme === 'dark' ? '#0f1210' : '#f4f5f2';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
+
+    document.querySelectorAll<HTMLLinkElement>('link[data-favicon]').forEach((link) => {
+      const size = link.dataset.favicon;
+      if (!size) return;
+      link.href = `/favicon-${size}${theme === 'dark' ? '-dark' : ''}.png`;
+    });
   }, [theme]);
 
   useEffect(() => {

@@ -62,7 +62,7 @@
       ]
     },
     {
-      "source": "/(favicon.ico|favicon-16.png|favicon-32.png|apple-touch-icon.png|icon-192.png|icon-512.png)",
+      "source": "/(favicon.ico|favicon-16.png|favicon-16-dark.png|favicon-32.png|favicon-32-dark.png|apple-touch-icon.png|apple-touch-icon-152x152.png|mstile-150x150.png|icon-192.png|icon-192-dark.png|icon-512.png|icon-512-dark.png|openresume-social.png)",
       "headers": [
         {
           "key": "Cache-Control",

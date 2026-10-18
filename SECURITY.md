@@ -35,4 +35,4 @@ Relevant reports include cross-site scripting through imported text, unsafe rend
 - Dependencies are kept minimal and reviewed before addition.
 - Exports are generated locally from the same in-memory model as the preview.
 
-For the ecosystem-wide security standard, see [ecosystem-standards](https://github.com/sparshsam/ecosystem-standards).
+For the public ecosystem guidance, see the [Kovina standards](https://github.com/sparshsam/kovina/tree/main/standards).
