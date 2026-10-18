@@ -397,10 +397,15 @@ button {
 
 .dialog-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 14px;
   flex-wrap: wrap;
+}
+
+.dialog-spacer {
+  flex: 1;
 }
 
 .warning-list {

@@ -163,4 +163,16 @@ describe('parseResume', () => {
     const second = parseResume(SAMPLE).resume;
     expect(second).toEqual(first);
   });
+
+  it('counts top-level resume headings', () => {
+    expect(parseResume(SAMPLE).documentCount).toBe(1);
+    expect(parseResume('').documentCount).toBe(0);
+  });
+
+  it('detects concatenated resumes instead of silently merging them', () => {
+    const concatenated = `${SAMPLE}\n\n# Second Person\nsecond@example.com\n\n## SUMMARY\nSecond.`;
+    const { documentCount, warnings } = parseResume(concatenated);
+    expect(documentCount).toBe(2);
+    expect(warnings.some((warning) => warning.includes('additional resume heading'))).toBe(true);
+  });
 });

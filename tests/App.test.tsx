@@ -44,6 +44,7 @@ describe('App', () => {
 
     const dialog = screen.getByRole('dialog');
     const textarea = within(dialog).getByLabelText('Structured resume text');
+    expect(textarea).toHaveValue('');
     fireEvent.change(textarea, {
       target: {
         value: [
@@ -59,6 +60,69 @@ describe('App', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Name')).toHaveValue('Imported Person');
+  });
+
+  it('replaces the whole document on a second import', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const importResume = async (text: string) => {
+      await user.click(screen.getByRole('button', { name: 'Import text' }));
+      const dialog = screen.getByRole('dialog');
+      fireEvent.change(within(dialog).getByLabelText('Structured resume text'), {
+        target: { value: text },
+      });
+      await user.click(within(dialog).getByRole('button', { name: 'Parse and replace' }));
+    };
+
+    await importResume(
+      ['# First Person', 'first@example.com', '', '## SUMMARY', 'First marker.'].join('\n'),
+    );
+    expect(screen.getByLabelText('Name')).toHaveValue('First Person');
+
+    await importResume(
+      ['# Second Person', 'second@example.com', '', '## SUMMARY', 'Second marker.'].join('\n'),
+    );
+
+    expect(screen.getByLabelText('Name')).toHaveValue('Second Person');
+    expect(screen.queryByText('First Person')).not.toBeInTheDocument();
+    expect(screen.queryByText(/First marker/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Second marker/).length).toBeGreaterThan(0);
+
+    await waitFor(() => {
+      const raw = localStorage.getItem(DRAFT_KEY) ?? '';
+      expect(raw).toContain('Second Person');
+      expect(raw).not.toContain('First Person');
+    });
+  });
+
+  it('rejects concatenated resumes without changing the document', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Import text' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Structured resume text'), {
+      target: {
+        value: [
+          '# First Person',
+          'first@example.com',
+          '',
+          '## SUMMARY',
+          'First.',
+          '',
+          '# Second Person',
+          'second@example.com',
+          '',
+          '## SUMMARY',
+          'Second.',
+        ].join('\n'),
+      },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Parse and replace' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/2 resume headings/);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
   });
 
   it('adds a custom section', async () => {

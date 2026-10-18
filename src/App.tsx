@@ -53,7 +53,7 @@ export default function App() {
   }, []);
 
   const applyImport = (next: Resume, warnings: string[]) => {
-    setResume(next);
+    setResume((current) => ({ ...next, template: current.template }));
     setImportOpen(false);
     setMessage(
       warnings.length > 0
@@ -136,7 +136,7 @@ export default function App() {
       </div>
       <ImportDialog
         open={importOpen}
-        initialText={serializeResume(resume)}
+        currentText={serializeResume(resume)}
         onClose={() => setImportOpen(false)}
         onApply={applyImport}
       />

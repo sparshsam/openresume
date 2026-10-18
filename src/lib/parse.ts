@@ -1,10 +1,12 @@
-import type {
-  ColumnId,
-  ParseResult,
-  Resume,
-  ResumeItem,
-  ResumeSection,
-  SectionKind,
+import {
+  DEFAULT_FORMAT,
+  DEFAULT_TEMPLATE,
+  type ColumnId,
+  type ParseResult,
+  type Resume,
+  type ResumeItem,
+  type ResumeSection,
+  type SectionKind,
 } from '../types/resume';
 
 const ALIASES: Record<string, SectionKind> = {
@@ -160,7 +162,10 @@ function emptyResume(): Resume {
     header: { name: '' },
     contact: { links: [] },
     sections: [],
-    template: { pageSize: 'a4', accent: '#14532D' },
+    template: {
+      ...DEFAULT_TEMPLATE,
+      format: { ...DEFAULT_FORMAT },
+    },
   };
 }
 
@@ -175,6 +180,7 @@ export function parseResume(input: string): ParseResult {
   let currentItem: ResumeItem | null = null;
   let lastWasBullet = false;
   let sectionIndex = 0;
+  let documentCount = 0;
 
   const pushSection = (kind: SectionKind, title: string): ResumeSection => {
     const section: ResumeSection = {
@@ -209,11 +215,14 @@ export function parseResume(input: string): ParseResult {
 
     if (trimmed.startsWith('# ') && !trimmed.startsWith('## ')) {
       const name = trimmed.slice(2).trim();
+      documentCount += 1;
       if (!resume.header.name) {
         resume.header.name = name;
         awaitingContact = true;
       } else {
-        warnings.push(`Ignored a second name heading: "${name}".`);
+        warnings.push(
+          `Found an additional resume heading: "${name}". Import one resume at a time.`,
+        );
       }
       currentSection = null;
       currentItem = null;
@@ -339,5 +348,5 @@ export function parseResume(input: string): ParseResult {
     warnings.push('No name found. Start with "# Your Name".');
   }
 
-  return { resume, warnings };
+  return { resume, warnings, documentCount };
 }

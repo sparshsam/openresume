@@ -4,16 +4,17 @@ import type { Resume } from '../types/resume';
 
 interface ImportDialogProps {
   open: boolean;
-  initialText: string;
+  currentText: string;
   onClose: () => void;
   onApply: (resume: Resume, warnings: string[]) => void;
 }
 
 type ImportDialogContentProps = Omit<ImportDialogProps, 'open'>;
 
-function ImportDialogContent({ initialText, onClose, onApply }: ImportDialogContentProps) {
-  const [text, setText] = useState(initialText);
+function ImportDialogContent({ currentText, onClose, onApply }: ImportDialogContentProps) {
+  const [text, setText] = useState('');
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -30,7 +31,19 @@ function ImportDialogContent({ initialText, onClose, onApply }: ImportDialogCont
   }, [onClose]);
 
   const apply = () => {
+    if (!text.trim()) {
+      setError('Paste a resume before importing.');
+      return;
+    }
     const parsed = parseResume(text);
+    if (parsed.documentCount > 1) {
+      setWarnings(parsed.warnings);
+      setError(
+        `This text contains ${parsed.documentCount} resume headings. Import one resume at a time so the document is replaced cleanly.`,
+      );
+      return;
+    }
+    setError(null);
     setWarnings(parsed.warnings);
     onApply(parsed.resume, parsed.warnings);
   };
@@ -45,17 +58,27 @@ function ImportDialogContent({ initialText, onClose, onApply }: ImportDialogCont
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="import-heading">
         <h2 id="import-heading">Import structured text</h2>
         <p className="dialog-help">
-          Paste resume content using the format in <code>docs/input-format.md</code>. Parsing is
-          deterministic and runs entirely in this browser.
+          The editor starts empty so a new import replaces the current document. Use{' '}
+          <strong>Load current draft</strong> if you want to edit the existing content as text.
+          Parsing is deterministic and runs entirely in this browser.
         </p>
         <textarea
           ref={textareaRef}
           className="dialog-textarea"
           aria-label="Structured resume text"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            setError(null);
+          }}
           spellCheck={false}
+          placeholder={'# Your Name\nHeadline | email@example.com | Toronto, ON\n\n## SUMMARY\n...'}
         />
+        {error ? (
+          <p className="warning-list" role="alert">
+            {error}
+          </p>
+        ) : null}
         {warnings.length > 0 ? (
           <ul className="warning-list" aria-live="polite">
             {warnings.map((warning) => (
@@ -64,6 +87,29 @@ function ImportDialogContent({ initialText, onClose, onApply }: ImportDialogCont
           </ul>
         ) : null}
         <div className="dialog-actions">
+          <button
+            type="button"
+            className="button button-small"
+            onClick={() => {
+              setText(currentText);
+              setError(null);
+              setWarnings([]);
+            }}
+          >
+            Load current draft
+          </button>
+          <button
+            type="button"
+            className="button button-small"
+            onClick={() => {
+              setText('');
+              setError(null);
+              setWarnings([]);
+            }}
+          >
+            Clear
+          </button>
+          <span className="dialog-spacer" />
           <button type="button" className="button" onClick={onClose}>
             Cancel
           </button>
@@ -76,7 +122,7 @@ function ImportDialogContent({ initialText, onClose, onApply }: ImportDialogCont
   );
 }
 
-export function ImportDialog({ open, initialText, onClose, onApply }: ImportDialogProps) {
+export function ImportDialog({ open, currentText, onClose, onApply }: ImportDialogProps) {
   if (!open) return null;
-  return <ImportDialogContent initialText={initialText} onClose={onClose} onApply={onApply} />;
+  return <ImportDialogContent currentText={currentText} onClose={onClose} onApply={onApply} />;
 }
