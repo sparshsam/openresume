@@ -21,15 +21,17 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.7 public information pages, committed locally. Production still serves v0.1.6 at https://resume.kovina.org until publication approval.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
-- **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
+- **Version:** v0.1.7 (About/Privacy/Terms, SEO, reversed logo placement, and document accent colours), released and deployed.
+- **Release:** annotated tag `v0.1.7` at `cc179019b955ed1cdf45c33be399c91faa4deda6`; GitHub pre-release published.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.7 run passed with 208 tests across 19 files.
+- **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
+- **Branch protection:** active repository ruleset `main-protection` (`id: 25359494`) blocks direct pushes, force-pushes, and deletion; requires a PR, conversation resolution, and the `check` CI status, with branches up to date. Required approvals are 0 so the owner can merge their own PR. No bypass actors.
 
-**For future sessions:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, then **wait for Sparsh's instructions** before editing, committing, pushing, tagging, releasing, or deploying. Do not push or deploy without explicit approval.
+**For future sessions:** read `CLAUDE.md` and `AGENTS.md` first to get oriented, inspect the working tree and recent commits, then **wait for Sparsh's instructions** before editing, committing, pushing, tagging, releasing, or deploying. Do not direct-push or deploy without explicit approval; land changes through a PR into protected `main`.
 
-**Known notes:** `/releases/latest` returns 404 while the only release is a pre-release; this is expected until a stable release exists. The repository wiki is enabled but empty. Pushing to `main` triggers a Vercel production deployment; PRs get preview deployments, which are SSO-protected while production is public.
+**Known notes:** `/releases/latest` returns 404 while the only release is a pre-release; this is expected until a stable release exists. The repository wiki is enabled but empty. Merging a PR to `main` triggers a Vercel production deployment; PRs get preview deployments, which are SSO-protected while production is public. Direct pushes to `main` are rejected by the ruleset.
 
 ## Commands
 
@@ -111,4 +113,5 @@ Full design: `ARCHITECTURE.md`.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.
-- Do not push or deploy without explicit permission.
+- `main` is protected: use a feature branch and PR, wait for the `check` status, then merge. Do not attempt direct pushes, force-pushes, or deletion.
+- Do not deploy, tag, release, or merge without explicit permission.

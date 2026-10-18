@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** production serves v0.1.6 at https://resume.kovina.org. The v0.1.7 information pages are committed locally and are not deployed until publication is approved. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+> **Deployment status:** production serves v0.1.7 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Production
 
@@ -17,7 +17,9 @@ OpenResume is a static, client-only Vite application. Production is hosted on Ve
 | Domain                | Custom `resume.kovina.org` plus Vercel default |
 | Environment variables | None                                           |
 
-Pushing to `main` triggers a production deployment. Pull requests get preview deployments; previews are protected by Vercel Authentication, while production is public. Both production hostnames serve the same deployment; no redirect is configured between them.
+Changes land through a pull request; merging to `main` triggers a production deployment. Pull requests get preview deployments; previews are protected by Vercel Authentication, while production is public. Both production hostnames serve the same deployment; no redirect is configured between them.
+
+`main` is protected by the active `main-protection` ruleset: no direct pushes, force-pushes, or deletion; a PR with conversation resolution and the `check` status is required, with branches up to date. Required approvals are 0 for solo maintenance, and there are no bypass actors.
 
 ## Custom domain
 
