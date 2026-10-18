@@ -7,19 +7,19 @@ OpenResume is designed so that a resume or cover letter never has to leave the b
 - **No network at runtime.** The application makes no `fetch`, XHR, WebSocket, or third-party script requests. There is no backend.
 - **No accounts.** There is no authentication, session, or user record.
 - **No telemetry.** No analytics, error reporting, or usage measurement is included.
-- **No cloud storage.** Drafts are stored in the browser only.
+- **No document storage.** Resume and cover letter content lives in memory for the current application session only.
 - **No AI.** Content is parsed deterministically; no model sees it.
 - **No secrets.** The app requires no environment variables or API keys.
 
 ## What is stored
 
-| Location                                     | Data                            | Purpose                      |
-| -------------------------------------------- | ------------------------------- | ---------------------------- |
-| `localStorage['openresume:draft.v1']`        | The complete `Resume` JSON      | Restore the resume on reload |
-| `localStorage['openresume:cover-letter.v1']` | The complete `CoverLetter` JSON | Restore the letter on reload |
-| `localStorage['openresume-theme']`           | `light` or `dark`               | Restore the interface theme  |
+| Location                           | Data              | Purpose                     |
+| ---------------------------------- | ----------------- | --------------------------- |
+| `localStorage['openresume-theme']` | `light` or `dark` | Restore the interface theme |
 
-Nothing else is persisted. There are no cookies, IndexedDB databases, caches, or service workers.
+Nothing else is persisted. Documents are lost on reload, navigation away, or closing the page. There are no document cookies, IndexedDB databases, caches, or service workers.
+
+Earlier releases stored documents under `openresume:draft.v1` and `openresume:cover-letter.v1`. On startup, OpenResume checks those two keys and removes them only when their contents validate as OpenResume documents. Other values in local storage are left untouched and are never read as documents.
 
 ## What leaves the browser
 
@@ -32,15 +32,15 @@ Both are created in memory and downloaded. They are not uploaded anywhere.
 
 ## Deleting data
 
-- Clear site data for the app's origin in the browser settings.
-- Uninstalling or clearing browser storage removes both drafts and the theme permanently; there is no backup.
-- Replacing a document through **New** → build overwrites only that document, after confirmation.
+- Clear site data for the app's origin in the browser settings; this removes the theme preference.
+- Reloading or closing the page discards the current documents permanently; there is no backup.
+- Legacy draft entries are removed automatically when identified as valid OpenResume documents.
 
 ## Threat model
 
 The relevant risks are local, not remote:
 
-- Another person with access to the browser profile can read `localStorage`.
+- Another person with access to the browser profile can read the stored theme preference, but no document content is stored.
 - Malicious text pasted into the editor is rendered as text, never as HTML.
 - Third-party dependency compromise is the main supply-chain risk; dependencies are intentionally minimal and pinned by the lockfile.
 
@@ -50,7 +50,7 @@ The privacy claims are checkable:
 
 ```bash
 grep -RInE "fetch\\(|XMLHttpRequest|WebSocket|sendBeacon|navigator\\.sendBeacon" src/
-grep -RIn "localStorage\\|sessionStorage\\|indexedDB" src/
+grep -RInE "localStorage|sessionStorage|indexedDB" src/
 ```
 
-Expected: no network calls; storage references limited to the draft module and its tests.
+Expected: no network calls; storage references limited to the theme module and the one-time legacy cleanup.

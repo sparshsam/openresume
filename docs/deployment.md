@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.4 landing and navigation release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.4.
+> **Deployment status:** the production domain currently serves v0.1.2. The v0.1.5 session-based UX release is committed locally and is not deployed until explicit approval. The deployment configuration below is unchanged by v0.1.5.
 
 ## Production
 
@@ -54,8 +54,8 @@ The deployed app remains fully client-side:
 
 - No server functions, databases, authentication, or analytics.
 - No runtime network requests.
-- Resume drafts persist in `localStorage['openresume:draft.v1']`.
-- Cover letter drafts persist in `localStorage['openresume:cover-letter.v1']`.
+- Resume and cover letter content lives in memory for the current session only.
+- No document content is written to `localStorage`, `sessionStorage`, or IndexedDB.
 - Theme choice persists in `localStorage['openresume-theme']`.
 - PDF and DOCX exports are generated in the browser.
 
@@ -67,7 +67,7 @@ After a deployment:
 2. Build a resume and a cover letter from the examples, then verify editing and live previews.
 3. Use **Copy AI Instructions** and confirm the complete template reaches the clipboard.
 4. Create a matching cover letter from a resume and confirm the resume is unchanged.
-5. Toggle light/dark, reload, and confirm the theme and both drafts persist.
+5. Toggle light/dark and reload: the theme persists, while both documents are cleared.
 6. Export PDF and DOCX for both documents and confirm text is selectable/editable.
 7. Check the layout at desktop and phone widths.
 8. Inspect the network panel: only same-origin document and asset requests.

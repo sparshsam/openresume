@@ -1,7 +1,7 @@
-import { normalizeTemplate } from './normalize';
 import type { CoverLetter } from '../types/coverLetter';
 import type { Resume } from '../types/resume';
 
+/** Keys used by v0.1.0–v0.1.4. They are removed once their contents are identified. */
 export const DRAFT_KEY = 'openresume:draft.v1';
 export const COVER_LETTER_DRAFT_KEY = 'openresume:cover-letter.v1';
 
@@ -28,34 +28,6 @@ export function isResume(value: unknown): value is Resume {
   );
 }
 
-export function loadDraft(storage: Storage = localStorage): Resume | null {
-  try {
-    const raw = storage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isResume(parsed)) return null;
-    return { ...parsed, template: normalizeTemplate(parsed.template) };
-  } catch {
-    return null;
-  }
-}
-
-export function saveDraft(resume: Resume, storage: Storage = localStorage): void {
-  try {
-    storage.setItem(DRAFT_KEY, JSON.stringify(resume));
-  } catch {
-    // Storage can be unavailable (private mode, quota). Drafts are a convenience.
-  }
-}
-
-export function clearDraft(storage: Storage = localStorage): void {
-  try {
-    storage.removeItem(DRAFT_KEY);
-  } catch {
-    // Ignore unavailable storage.
-  }
-}
-
 export function isCoverLetter(value: unknown): value is CoverLetter {
   if (!isRecord(value)) return false;
   if (value.schemaVersion !== 1) return false;
@@ -74,65 +46,26 @@ export function isCoverLetter(value: unknown): value is CoverLetter {
   return true;
 }
 
-export function normalizeCoverLetter(value: unknown): CoverLetter | null {
-  if (!isCoverLetter(value)) return null;
-
-  const applicant = value.applicant as CoverLetter['applicant'];
-  const contact = applicant.contact;
-
-  return {
-    schemaVersion: 1,
-    applicant: {
-      name: applicant.name,
-      headline: typeof applicant.headline === 'string' ? applicant.headline : undefined,
-      contact: {
-        email: typeof contact.email === 'string' ? contact.email : undefined,
-        phone: typeof contact.phone === 'string' ? contact.phone : undefined,
-        location: typeof contact.location === 'string' ? contact.location : undefined,
-        links: Array.isArray(contact.links)
-          ? contact.links.filter(
-              (link): link is { label: string; url: string } =>
-                isRecord(link) && typeof link.label === 'string' && typeof link.url === 'string',
-            )
-          : [],
-      },
-    },
-    date: value.date,
-    recipient: value.recipient.filter((line): line is string => typeof line === 'string'),
-    position: value.position,
-    salutation: value.salutation,
-    body: value.body.filter((line): line is string => typeof line === 'string'),
-    closing: value.closing,
-    signature: value.signature,
-    template: normalizeTemplate(value.template),
-  };
-}
-
-export function loadCoverLetterDraft(storage: Storage = localStorage): CoverLetter | null {
-  try {
-    const raw = storage.getItem(COVER_LETTER_DRAFT_KEY);
-    if (!raw) return null;
-    return normalizeCoverLetter(JSON.parse(raw) as unknown);
-  } catch {
-    return null;
-  }
-}
-
-export function saveCoverLetterDraft(
-  coverLetter: CoverLetter,
-  storage: Storage = localStorage,
+function clearIdentifiedEntry(
+  key: string,
+  isDocument: (value: unknown) => boolean,
+  storage: Storage,
 ): void {
   try {
-    storage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify(coverLetter));
+    const raw = storage.getItem(key);
+    if (raw === null) return;
+    const parsed: unknown = JSON.parse(raw);
+    if (isDocument(parsed)) storage.removeItem(key);
   } catch {
-    // Storage can be unavailable (private mode, quota). Drafts are a convenience.
+    // Leave unreadable values untouched rather than removing something we cannot identify.
   }
 }
 
-export function clearCoverLetterDraft(storage: Storage = localStorage): void {
-  try {
-    storage.removeItem(COVER_LETTER_DRAFT_KEY);
-  } catch {
-    // Ignore unavailable storage.
-  }
+/**
+ * Removes drafts written by earlier releases. Storage is otherwise unused; the
+ * theme preference is owned by the theme module and is not touched here.
+ */
+export function clearLegacyDrafts(storage: Storage = localStorage): void {
+  clearIdentifiedEntry(DRAFT_KEY, isResume, storage);
+  clearIdentifiedEntry(COVER_LETTER_DRAFT_KEY, isCoverLetter, storage);
 }

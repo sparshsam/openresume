@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
 import { Footer } from './components/Footer';
@@ -7,8 +7,7 @@ import { Header } from './components/Header';
 import { LandingPage } from './components/LandingPage';
 import { PrepareScreen } from './components/PrepareScreen';
 import { Preview } from './components/Preview';
-import { useCoverLetterDraft } from './hooks/useCoverLetterDraft';
-import { useDraft } from './hooks/useDraft';
+import { ToastRegion, type ToastItem, type ToastTone } from './components/ToastRegion';
 import {
   addBodyParagraph,
   removeBodyParagraph,
@@ -25,6 +24,7 @@ import { buildCoverLetterScaffold } from './lib/coverLetterScaffold';
 import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
 import { documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
+import { clearLegacyDrafts } from './lib/storage';
 import {
   addBullet,
   addItem,
@@ -72,8 +72,8 @@ interface PrepareBack {
 }
 
 export default function App() {
-  const { resume, setResume, saveState: resumeSaveState } = useDraft();
-  const { coverLetter, setCoverLetter, saveState: coverLetterSaveState } = useCoverLetterDraft();
+  const [resume, setResume] = useState<Resume | null>(null);
+  const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
 
   const [view, setView] = useState<View>('landing');
   const [activeKind, setActiveKind] = useState<DocumentKind>('resume');
@@ -85,10 +85,10 @@ export default function App() {
     kind: 'resume',
   });
   const [formattingOpen, setFormattingOpen] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const nextToastId = useRef(0);
 
-  const activeSaveState = activeKind === 'resume' ? resumeSaveState : coverLetterSaveState;
   const activeTemplate = activeKind === 'resume' ? resume?.template : coverLetter?.template;
 
   const layout = useMemo(() => {
@@ -100,10 +100,18 @@ export default function App() {
   }, [activeKind, resume, coverLetter]);
 
   useEffect(() => {
-    if (!message) return;
-    const id = window.setTimeout(() => setMessage(null), 4000);
-    return () => window.clearTimeout(id);
-  }, [message]);
+    clearLegacyDrafts();
+  }, []);
+
+  const notify = useCallback((message: string, tone: ToastTone = 'success') => {
+    nextToastId.current += 1;
+    const toast = { id: nextToastId.current, message, tone };
+    setToasts((current) => [...current.slice(-2), toast]);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }, []);
 
   const onFocusTarget = useCallback((sectionId: string, itemId?: string) => {
     setFocusTarget({ sectionId, itemId, nonce: Date.now() });
@@ -159,19 +167,13 @@ export default function App() {
   };
 
   const handleBuildResume = (next: Resume, warnings: string[]) => {
-    if (resume) {
-      const replace = window.confirm(
-        'Replace your current resume? This overwrites the saved resume draft.',
-      );
-      if (!replace) return;
-    }
     setResume((current) => ({
       ...next,
       template: current?.template ?? next.template,
     }));
     setActiveKind('resume');
     setView('workspace');
-    setMessage(
+    notify(
       warnings.length > 0
         ? `Resume built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`
         : 'Resume built.',
@@ -179,19 +181,13 @@ export default function App() {
   };
 
   const handleBuildCoverLetter = (next: CoverLetter, warnings: string[]) => {
-    if (coverLetter) {
-      const replace = window.confirm(
-        'Replace your current cover letter? This overwrites the saved cover letter draft.',
-      );
-      if (!replace) return;
-    }
     setCoverLetter((current) => ({
       ...next,
       template: current?.template ?? resume?.template ?? next.template,
     }));
     setActiveKind('coverLetter');
     setView('workspace');
-    setMessage(
+    notify(
       warnings.length > 0
         ? `Cover letter built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`
         : 'Cover letter built.',
@@ -239,7 +235,7 @@ export default function App() {
     } else {
       setCoverLetter((current) => (current ? resetLetterTemplate(current) : current));
     }
-    setMessage('Formatting reset to defaults.');
+    notify('Formatting reset to defaults.');
   };
 
   const handleExportPdf = async () => {
@@ -251,9 +247,9 @@ export default function App() {
       } else if (coverLetter) {
         exportPdf(coverLetterMeta(coverLetter), layout);
       }
-      setMessage('PDF downloaded.');
+      notify('PDF exported.');
     } catch {
-      setMessage('PDF export failed.');
+      notify('PDF export failed.', 'error');
     }
   };
 
@@ -269,9 +265,9 @@ export default function App() {
         const blob = await exportCoverLetterDocx(coverLetter, layout);
         downloadBlob(blob, documentFilename(coverLetter.applicant.name, 'coverLetter', 'docx'));
       }
-      setMessage('DOCX downloaded.');
+      notify('Word document exported.');
     } catch {
-      setMessage('DOCX export failed.');
+      notify('Word export failed.', 'error');
     }
   };
 
@@ -317,8 +313,6 @@ export default function App() {
       <Header
         view={renderView}
         kind={renderView === 'workspace' ? activeKind : null}
-        saveState={activeSaveState}
-        message={message}
         formattingOpen={formattingOpen}
         onHome={goHome}
         onNew={handleNew}
@@ -333,21 +327,21 @@ export default function App() {
           hasCoverLetter={Boolean(coverLetter)}
           onResume={() => openPrepare('resume', { view: 'landing', kind: 'resume' })}
           onCoverLetter={() => openPrepare('coverLetter', { view: 'landing', kind: 'coverLetter' })}
-          onContinueResume={() => openWorkspace('resume')}
-          onContinueCoverLetter={() => openWorkspace('coverLetter')}
+          onOpenResume={() => openWorkspace('resume')}
+          onOpenCoverLetter={() => openWorkspace('coverLetter')}
         />
       ) : renderView === 'prepare' ? (
         <PrepareScreen
           key={`${activeKind}-${prepareNonce}`}
           kind={activeKind}
           initialText={prepareText}
-          hasExistingDraft={activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter)}
           reusedFromResume={prepareFromResume}
           resumeScaffold={
             activeKind === 'coverLetter' && resume ? buildCoverLetterScaffold(resume) : undefined
           }
           onBuildResume={handleBuildResume}
           onBuildCoverLetter={handleBuildCoverLetter}
+          onNotify={notify}
           onBack={handlePrepareBack}
         />
       ) : (
@@ -420,6 +414,7 @@ export default function App() {
       )}
 
       <Footer />
+      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

@@ -19,7 +19,7 @@
 - [ ] CHANGELOG updated for user-visible changes.
 - [ ] README or docs updated if behavior changed.
 - [ ] No new runtime dependency without justification.
-- [ ] No network calls, telemetry, or storage beyond `localStorage`.
+- [ ] No network calls, telemetry, or document storage; only the theme preference may persist.
 
 ## Verification
 

@@ -21,7 +21,7 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.4 landing and navigation release, committed locally. Production is still v0.1.2 until deployment approval.
+- **Version:** v0.1.5 session-based UX release, committed locally. Production is still v0.1.2 until deployment approval.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build.
 - **Verification baseline:** `npm run check` and `npm run format:check`; see the latest full run for the test count.
 - **README:** includes the canonical Kovina Collection footer.
@@ -45,7 +45,8 @@ npm run check        # everything above, in release order
 ## Architecture map
 
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
-- `src/components/LandingPage.tsx` — two-card document selection with Build and Continue Saved actions.
+- `src/components/LandingPage.tsx` — two-card document selection with Build and session Open actions.
+- `src/components/ToastRegion.tsx` — dismissible success and error notifications.
 - `src/components/PrepareScreen.tsx` — shared preparation, validation, AI copy, examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
@@ -56,7 +57,7 @@ npm run check        # everything above, in release order
 - `src/lib/parseCoverLetter.ts` — text → `CoverLetter`; reports `documentCount`.
 - `src/lib/contact.ts` — shared contact-line classification.
 - `src/lib/serialize.ts` — `Resume` → text (round-trip).
-- `src/lib/normalize.ts` — legacy draft/template upgrade and preset validation.
+- `src/lib/normalize.ts` — legacy template upgrade and preset validation.
 - `src/lib/metrics.ts` — page sizes and formatting presets → geometry and typography.
 - `src/lib/measure.ts` — Helvetica AFM widths and wrapping.
 - `src/lib/paginate.ts` — line-boundary pagination with keep-with-next.
@@ -66,7 +67,7 @@ npm run check        # everything above, in release order
 - `src/lib/aiInstructions.ts` — parser-generated AI instruction templates.
 - `src/lib/content.ts` — content strings for PDF/DOCX parity checks.
 - `src/lib/exportPdf.ts` / `exportDocx.ts` — render either document's `Layout`.
-- `src/lib/storage.ts` — versioned drafts for both document types.
+- `src/lib/storage.ts` — validated one-time cleanup of v0.1.x draft entries.
 - `src/components/FormattingPanel.tsx` — document-specific formatting controls.
 - `src/App.tsx` — state wiring only.
 
@@ -77,11 +78,11 @@ Full design: `ARCHITECTURE.md`.
 1. **One layout per document.** Preview and both exporters consume `layoutResume` or `layoutCoverLetter`. Never re-paginate in an exporter.
 2. **Points everywhere.** Page geometry and typography use pt. CSS uses `pt`; jsPDF uses pt.
 3. **Preserve content.** Both parsers must not summarize or rewrite text.
-4. **No I/O.** No network, backend, auth, analytics, cloud storage, or AI. The only persistence is `localStorage`.
+4. **No document persistence.** No network, backend, auth, analytics, cloud storage, or AI. Documents live in memory for the session; only the theme is stored in `localStorage`.
 5. **Real text exports.** Never rasterize a page.
-6. **Preparation replaces, never merges.** Keep the multiple-heading rejection and confirmation before replacing an existing draft.
-7. **Document selection first, never fabricated.** Build always opens preparation. Continue Saved is the only path from the landing page into an existing workspace.
-8. **Independent documents.** Resume and cover letter drafts use separate keys and templates. Building one must not change the other.
+6. **Preparation replaces, never merges.** Keep the multiple-heading rejection and replace the previous in-memory document without a confirmation dialog.
+7. **Document selection first, never fabricated.** Build always opens preparation. Open resume / Open cover letter are the only paths from the landing page into an existing workspace.
+8. **Independent session documents.** Resume and cover letter state use separate models and templates. Building one must not change the other.
 9. **AI instructions are generated.** Never hand-maintain a second template; update parser aliases and let the drift tests verify.
 10. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.
 11. **Theme is interface-only.** Use tokens from `styles/tokens.css`; never theme document pages, PDF, or DOCX.
@@ -90,7 +91,7 @@ Full design: `ARCHITECTURE.md`.
 ## Working agreement
 
 - Make focused changes and run `npm run check` before claiming completion.
-- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, independent drafts, matching-letter reuse, and theme persistence are the critical surfaces.
+- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, matching-letter reuse, legacy cleanup, and theme persistence are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.

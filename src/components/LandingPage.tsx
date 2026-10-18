@@ -5,8 +5,8 @@ interface LandingPageProps {
   hasCoverLetter: boolean;
   onResume: () => void;
   onCoverLetter: () => void;
-  onContinueResume: () => void;
-  onContinueCoverLetter: () => void;
+  onOpenResume: () => void;
+  onOpenCoverLetter: () => void;
 }
 
 export function LandingPage({
@@ -14,8 +14,8 @@ export function LandingPage({
   hasCoverLetter,
   onResume,
   onCoverLetter,
-  onContinueResume,
-  onContinueCoverLetter,
+  onOpenResume,
+  onOpenCoverLetter,
 }: LandingPageProps) {
   return (
     <main className="landing" id="main">
@@ -39,7 +39,6 @@ export function LandingPage({
               <span className="landing-icon" aria-hidden="true">
                 <Icon name="fileText" size={26} />
               </span>
-              {hasResume ? <span className="landing-saved">Saved draft</span> : null}
             </div>
 
             <div className="landing-card-body">
@@ -57,8 +56,8 @@ export function LandingPage({
                 </span>
               </button>
               {hasResume ? (
-                <button type="button" className="landing-card-continue" onClick={onContinueResume}>
-                  Continue Saved Resume
+                <button type="button" className="landing-card-continue" onClick={onOpenResume}>
+                  Open resume
                 </button>
               ) : null}
             </div>
@@ -69,7 +68,6 @@ export function LandingPage({
               <span className="landing-icon" aria-hidden="true">
                 <Icon name="mail" size={26} />
               </span>
-              {hasCoverLetter ? <span className="landing-saved">Saved draft</span> : null}
             </div>
 
             <div className="landing-card-body">
@@ -87,12 +85,8 @@ export function LandingPage({
                 </span>
               </button>
               {hasCoverLetter ? (
-                <button
-                  type="button"
-                  className="landing-card-continue"
-                  onClick={onContinueCoverLetter}
-                >
-                  Continue Saved Cover Letter
+                <button type="button" className="landing-card-continue" onClick={onOpenCoverLetter}>
+                  Open cover letter
                 </button>
               ) : null}
             </div>

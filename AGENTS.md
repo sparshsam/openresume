@@ -5,7 +5,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-18)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.4 landing and navigation release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
+- **Release:** v0.1.5 session-based UX release is committed locally; the v0.1.2 tag and pre-release remain the live GitHub release. Production is still v0.1.2 until deployment approval.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://openresume-sigma.vercel.app — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; default Vercel domain; no environment variables.
@@ -24,13 +24,14 @@ Produce consistent, professional resumes and cover letters from structured text 
 - The preview and the two exports of each document share one `Layout`.
 - Pagination never duplicates or drops a line, and no blank pages are emitted.
 - Content is preserved unless the user edits it.
-- Preparation replaces the selected document; multiple top-level headings are rejected and replacement requires confirmation.
-- No draft means preparation; the app never fabricates a document.
-- Build always means preparation; a saved draft is reached only through Continue Saved.
-- Resume and cover letter drafts are independent, with separate storage keys and templates.
+- Preparation replaces the selected in-memory document without confirmation; multiple top-level headings are rejected.
+- No document means preparation; the app never fabricates a document.
+- Build always means preparation; a session document is reached only through Open resume / Open cover letter.
+- Resume and cover letter state are independent in memory, with separate models and templates.
+- Documents never enter `localStorage` or `sessionStorage`; only the theme preference is stored.
 - Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
 - Interface themes never change document, PDF, or DOCX colors.
-- No runtime network calls and no storage beyond `localStorage`.
+- No runtime network calls and no document storage.
 - AI instructions are generated from parser aliases and must remain drift-tested.
 - PDF text is selectable; DOCX text is editable and contains every content string.
 
@@ -50,11 +51,12 @@ Produce consistent, professional resumes and cover letters from structured text 
 | Cover letter layout         | `src/lib/coverLetterLayout.ts`, `tests/coverLetterLayout.test.ts`                       |
 | PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`, `tests/exportCoverLetter.test.ts`    |
 | DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`, `tests/exportCoverLetter.test.ts`  |
-| Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/usePersistedDocument.ts`, `tests/storage.test.ts`      |
+| Legacy cleanup and schema   | `src/lib/storage.ts`, `tests/storage.test.ts`                                           |
 | Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md`        |
 | Preparation validation      | `src/components/PrepareScreen.tsx`, `src/App.tsx`, `tests/App.test.tsx`                 |
 | Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                     |
 | Landing cards and copy      | `src/components/LandingPage.tsx`, `src/styles/globals.css`, `src/styles/tokens.css`     |
+| Feedback and toasts         | `src/components/ToastRegion.tsx`, `src/App.tsx`, `src/styles/globals.css`               |
 | Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                   |
 | Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                   |
 | Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`         |
@@ -76,14 +78,15 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - PDF text can be selected.
 - DOCX opens and paragraphs are editable.
 - Page count matches the preview on US Letter, A4, and US Legal for both documents.
-- A second build replaces only the selected document, after confirmation.
+- A second build replaces only the selected document, without a confirmation dialog.
 - Formatting changes appear in the preview and both exports, and document-specific controls are visible only where relevant.
-- First launch shows document selection; Build opens preparation regardless of saved drafts.
-- Continue Saved opens the matching workspace without changing the draft.
+- First launch shows document selection; Build opens preparation regardless of session documents.
+- Open resume / Open cover letter return to existing workspaces without changing either document.
 - Copy AI Instructions returns the complete template, and Load Example does not copy.
 - Create matching cover letter reuses identity/contact and leaves the resume unchanged.
-- Resume and cover letter drafts persist independently across reloads.
-- v0.1.2 resume drafts still load.
+- Both documents coexist across navigation and neither survives a reload.
+- No document content appears in `localStorage`; the theme preference still does.
+- Toasts and inline validation replace all native alerts; dismiss notifications with the keyboard.
 - Light, dark, and system themes work; document pages keep fixed colors.
 - Header, landing, preparation, and footer remain usable at 375px.
 

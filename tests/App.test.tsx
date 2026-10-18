@@ -20,14 +20,6 @@ function renderApp() {
   );
 }
 
-function seedResume(resume = createSampleResume()) {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(resume));
-}
-
-function seedCoverLetter(letter = createSampleCoverLetter()) {
-  localStorage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify(letter));
-}
-
 function installClipboardMock() {
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
@@ -52,10 +44,9 @@ async function openPrepare(
   user: ReturnType<typeof userEvent.setup>,
   kind: 'resume' | 'coverLetter',
 ) {
-  renderApp();
   await user.click(
     screen.getByRole('button', {
-      name: kind === 'resume' ? /Build Resume/i : /Build Cover Letter/i,
+      name: kind === 'resume' ? 'Build Resume' : 'Build Cover Letter',
     }),
   );
 }
@@ -77,14 +68,27 @@ async function buildDocument(
   );
 }
 
-async function openSavedResume(user: ReturnType<typeof userEvent.setup>) {
+async function renderAndBuild(
+  user: ReturnType<typeof userEvent.setup>,
+  kind: 'resume' | 'coverLetter',
+  text: string,
+) {
   renderApp();
-  await user.click(screen.getByRole('button', { name: 'Continue Saved Resume' }));
+  await buildDocument(user, kind, text);
 }
 
-async function openSavedCoverLetter(user: ReturnType<typeof userEvent.setup>) {
-  renderApp();
-  await user.click(screen.getByRole('button', { name: 'Continue Saved Cover Letter' }));
+async function buildSampleResume(user: ReturnType<typeof userEvent.setup>) {
+  await renderAndBuild(user, 'resume', SAMPLE_RESUME_TEXT);
+}
+
+async function buildSampleCoverLetter(user: ReturnType<typeof userEvent.setup>) {
+  await renderAndBuild(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
+}
+
+async function goHome(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(
+    screen.getByRole('button', { name: /OpenResume home|Back to document selection/ }),
+  );
 }
 
 beforeEach(() => {
@@ -92,7 +96,6 @@ beforeEach(() => {
   document.documentElement.removeAttribute('data-theme');
   document.documentElement.style.colorScheme = '';
   mockSystemTheme(false);
-  window.confirm = () => true;
   writeText.mockReset().mockResolvedValue(undefined);
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
@@ -101,7 +104,7 @@ beforeEach(() => {
 });
 
 describe('landing and navigation', () => {
-  it('shows the two document options without saved drafts', () => {
+  it('shows the two document choices before either document exists', () => {
     renderApp();
 
     expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
@@ -109,10 +112,8 @@ describe('landing and navigation', () => {
     expect(screen.getByRole('heading', { name: 'Cover Letter' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Build Resume' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Build Cover Letter' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Continue Saved Resume' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Continue Saved Cover Letter' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open resume' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open cover letter' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Formatting' })).not.toBeInTheDocument();
   });
 
@@ -132,11 +133,10 @@ describe('landing and navigation', () => {
     expect(screen.getByLabelText('Cover letter text')).toHaveValue('');
   });
 
-  it('always opens preparation from Build Resume when a resume draft exists', async () => {
+  it('Build Resume always opens preparation when a resume exists in this session', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    renderApp();
-    const saved = localStorage.getItem(DRAFT_KEY);
+    await buildSampleResume(user);
+    await goHome(user);
 
     await user.click(screen.getByRole('button', { name: 'Build Resume' }));
 
@@ -145,96 +145,113 @@ describe('landing and navigation', () => {
     expect(screen.getByRole('button', { name: 'Copy AI Instructions' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Load Example' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Build Resume' })).toBeInTheDocument();
-    expect(localStorage.getItem(DRAFT_KEY)).toBe(saved);
   });
 
-  it('always opens preparation from Build Cover Letter when a draft exists', async () => {
+  it('Build Cover Letter always opens preparation when a letter exists', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedCoverLetter();
-    renderApp();
-    const saved = localStorage.getItem(COVER_LETTER_DRAFT_KEY);
+    await buildSampleCoverLetter(user);
+    await goHome(user);
 
     await user.click(screen.getByRole('button', { name: 'Build Cover Letter' }));
 
     expect(screen.getByRole('heading', { name: 'Create your cover letter' })).toBeInTheDocument();
     expect(screen.getByLabelText('Cover letter text')).toHaveValue('');
-    expect(localStorage.getItem(COVER_LETTER_DRAFT_KEY)).toBe(saved);
   });
 
-  it('continues each saved draft independently', async () => {
+  it('keeps both documents available while navigating in one session', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    seedCoverLetter();
     renderApp();
 
-    expect(screen.getAllByText('Saved draft')).toHaveLength(2);
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+    const resumeName = screen.getByLabelText('Name');
+    await user.clear(resumeName);
+    await user.type(resumeName, 'Session Resumer');
 
-    await user.click(screen.getByRole('button', { name: 'Continue Saved Resume' }));
-    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+    await goHome(user);
+    await buildDocument(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
 
-    await user.click(screen.getByRole('button', { name: 'Back to document selection' }));
-    await user.click(screen.getByRole('button', { name: 'Continue Saved Cover Letter' }));
+    await goHome(user);
+    expect(screen.getByRole('button', { name: 'Open resume' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open cover letter' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open resume' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Session Resumer');
+
+    await goHome(user);
+    await user.click(screen.getByRole('button', { name: 'Open cover letter' }));
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
-    expect(screen.getByLabelText('Position or subject (optional)')).toHaveValue(
-      'Senior Product Engineer',
-    );
   });
 
-  it('keeps a saved draft after leaving preparation', async () => {
+  it('keeps the current document when leaving preparation and returning', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    renderApp();
-    const saved = localStorage.getItem(DRAFT_KEY);
+    await buildSampleResume(user);
 
-    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
+    await user.click(screen.getByRole('button', { name: 'New resume' }));
+    expect(screen.getByRole('heading', { name: 'Create your resume' })).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /^← Back$/ }));
-
-    expect(screen.getByRole('button', { name: 'Continue Saved Resume' })).toBeInTheDocument();
-    expect(localStorage.getItem(DRAFT_KEY)).toBe(saved);
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
   });
 
-  it('confirms before replacing a saved draft built from the landing page', async () => {
+  it('replaces a document without confirmation', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    renderApp();
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'New resume' }));
 
-    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
     fireEvent.change(screen.getByLabelText('Resume text'), {
       target: { value: '# Replacement\nreplacement@example.com' },
     });
 
-    const confirm = vi.fn(() => false);
-    window.confirm = confirm;
+    const confirm = vi.spyOn(window, 'confirm');
+    const alert = vi.spyOn(window, 'alert');
+    const prompt = vi.spyOn(window, 'prompt');
+
     await user.click(screen.getByRole('button', { name: 'Build Resume' }));
 
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('heading', { name: 'Create your resume' })).toBeInTheDocument();
-    expect(localStorage.getItem(DRAFT_KEY)).toContain('Jordan Avery');
-
-    window.confirm = vi.fn(() => true);
-    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(alert).not.toHaveBeenCalled();
+    expect(prompt).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Name')).toHaveValue('Replacement');
   });
 
-  it('loads a v0.1.2 resume draft safely', async () => {
-    const user = userEvent.setup({ writeToClipboard: false });
-    const legacy = {
-      ...createSampleResume(),
-      template: { pageSize: 'a4', accent: '#14532D' },
-    };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(legacy));
+  it('does not restore legacy drafts after reload and identifies them safely', async () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(createSampleResume()));
+    localStorage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify(createSampleCoverLetter()));
+    localStorage.setItem('another-app:data', '{"keep":true}');
+    localStorage.setItem(THEME_KEY, 'dark');
+
     renderApp();
 
-    expect(screen.getAllByText('Saved draft')).toHaveLength(1);
-    await user.click(screen.getByRole('button', { name: 'Continue Saved Resume' }));
-    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+    expect(screen.queryByRole('button', { name: 'Open resume' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open cover letter' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+      expect(localStorage.getItem(COVER_LETTER_DRAFT_KEY)).toBeNull();
+    });
+    expect(localStorage.getItem('another-app:data')).toBe('{"keep":true}');
+    expect(localStorage.getItem(THEME_KEY)).toBe('dark');
+  });
+
+  it('keeps session documents out of localStorage across a remount', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const { unmount } = renderApp();
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(localStorage.getItem(COVER_LETTER_DRAFT_KEY)).toBeNull();
+
+    unmount();
+    renderApp();
+
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open resume' })).not.toBeInTheDocument();
   });
 });
 
 describe('resume workflow', () => {
   it('builds a resume from prepared text', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    await buildDocument(
+    await renderAndBuild(
       user,
       'resume',
       ['# Prepared Person', 'prepared@example.com', '', '## SUMMARY', 'Prepared body.'].join('\n'),
@@ -243,28 +260,25 @@ describe('resume workflow', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Prepared Person');
     expect(screen.getByText('Prepared Person')).toBeInTheDocument();
     expect(screen.getAllByText(/Prepared body/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Resume built.')).toBeInTheDocument();
   });
 
-  it('edits the resume preview and persists the draft', async () => {
+  it('edits the resume in memory without writing document content to storage', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
+    await buildSampleResume(user);
 
     const name = screen.getByLabelText('Name');
     await user.clear(name);
     await user.type(name, 'Ada Lovelace');
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
 
-    await waitFor(() => {
-      const raw = localStorage.getItem(DRAFT_KEY) ?? '';
-      expect(raw).toContain('Ada Lovelace');
-    });
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(screen.queryByText(/Saved locally|Saving…|No saved draft/)).not.toBeInTheDocument();
   });
 
   it('shows resume formatting controls', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
+    await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
 
     expect(screen.getByLabelText('Bullet spacing')).toBeInTheDocument();
@@ -272,56 +286,32 @@ describe('resume workflow', () => {
     expect(screen.queryByLabelText('Paragraph spacing')).not.toBeInTheDocument();
   });
 
-  it('returns to preparation on New and preserves the draft on Back', async () => {
+  it('rejects concatenated resumes with inline validation', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
-
-    await user.click(screen.getByRole('button', { name: 'New resume' }));
-    expect(screen.getByRole('heading', { name: 'Create your resume' })).toBeInTheDocument();
-    expect(localStorage.getItem(DRAFT_KEY)).toContain('Jordan Avery');
-
-    await user.click(screen.getByRole('button', { name: /^← Back$/ }));
-    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
-  });
-
-  it('confirms before replacing an existing resume', async () => {
-    const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
-    await user.click(screen.getByRole('button', { name: 'New resume' }));
-
-    const textarea = screen.getByLabelText('Resume text') as HTMLTextAreaElement;
-    fireEvent.change(textarea, {
-      target: { value: '# Replacement\nreplacement@example.com' },
-    });
-
-    window.confirm = vi.fn(() => false);
-    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
-    expect(screen.getByRole('heading', { name: 'Create your resume' })).toBeInTheDocument();
-    expect(window.confirm).toHaveBeenCalled();
-
-    window.confirm = vi.fn(() => true);
-    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
-    expect(screen.getByLabelText('Name')).toHaveValue('Replacement');
-  });
-
-  it('rejects concatenated resumes', async () => {
-    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
     await openPrepare(user, 'resume');
-    const textarea = screen.getByLabelText('Resume text');
-    fireEvent.change(textarea, {
+    fireEvent.change(screen.getByLabelText('Resume text'), {
       target: { value: '# First\nfirst@example.com\n\n# Second\nsecond@example.com' },
     });
     await user.click(screen.getByRole('button', { name: 'Build Resume' }));
+
     expect(screen.getByRole('alert')).toHaveTextContent(/2 resume headings/);
+  });
+
+  it('requires content before building', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await openPrepare(user, 'resume');
+    await user.click(screen.getByRole('button', { name: 'Build Resume' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/Paste resume text before building/);
   });
 });
 
 describe('cover letter workflow', () => {
   it('builds and edits a cover letter', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    await buildDocument(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
+    await buildSampleCoverLetter(user);
 
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
     expect(screen.getByLabelText('Position or subject (optional)')).toHaveValue(
@@ -339,12 +329,13 @@ describe('cover letter workflow', () => {
     await user.clear(paragraph);
     await user.type(paragraph, 'Updated letter body.');
     expect(within(preview).getByText(/Updated letter body/)).toBeInTheDocument();
+
+    expect(localStorage.getItem(COVER_LETTER_DRAFT_KEY)).toBeNull();
   });
 
   it('adds and removes body paragraphs', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedCoverLetter();
-    await openSavedCoverLetter(user);
+    await buildSampleCoverLetter(user);
 
     expect(screen.getAllByLabelText(/^Paragraph \d+$/)).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Add paragraph' }));
@@ -356,8 +347,7 @@ describe('cover letter workflow', () => {
 
   it('shows cover letter formatting controls', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedCoverLetter();
-    await openSavedCoverLetter(user);
+    await buildSampleCoverLetter(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
 
     expect(screen.getByLabelText('Paragraph spacing')).toBeInTheDocument();
@@ -365,31 +355,11 @@ describe('cover letter workflow', () => {
     expect(screen.queryByLabelText('Column spacing')).not.toBeInTheDocument();
   });
 
-  it('persists resume and cover letter drafts independently', async () => {
-    const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    seedCoverLetter();
-    renderApp();
-    await user.click(screen.getByRole('button', { name: 'Continue Saved Cover Letter' }));
-
-    const position = screen.getByLabelText('Position or subject (optional)');
-    await user.clear(position);
-    await user.type(position, 'Staff Engineer');
-
-    await waitFor(() => {
-      const letterRaw = localStorage.getItem(COVER_LETTER_DRAFT_KEY) ?? '';
-      const resumeRaw = localStorage.getItem(DRAFT_KEY) ?? '';
-      expect(letterRaw).toContain('Staff Engineer');
-      expect(resumeRaw).toContain('Jordan Avery');
-      expect(resumeRaw).not.toContain('Staff Engineer');
-    });
-  });
-
   it('validates a cover letter without a body', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
     await openPrepare(user, 'coverLetter');
-    const textarea = screen.getByLabelText('Cover letter text');
-    fireEvent.change(textarea, {
+    fireEvent.change(screen.getByLabelText('Cover letter text'), {
       target: { value: '# A Person\n\n## DATE\nOctober 18, 2026' },
     });
     await user.click(screen.getByRole('button', { name: 'Build Cover Letter' }));
@@ -400,9 +370,7 @@ describe('cover letter workflow', () => {
 describe('matching cover letter flow', () => {
   it('reuses resume identity without changing the resume', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
-    const before = localStorage.getItem(DRAFT_KEY);
+    await buildSampleResume(user);
 
     await user.click(screen.getByRole('button', { name: /Create matching cover letter/i }));
     expect(screen.getByRole('heading', { name: 'Create your cover letter' })).toBeInTheDocument();
@@ -413,7 +381,7 @@ describe('matching cover letter flow', () => {
       screen.getByText(/Applicant details from your resume are pre-filled/),
     ).toBeInTheDocument();
 
-    const complete = `${textarea.value.replace('## BODY\n', '## BODY\nI am applying for this role.')}`;
+    const complete = textarea.value.replace('## BODY\n', '## BODY\nI am applying for this role.');
     fireEvent.change(textarea, { target: { value: complete } });
     await user.click(screen.getByRole('button', { name: 'Build Cover Letter' }));
 
@@ -422,25 +390,14 @@ describe('matching cover letter flow', () => {
 
     await user.click(screen.getByRole('button', { name: /Back to resume/ }));
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
-
-    const after = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as {
-      header?: { name?: string };
-      sections?: unknown[];
-    };
-    const original = JSON.parse(before ?? '{}') as {
-      header?: { name?: string };
-      sections?: unknown[];
-    };
-    expect(after.header?.name).toBe(original.header?.name);
-    expect(after.sections).toEqual(original.sections);
-    expect(JSON.stringify(after)).not.toContain('I am applying for this role');
+    expect(screen.getAllByText(/Product-minded software generalist/).length).toBeGreaterThan(0);
   });
 
   it('offers resume details from the regular cover letter preparation', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    renderApp();
-    await user.click(screen.getByRole('button', { name: /Build Cover Letter/i }));
+    await buildSampleResume(user);
+    await goHome(user);
+    await openPrepare(user, 'coverLetter');
 
     await user.click(screen.getByRole('button', { name: 'Use resume details' }));
     const textarea = screen.getByLabelText('Cover letter text') as HTMLTextAreaElement;
@@ -449,36 +406,50 @@ describe('matching cover letter flow', () => {
   });
 });
 
-describe('AI instructions and examples', () => {
+describe('feedback and AI instructions', () => {
   it('copies the complete resume instructions with feedback', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     installClipboardMock();
+    renderApp();
     await openPrepare(user, 'resume');
     await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
 
     expect(writeText).toHaveBeenCalledWith(RESUME_AI_INSTRUCTIONS);
-    expect(screen.getByRole('status')).toHaveTextContent(/AI instructions copied/);
+    expect(await screen.findByText('AI instructions copied.')).toBeInTheDocument();
   });
 
   it('copies the complete cover letter instructions', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     installClipboardMock();
+    renderApp();
     await openPrepare(user, 'coverLetter');
     await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
     expect(writeText).toHaveBeenCalledWith(COVER_LETTER_AI_INSTRUCTIONS);
   });
 
-  it('shows an error when copying fails', async () => {
+  it('shows an error toast when copying fails', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     installClipboardMock();
     writeText.mockRejectedValueOnce(new Error('blocked'));
+    renderApp();
     await openPrepare(user, 'resume');
     await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
+
     expect(await screen.findByText(/Could not copy/)).toBeInTheDocument();
+  });
+
+  it('dismisses a toast accessibly', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    expect(screen.getByText('Resume built.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss notification' }));
+    expect(screen.queryByText('Resume built.')).not.toBeInTheDocument();
   });
 
   it('loads the example without copying instructions', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
     await openPrepare(user, 'resume');
     await user.click(screen.getByRole('button', { name: 'Load Example' }));
 
@@ -486,13 +457,27 @@ describe('AI instructions and examples', () => {
     expect(writeText).not.toHaveBeenCalled();
     expect(screen.queryByText('Example input format')).not.toBeInTheDocument();
   });
+
+  it('supports Escape and Ctrl+Enter from preparation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await openPrepare(user, 'resume');
+
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+
+    await openPrepare(user, 'resume');
+    await user.click(screen.getByRole('button', { name: 'Load Example' }));
+    const textarea = screen.getByLabelText('Resume text');
+    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+  });
 });
 
 describe('header, theme, and footer', () => {
   it('shows context actions and the document label in the workspace', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
+    await buildSampleResume(user);
 
     expect(screen.getByText('Resume')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New resume' })).toBeInTheDocument();
@@ -529,8 +514,7 @@ describe('header, theme, and footer', () => {
 
   it('keeps the resume document colors fixed in dark mode', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
-    seedResume();
-    await openSavedResume(user);
+    await buildSampleResume(user);
     const preview = screen.getByLabelText('Resume preview');
     const name = within(preview).getByText('Jordan Avery');
     const before = name.style.color;

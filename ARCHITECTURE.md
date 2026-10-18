@@ -8,11 +8,11 @@ OpenResume is a client-only React application. Its correctness lives in a pure, 
 2. **Points are the unit.** Page geometry, typography, and coordinates are expressed in PostScript points. CSS renders the same numbers with `pt` units; jsPDF consumes them directly.
 3. **Content is preserved.** Both parsers never rewrite, summarize, or normalize user text beyond structural whitespace. Only explicit edits change content.
 4. **Preparation replaces, never merges.** A new document fully replaces that document's model; concatenated documents are rejected.
-5. **Document-selection first, never fabricated.** The landing page lets the user choose a resume or cover letter. Build always opens preparation; saved drafts are reached only through Continue Saved. No sample document is invented.
-6. **No hidden I/O.** There are no runtime network calls, no server, and no telemetry. The only persistence is `localStorage`.
+5. **Document-selection first, never fabricated.** The landing page lets the user choose a resume or cover letter. Build always opens preparation; documents from the current session are reached only through their Open action. No sample document is invented.
+6. **No hidden I/O.** There are no runtime network calls, no server, and no telemetry. Documents live in memory; the only persistence is the interface theme preference.
 7. **Exports contain real text and identical content.** Pages are never rasterized. PDF text is selectable; DOCX paragraphs are editable; both carry every content string.
 8. **Interface theme never touches the document.** Light/dark tokens style the shell only. The resume and cover letter pages and exports keep fixed colors.
-9. **Independent documents.** Resume and cover letter drafts live under separate storage keys and can use different formatting. Building one never changes the other.
+9. **Independent session documents.** Resume and cover letter models are separate in-memory state and can use different formatting. Building one never changes the other.
 10. **AI instructions cannot drift.** Templates are generated from parser constants and tested against every alias.
 
 ## Pipeline
@@ -31,41 +31,42 @@ flowchart LR
   G --> H[Preview]
   G --> I[exportPdf]
   G --> J[exportDocx]
-  C --> K[localStorage resume draft v1]
-  M --> N[localStorage cover-letter draft v1]
+  C --> K[in-memory resume]
+  M --> N[in-memory cover letter]
+  K --> O[one-time legacy draft cleanup]
+  N --> O
 ```
 
 ## Modules
 
-| Module                                             | Responsibility                                       | Must not                     |
-| -------------------------------------------------- | ---------------------------------------------------- | ---------------------------- |
-| `src/components/LandingPage.tsx`                   | Document selection and saved-draft indicators        | Own document state           |
-| `src/components/PrepareScreen.tsx`                 | Shared preparation, validation, AI copy, examples    | Parse with a wrong parser    |
-| `src/components/Header.tsx`                        | Brand, context actions, status, theme slot           | Own document state           |
-| `src/components/ThemeProvider.tsx`                 | Resolve and persist light/dark theme                 | Affect document colors       |
-| `src/lib/theme.ts`                                 | Theme context, key, and system detection             | Render UI                    |
-| `src/components/Footer.tsx`                        | Kovina attribution, links, and version               | Invent branding              |
-| `src/lib/appMeta.ts`                               | Build-time application version                       | Read the network             |
-| `src/lib/parse.ts`                                 | Deterministic text → `Resume`; warnings, no throwing | Know about React or layout   |
-| `src/lib/parseCoverLetter.ts`                      | Deterministic text → `CoverLetter`; warnings         | Know about React or layout   |
-| `src/lib/aiInstructions.ts`                        | Parser-generated AI instruction templates            | Duplicate parser rules       |
-| `src/lib/coverLetterLayout.ts`                     | Single-column letter layout and pagination           | Recalculate resume layout    |
-| `src/lib/coverLetterEdits.ts`                      | Pure cover letter edit helpers                       | Mutate inputs                |
-| `src/lib/coverLetterScaffold.ts`                   | Reuse resume identity in a letter scaffold           | Generate letter body content |
-| `src/lib/serialize.ts`                             | `Resume` → canonical input text (round-trip)         | Lose information             |
-| `src/lib/normalize.ts`                             | Upgrade legacy templates and reject invalid presets  | Invent unsupported values    |
-| `src/lib/metrics.ts`                               | Presets → page geometry, typography, and spacing     | Read the DOM                 |
-| `src/lib/measure.ts`                               | Helvetica AFM metrics and greedy word wrap           | Depend on the DOM            |
-| `src/lib/paginate.ts`                              | Flow blocks → pages at line boundaries               | Drop or duplicate lines      |
-| `src/lib/layout.ts`                                | Resume flow blocks, header, page assembly            | Render or export             |
-| `src/lib/content.ts`                               | Content strings for resume and letter parity checks  | Render or export             |
-| `src/lib/exportPdf.ts`                             | Draw either `Layout` with jsPDF as selectable text   | Recalculate pagination       |
-| `src/lib/exportDocx.ts`                            | Resume tables and single-column letter documents     | Rasterize or flatten text    |
-| `src/lib/storage.ts`                               | Versioned, guarded drafts for both document types    | Throw on unavailable storage |
-| `src/lib/resumeEdits.ts`                           | Pure immutable resume edit helpers                   | Mutate inputs                |
-| `src/hooks/usePersistedDocument.ts`                | Generic debounced local draft persistence            | Know document shapes         |
-| `src/hooks/useDraft.ts` / `useCoverLetterDraft.ts` | Typed document wrappers                              | Hold layout state            |
-| `src/App.tsx`                                      | Landing/prepare/workspace state and both documents   | Contain layout logic         |
+| Module                             | Responsibility                                       | Must not                     |
+| ---------------------------------- | ---------------------------------------------------- | ---------------------------- |
+| `src/components/LandingPage.tsx`   | Document selection and session Open actions          | Own document state           |
+| `src/components/ToastRegion.tsx`   | Dismissible success and error notifications          | Hold document state          |
+| `src/components/PrepareScreen.tsx` | Shared preparation, validation, AI copy, examples    | Parse with a wrong parser    |
+| `src/components/Header.tsx`        | Brand, context actions, status, theme slot           | Own document state           |
+| `src/components/ThemeProvider.tsx` | Resolve and persist light/dark theme                 | Affect document colors       |
+| `src/lib/theme.ts`                 | Theme context, key, and system detection             | Render UI                    |
+| `src/components/Footer.tsx`        | Kovina attribution, links, and version               | Invent branding              |
+| `src/lib/appMeta.ts`               | Build-time application version                       | Read the network             |
+| `src/lib/parse.ts`                 | Deterministic text → `Resume`; warnings, no throwing | Know about React or layout   |
+| `src/lib/parseCoverLetter.ts`      | Deterministic text → `CoverLetter`; warnings         | Know about React or layout   |
+| `src/lib/aiInstructions.ts`        | Parser-generated AI instruction templates            | Duplicate parser rules       |
+| `src/lib/coverLetterLayout.ts`     | Single-column letter layout and pagination           | Recalculate resume layout    |
+| `src/lib/coverLetterEdits.ts`      | Pure cover letter edit helpers                       | Mutate inputs                |
+| `src/lib/coverLetterScaffold.ts`   | Reuse resume identity in a letter scaffold           | Generate letter body content |
+| `src/lib/serialize.ts`             | `Resume` → canonical input text (round-trip)         | Lose information             |
+| `src/lib/normalize.ts`             | Upgrade legacy templates and reject invalid presets  | Invent unsupported values    |
+| `src/lib/metrics.ts`               | Presets → page geometry, typography, and spacing     | Read the DOM                 |
+| `src/lib/measure.ts`               | Helvetica AFM metrics and greedy word wrap           | Depend on the DOM            |
+| `src/lib/paginate.ts`              | Flow blocks → pages at line boundaries               | Drop or duplicate lines      |
+| `src/lib/layout.ts`                | Resume flow blocks, header, page assembly            | Render or export             |
+| `src/lib/content.ts`               | Content strings for resume and letter parity checks  | Render or export             |
+| `src/lib/exportPdf.ts`             | Draw either `Layout` with jsPDF as selectable text   | Recalculate pagination       |
+| `src/lib/exportDocx.ts`            | Resume tables and single-column letter documents     | Rasterize or flatten text    |
+| `src/lib/storage.ts`               | Validate and remove identified legacy draft entries  | Touch unrelated storage      |
+| `src/lib/resumeEdits.ts`           | Pure immutable resume edit helpers                   | Mutate inputs                |
+| `src/App.tsx`                      | Landing/prepare/workspace state and both documents   | Contain layout logic         |
 
 ## Data model
 
@@ -86,7 +87,7 @@ Section IDs and parser-created item IDs are deterministic, so repeated parses of
 - `body[]` — ordered body paragraphs.
 - `template` — the same page size, accent, and format shape as the resume.
 
-Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have separate parsers, layouts, editors, and storage keys.
+Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have separate parsers, layouts, editors, and in-memory state.
 
 ## Layout and pagination
 
@@ -113,7 +114,7 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 - Preparation surfaces start empty; a new document cannot append to the previous one.
 - `parseResume` and `parseCoverLetter` return `documentCount`. Text with more than one top-level `#` heading is rejected before it can replace the document.
 - Building replaces only the selected document's model and preserves its current template (page size and formatting). The other document is untouched.
-- Replacement requires explicit confirmation when a draft already exists.
+- Building replaces the previous document of that type in memory without a confirmation dialog.
 - `collectContentStrings()` and `collectCoverLetterContentStrings()` extract every field from their models and are used to assert PDF/DOCX parity.
 - The AI instruction templates are generated from parser alias constants and covered by drift tests.
 
@@ -121,18 +122,18 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 
 `App` owns a three-value view state and an active document kind:
 
-| View        | When                                      | Content                                              |
-| ----------- | ----------------------------------------- | ---------------------------------------------------- |
-| `landing`   | App start, Home, or no active document    | `LandingPage` with Build Resume / Build Cover Letter |
-| `prepare`   | New, Import-like replacement, or no draft | `PrepareScreen` for the active kind                  |
-| `workspace` | An active draft exists                    | Resume or cover letter editor and live preview       |
+| View        | When                                   | Content                                              |
+| ----------- | -------------------------------------- | ---------------------------------------------------- |
+| `landing`   | App start, Home, or no active document | `LandingPage` with Build Resume / Build Cover Letter |
+| `prepare`   | New, replacement, or first build       | `PrepareScreen` for the active kind                  |
+| `workspace` | A session document exists              | Resume or cover letter editor and live preview       |
 
-- `useDraft` and `useCoverLetterDraft` each return a nullable document. Neither fabricates a sample.
-- The landing card's primary action always opens preparation, with or without a draft.
-- A separate Continue Saved action opens an existing workspace and is rendered only when that draft exists.
+- `App` owns nullable resume and cover letter state initialized to `null`; neither fabricates a sample.
+- The landing card's primary action always opens preparation, with or without a session document.
+- A separate Open action opens an existing workspace and is rendered only while that document exists in memory.
 - `PrepareScreen` requires exactly one top-level `#` heading and validates the selected parser's required fields. Zero or multiple headings produce a clear error and no state change.
 - A successful build replaces that model, preserves its template (or reuses the resume template for a first cover letter), and switches to the workspace.
-- New returns to preparation without discarding the draft; Back returns to the previous workspace or landing.
+- New returns to preparation without changing the in-memory document; Back returns to the previous workspace or landing.
 - The header hides document actions outside the workspace, showing only branding and the theme toggle.
 - A matching-letter flow opens cover letter preparation with resume identity/contact prefilled and a return path to the resume. The resume is never modified.
 
@@ -148,11 +149,10 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 
 ## State and persistence
 
-- `usePersistedDocument` provides debounced save, visibility flush, and save state; `useDraft` and `useCoverLetterDraft` wrap it for typed documents.
-- Resume drafts use `openresume:draft.v1`; cover letter drafts use `openresume:cover-letter.v1`. Both are versioned and structurally validated (`isResume`, `isCoverLetter`). Corrupt payloads are ignored.
-- Saves are debounced by 400 ms and flushed on `visibilitychange`; nothing is saved while a document is null.
-- Formatting lives in each document's `template`, so it persists with that draft and survives replacement builds.
-- Legacy resume drafts are normalized with defaults, including `paragraphSpacing`.
+- `App` holds `Resume | null` and `CoverLetter | null` in React state. Both survive navigation within the mounted application and disappear when it unmounts or the page reloads.
+- No document content is written to `localStorage`, `sessionStorage`, or IndexedDB.
+- Formatting lives in each document's `template`, so it stays with that document for the session and survives replacement builds.
+- On mount, `clearLegacyDrafts()` checks `openresume:draft.v1` and `openresume:cover-letter.v1`. It removes an entry only when the value parses and validates via `isResume`/`isCoverLetter`; other values and keys are untouched.
 - Theme persistence is independent (`openresume-theme`), so content changes never change the interface theme.
 
 ## Dependency policy
@@ -167,19 +167,19 @@ No state library, router, CSS framework, parser library, or storage wrapper. Add
 
 ## Testing
 
-- Parser, serializer, measurement, pagination, layout, edits, storage, and exports have focused unit tests for both document types.
+- Parser, serializer, measurement, pagination, layout, edits, cleanup, and exports have focused unit tests for both document types.
 - The long-resume and long-letter tests assert every bullet or paragraph appears exactly once across pages.
 - Export tests assert `%PDF`, page count, real text presence, ZIP magic bytes, text inclusion, and resume/letter single-vs-two-column structure.
 - AI instruction tests assert every parser alias appears in the matching template and that the bundled examples parse.
-- Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, copy feedback, examples, independent persistence, matching-letter reuse, confirmation, migration, and theme persistence.
+- Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, toast feedback, examples, coexisting session documents, matching-letter reuse, replacement without confirmation, legacy cleanup, no document persistence, and theme persistence.
 
 ## Extension points
 
 - **Page size.** Add a preset in `metrics.ts`; both layouts consume the resolved metrics.
 - **Templates.** Introduce a template profile that supplies metrics, column ratios, and section defaults; do not fork the pipeline.
 - **Fonts.** Replace the embedded width tables with a font embedded in both the browser and the PDF, keeping measurement and rendering identical.
-- **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, storage key, and preparation validation.
+- **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, in-memory state, and preparation validation.
 
-## Non-goals for v0.1.4
+## Non-goals for v0.1.5
 
 Multi-user accounts, cloud sync, AI content generation, PDF/DOCX import, and multi-template galleries.

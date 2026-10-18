@@ -9,16 +9,14 @@ import type { CoverLetter } from '../types/coverLetter';
 import type { DocumentKind } from '../types/document';
 import type { Resume } from '../types/resume';
 
-type CopyStatus = 'idle' | 'copied' | 'error';
-
 interface PrepareScreenProps {
   kind: DocumentKind;
   initialText?: string;
-  hasExistingDraft: boolean;
   reusedFromResume?: boolean;
   resumeScaffold?: string;
   onBuildResume?: (resume: Resume, warnings: string[]) => void;
   onBuildCoverLetter?: (letter: CoverLetter, warnings: string[]) => void;
+  onNotify?: (message: string, tone?: 'success' | 'error') => void;
   onBack: () => void;
 }
 
@@ -32,28 +30,21 @@ const PLACEHOLDER: Record<DocumentKind, string> = {
 export function PrepareScreen({
   kind,
   initialText,
-  hasExistingDraft,
   reusedFromResume = false,
   resumeScaffold,
   onBuildResume,
   onBuildCoverLetter,
+  onNotify,
   onBack,
 }: PrepareScreenProps) {
   const [text, setText] = useState(initialText ?? '');
   const [error, setError] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const id = window.setTimeout(() => textareaRef.current?.focus(), 30);
     return () => window.clearTimeout(id);
   }, []);
-
-  useEffect(() => {
-    if (copyStatus === 'idle') return;
-    const id = window.setTimeout(() => setCopyStatus('idle'), 3500);
-    return () => window.clearTimeout(id);
-  }, [copyStatus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -119,9 +110,9 @@ export function PrepareScreen({
   const copyInstructions = async () => {
     try {
       await navigator.clipboard.writeText(getAiInstructions(kind));
-      setCopyStatus('copied');
+      onNotify?.('AI instructions copied.');
     } catch {
-      setCopyStatus('error');
+      onNotify?.('Could not copy. Allow clipboard access and try again.', 'error');
     }
   };
 
@@ -145,11 +136,6 @@ export function PrepareScreen({
           <p className="prepare-note">
             Applicant details from your resume are pre-filled. Add the recipient, role, salutation,
             and letter body.
-          </p>
-        ) : null}
-        {hasExistingDraft ? (
-          <p className="prepare-note">
-            Building will replace your saved {label}. You will be asked to confirm.
           </p>
         ) : null}
 
@@ -180,23 +166,13 @@ export function PrepareScreen({
             }}
             spellCheck={false}
             aria-invalid={Boolean(error)}
-            aria-describedby={
-              error ? 'prepare-error' : copyStatus === 'idle' ? 'prepare-help' : 'copy-status'
-            }
+            aria-describedby={error ? 'prepare-error' : 'prepare-help'}
             placeholder={PLACEHOLDER[kind]}
           />
 
           {error ? (
             <p className="prepare-error" id="prepare-error" role="alert">
               {error}
-            </p>
-          ) : copyStatus === 'copied' ? (
-            <p className="prepare-status" id="copy-status" role="status">
-              AI instructions copied. Paste them into your AI assistant.
-            </p>
-          ) : copyStatus === 'error' ? (
-            <p className="prepare-error" id="copy-status" role="status">
-              Could not copy. Allow clipboard access and try again.
             </p>
           ) : (
             <p className="prepare-help" id="prepare-help">

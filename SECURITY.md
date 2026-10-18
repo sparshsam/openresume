@@ -17,9 +17,9 @@ OpenResume is a client-only application. Its security surface is deliberately sm
 - No runtime network requests.
 - No telemetry or third-party scripts.
 - No environment variables or secrets.
-- Drafts are stored only in the current browser's `localStorage`.
+- Documents live in memory for the current session; only the interface theme is stored in `localStorage`.
 
-Relevant reports include cross-site scripting through imported text, unsafe rendering of user content, dependency vulnerabilities with a reachable path, and draft data leaking outside the browser.
+Relevant reports include cross-site scripting through imported text, unsafe rendering of user content, dependency vulnerabilities with a reachable path, and document content leaving the browser through an unintended path.
 
 ## Supported versions
 

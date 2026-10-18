@@ -2,7 +2,7 @@
 
 OpenResume resolves every geometric and typographic value from the active document's `template` through `resolveMetrics()`. Resumes and cover letters each have their own template. The preview, PDF, and DOCX all consume the resulting layout, so a change is applied consistently.
 
-Formatting is content-level: it is saved with that document's draft and is independent of the interface theme. Switching light/dark never changes page size, spacing, preview, PDF, or DOCX output.
+Formatting is content-level: it stays with that document for the current session and is independent of the interface theme. Switching light/dark never changes page size, spacing, preview, PDF, or DOCX output.
 
 ## Page sizes
 
@@ -39,19 +39,17 @@ Resume content width is `page width − 2 × side margin`. The main column keeps
 
 Cover letters use the full content width as a single column.
 
-## Persistence
+## Session behavior
 
-Formatting lives in each document's `template`:
+Formatting lives in each document's `template` in memory:
 
-| Document     | Storage key                  |
-| ------------ | ---------------------------- |
-| Resume       | `openresume:draft.v1`        |
-| Cover letter | `openresume:cover-letter.v1` |
-
-It survives page reloads, replacement builds (the current template is preserved when new content replaces the document), and switching between document types. Changing one document's formatting never changes the other's.
+- It survives navigation and replacement builds while the page stays open; the current template is preserved when new content replaces the document.
+- Changing one document's formatting never changes the other's.
+- It does not survive a reload, and it is never written to `localStorage` along with the document.
+- Loading a legacy stored document is no longer part of the application; the old draft entries are removed when identified.
 
 **Reset to defaults** restores US Letter and every standard preset for the active document.
 
-## Legacy drafts
+## Legacy templates
 
-Resume drafts created by v0.1.0–v0.1.2 may have a template with `pageSize` and `accent` but no complete format. On load, missing or invalid settings are filled with defaults—including `paragraphSpacing: standard`—while a valid existing page size is preserved. The same normalization is applied in tests.
+Resume templates created by v0.1.0–v0.1.2 may have `pageSize` and `accent` but no complete format. `normalizeTemplate` still fills missing or invalid settings with defaults—including `paragraphSpacing: standard`—while preserving a valid existing page size. Unknown or invalid presets always fall back to safe defaults.

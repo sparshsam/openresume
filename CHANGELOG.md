@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] — 2026-10-18
+
+### Changed
+
+- OpenResume is now a session-based document builder. Resume and cover letter content survives navigation within the current session but is not restored after reload.
+- Removed automatic draft persistence, draft badges, Continue Saved actions, automatic restoration, replacement confirmations, and saved-status messaging.
+- New builds replace the previous document of the same type immediately, without a confirmation dialog.
+- Added a lightweight application-native toast system for builds, clipboard copy, formatting reset, and PDF/Word exports.
+- Copy failures and export failures use themed error toasts; structured-content errors remain inline next to the input.
+- The landing page offers **Open resume** / **Open cover letter** for documents created in the current session.
+- Existing `openresume:draft.v1` and `openresume:cover-letter.v1` entries are removed only when their contents validate as OpenResume documents; unrelated storage is untouched.
+
+### Removed
+
+- Native browser `alert` / `confirm` / `prompt` usage.
+- Automatic `localStorage` document persistence and the draft persistence hooks.
+- Saved-draft terminology throughout the interface.
+
 ## [0.1.4] — 2026-10-18
 
 ### Changed

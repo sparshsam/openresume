@@ -4,9 +4,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.4.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.5.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.4 is committed locally pending deployment approval)
+**Live:** https://openresume-sigma.vercel.app (production currently serves v0.1.2; v0.1.5 is committed locally pending deployment approval)
 
 ## Description
 
@@ -14,7 +14,7 @@ OpenResume exists because document updates should not require an account, a subs
 
 Resumes use a fixed two-column layout. Cover letters use a calm single-column business-letter layout. Both support live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
 
-Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Drafts are stored in `localStorage`; exports are generated locally. The app never makes a network request at runtime.
+Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Documents live in memory for the current session only; exports are generated locally. The app never makes a network request at runtime.
 
 The workflow is:
 
@@ -22,22 +22,22 @@ The workflow is:
 Choose document → Prepare content → Build → Edit/Preview → Export
 ```
 
-OpenResume opens on a document-selection screen with two cards: **Resume** and **Cover Letter**. Each card starts a new build in its preparation screen. When a saved draft exists, the card also offers a separate **Continue Saved** action, so starting a new document never bypasses preparation or overwrites saved work.
+OpenResume opens on a document-selection screen with two cards: **Resume** and **Cover Letter**. Each card starts a new build in its preparation screen. A document created in the current session can be reopened from its card with **Open resume** or **Open cover letter**.
 
 ![OpenResume document selection](assets/hero/hero-light.png)
 
-Saved drafts never redirect the primary action: **Build Resume** and **Build Cover Letter** always open preparation, while **Continue Saved Resume** and **Continue Saved Cover Letter** open the existing workspace.
+Documents are session-only. Reloading or closing the page may discard them; nothing is written to `localStorage` except the interface theme. A new build replaces the previous document of the same type without a confirmation dialog.
 
 ## Features
 
-- **Two-card document-selection landing page** for a resume or a cover letter, with separate Build and Continue Saved actions.
+- **Two-card document-selection landing page** for a resume or a cover letter, with Build and session-only Open actions.
 - **Preparation screens** with a large paste area, Copy AI Instructions, Load Example, and inline validation.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
 - **Resume workspace** preserving the fixed two-column template, section ordering, editing, and pagination.
 - **Cover letter workspace** with applicant details, date, recipient, position, salutation, body paragraphs, closing, and signature.
 - **Create matching cover letter** from a resume, reusing applicant identity and contact details without changing the resume.
 - **AI instruction templates** for both document types, generated from the parsers' supported headings and covered by drift tests.
-- **Independent local drafts** for resumes and cover letters, with safe v0.1.2 resume-draft migration.
+- **Session-based documents** for resumes and cover letters; navigating within the app preserves both, while reloads start clean.
 - **US Letter, A4, and US Legal** page sizes, switchable before export.
 - **Document-specific formatting controls** for margins, font size, line spacing, section spacing, content density, and the controls relevant to each document type.
 - **Live, page-aware preview** rendered from the same layout coordinates as the exports.
@@ -198,7 +198,7 @@ The default is **US Letter (8.5 × 11 in)**. The **Formatting** panel also offer
 | Column spacing    | Narrow, Standard, Wide      | Resume       |
 | Content density   | Compact, Balanced, Spacious | Both         |
 
-Formatting applies to the preview, PDF, and DOCX, and is saved with each document's local draft. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
+Formatting applies to the preview, PDF, and DOCX, and stays with each document for the current session. **Reset to defaults** restores US Letter with the standard presets. See [docs/formatting.md](docs/formatting.md).
 
 ## Limitations
 
@@ -207,13 +207,13 @@ Formatting applies to the preview, PDF, and DOCX, and is saved with each documen
 - DOCX flows text naturally inside each logical page. Editing in Word can re-flow individual pages; pagination is structurally consistent with the PDF rather than pixel-identical.
 - No import from PDF or existing DOCX; input is structured text only.
 - Cover letters are not generated. **Create matching cover letter** reuses identity and contact details and scaffolds the section markers; you write the body.
-- No cloud sync or backup. Clearing browser storage deletes the drafts.
+- No cloud sync, backup, or reload recovery. Reloading or closing the page discards the current documents.
 - Desktop-first. Editing works on smaller screens but is not the primary workflow.
 - The app icon is an intentional placeholder and will be replaced.
 
 ## Privacy model
 
-No network requests, no telemetry, no accounts. Resume drafts live under `openresume:draft.v1`; cover letter drafts live under `openresume:cover-letter.v1`. Both stay in the browser's `localStorage`. See [docs/privacy-model.md](docs/privacy-model.md).
+No network requests, no telemetry, no accounts. Resume and cover letter content stays in memory for the current session and is never written to `localStorage`. Only the interface theme preference is stored, under `openresume-theme`. See [docs/privacy-model.md](docs/privacy-model.md).
 
 ## Ecosystem role
 

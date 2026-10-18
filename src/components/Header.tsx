@@ -1,13 +1,10 @@
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
-import type { SaveState } from '../hooks/useDraft';
 import type { DocumentKind } from '../types/document';
 
 interface HeaderProps {
   view: 'landing' | 'prepare' | 'workspace';
   kind: DocumentKind | null;
-  saveState: SaveState;
-  message: string | null;
   formattingOpen: boolean;
   onHome: () => void;
   onNew: () => void;
@@ -16,19 +13,9 @@ interface HeaderProps {
   onExportDocx: () => void;
 }
 
-function statusText(saveState: SaveState, message: string | null): string {
-  if (message) return message;
-  if (saveState === 'saving') return 'Saving…';
-  if (saveState === 'saved') return 'Saved locally';
-  if (saveState === 'loaded') return 'Loaded from this browser';
-  return 'No saved draft';
-}
-
 export function Header({
   view,
   kind,
-  saveState,
-  message,
   formattingOpen,
   onHome,
   onNew,
@@ -60,10 +47,6 @@ export function Header({
             <span className="document-label">{kindLabel}</span>
 
             <nav className="header-actions" aria-label="Document actions">
-              <span className="header-status" role="status" aria-live="polite">
-                {statusText(saveState, message)}
-              </span>
-
               <button
                 type="button"
                 className="button"
