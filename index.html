@@ -6,12 +6,31 @@
     <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#14532d" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f5f2" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1210" />
     <meta
       name="description"
-      content="Privacy-first, local-first resume builder. Your content stays in your browser."
+      content="Privacy-first, local-first resume builder. Paste AI-generated resume content and export a precise PDF or Word document. Your content stays in your browser."
     />
     <title>OpenResume</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('openresume-theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch (error) {
+          /* The app falls back to light if storage or matchMedia is unavailable. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

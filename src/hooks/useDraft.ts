@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
-import { createSampleResume } from '../lib/sample';
-import { clearDraft, loadDraft, saveDraft } from '../lib/storage';
+import { useEffect, useState } from 'react';
+import { loadDraft, saveDraft } from '../lib/storage';
 import { useDebouncedEffect } from './useDebouncedEffect';
 import type { Resume } from '../types/resume';
 
-export type SaveState = 'loaded' | 'saving' | 'saved';
+export type SaveState = 'idle' | 'loaded' | 'saving' | 'saved';
 
 export function useDraft() {
-  const [resume, setResume] = useState<Resume>(() => loadDraft() ?? createSampleResume());
-  const [saveState, setSaveState] = useState<SaveState>('loaded');
+  const [resume, setResume] = useState<Resume | null>(() => loadDraft());
+  const [saveState, setSaveState] = useState<SaveState>(() => (resume ? 'loaded' : 'idle'));
 
   useDebouncedEffect(
     () => {
+      if (!resume) return;
       setSaveState('saving');
       saveDraft(resume);
       setSaveState('saved');
@@ -22,17 +22,11 @@ export function useDraft() {
 
   useEffect(() => {
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') saveDraft(resume);
+      if (resume && document.visibilityState === 'hidden') saveDraft(resume);
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [resume]);
 
-  const reset = useCallback(() => {
-    clearDraft();
-    setResume((current) => ({ ...createSampleResume(), template: current.template }));
-    setSaveState('loaded');
-  }, []);
-
-  return { resume, setResume, reset, saveState };
+  return { resume, setResume, saveState };
 }

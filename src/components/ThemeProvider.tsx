@@ -1,0 +1,41 @@
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { THEME_KEY, ThemeContext, getInitialTheme, type Theme } from '../lib/theme';
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (event: MediaQueryListEvent) => {
+      try {
+        if (!localStorage.getItem(THEME_KEY)) setTheme(event.matches ? 'dark' : 'light');
+      } catch {
+        setTheme(event.matches ? 'dark' : 'light');
+      }
+    };
+    media.addEventListener?.('change', onChange);
+    return () => media.removeEventListener?.('change', onChange);
+  }, []);
+
+  const toggle = useCallback(() => {
+    setTheme((previous) => {
+      const next: Theme = previous === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      document.documentElement.style.colorScheme = next;
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {
+        // The theme still applies for this session if storage is unavailable.
+      }
+      return next;
+    });
+  }, []);
+
+  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
+}
