@@ -2,6 +2,8 @@
 
 OpenResume resolves every geometric and typographic value from `Resume.template` through `resolveMetrics()`. The preview, PDF, and DOCX all consume the resulting layout, so a change is applied consistently.
 
+Formatting is content-level: it is saved with the draft and is independent of the interface theme. Switching light/dark never changes page size, spacing, preview, PDF, or DOCX output.
+
 ## Page sizes
 
 | Option              | Dimensions                        |

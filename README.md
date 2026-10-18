@@ -4,20 +4,27 @@ A privacy-first, local-first resume builder that turns structured text into prof
 
 ## Status
 
-**Early development — v0.1.1.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.2.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
 ## Description
 
-OpenResume exists because resume updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or a notes app already produces — and OpenResume deterministically parses it into a fixed, two-column document with reliable pagination.
+OpenResume exists because resume updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a fixed, two-column document with reliable pagination.
 
 Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Drafts are stored in `localStorage`; exports are generated locally. The app never makes a network request at runtime.
 
-The initial release optimizes for repeated production: parse once, edit inline, export a selectable-text PDF and an editable DOCX without re-flowing the layout by hand.
+The workflow is deliberately import-first:
 
-![OpenResume editor and live preview](assets/hero/hero-light.png)
+```
+Paste AI-generated resume text → Import → Review → Export
+```
+
+No draft yet? OpenResume opens on a focused import screen. A saved draft opens directly in the editor, with **New** and **Import** always available.
+
+![OpenResume import screen](assets/hero/hero-light.png)
 
 ## Features
 
+- **Import-first experience** with a large paste area, example input, and inline validation.
 - **Structured text input** with predefined and custom sections.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
 - **Fixed two-column template** with configurable section ordering and column assignment.
@@ -29,8 +36,18 @@ The initial release optimizes for repeated production: parse once, edit inline, 
 - **Selectable-text PDF** generated with real text, not screenshots.
 - **Editable DOCX** with readable, naturally flowing paragraphs and real Word bullets.
 - **Local draft and formatting persistence** with a versioned storage key.
+- **Light, dark, and system themes** with a persistent, flash-free header toggle.
+- **Icon-led header actions** — New, Import, Format, PDF, and Word.
 - **Accessible editor** with labeled controls, keyboard focus, and reduced-motion support.
 - **No backend, auth, analytics, cloud storage, or AI.**
+
+## Themes
+
+The header toggle switches between light and dark. With no stored choice, OpenResume follows the operating system preference and updates live when it changes. The choice persists under `openresume-theme`.
+
+The interface shell changes theme; **the resume document and its PDF/DOCX colors do not**. The preview page always keeps its professional white page and fixed typography colors.
+
+![OpenResume in dark mode](assets/screenshots/dark/editor.png)
 
 ## Architecture
 
@@ -54,7 +71,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed local URL. The app loads the fictional sample resume on first run.
+Open the printed local URL. With no saved draft, the app opens the import screen; **Load example** fills it with a fictional sample.
 
 ### Commands
 
@@ -70,6 +87,12 @@ Open the printed local URL. The app loads the fictional sample resume on first r
 | `npm run check`        | Lint, typecheck, test, and build   |
 
 Helper scripts live in `scripts/` (`build.sh`, `test.sh`, `lint.sh`, `generate-icons.py`), each with `--help`.
+
+### Keyboard
+
+- `Ctrl`/`⌘` + `Enter` imports from the import screen.
+- `Escape` returns to the current resume from the New/Import screen.
+- All header actions are native buttons with focus-visible rings and accessible labels.
 
 ## Input format
 

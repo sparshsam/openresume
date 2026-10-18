@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] — 2026-10-18
+
+### Added
+
+- Import-first landing experience with a large paste area, prominent "Import & Preview" action, example input, and inline validation.
+- Separate New and Import actions, with safe navigation back to the current resume.
+- Inline SVG icon set for the header, sharing no new dependency.
+- Light, dark, and system-preference theming with a far-right header toggle, persistence under `openresume-theme`, live system updates, and a pre-hydration script that prevents a flash of the wrong theme.
+- Footer with OpenResume version, Kovina ecosystem attribution, GitHub, input-format, and MIT license links.
+
+### Changed
+
+- With no saved draft, the application opens the import screen instead of a sample-filled editor.
+- Saved drafts open directly in the editor; New and Import return to the import screen without discarding the draft.
+- Header actions are regrouped and relabeled: New, Import, Format, PDF, Word, Theme.
+- Visual polish: refreshed spacing and radii, calmer section cards, clearer editor/preview separation, responsive header rows, and improved focus indicators.
+- The editor lives in a themed shell while the resume document and both exports keep fixed colors.
+
+### Fixed
+
+- Header actions no longer overlap the brand on narrow screens.
+- The identity row gives email more width and stacks on small screens.
+
 ## [0.1.1] — 2026-10-18
 
 ### Added

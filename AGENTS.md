@@ -12,7 +12,9 @@ Produce consistent, professional resumes from structured text with zero data lea
 - Pagination never duplicates or drops a line, and no blank pages are emitted.
 - Content is preserved unless the user edits it.
 - Imports replace the whole document; multiple top-level headings are rejected.
+- No draft means the import screen; the app never fabricates a document.
 - Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
+- Interface themes never change the resume page, PDF, or DOCX colors.
 - No runtime network calls and no storage beyond `localStorage`.
 - PDF text is selectable; DOCX text is editable and contains every content string.
 
@@ -31,7 +33,11 @@ Produce consistent, professional resumes from structured text with zero data lea
 | DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`                              |
 | Draft storage or schema     | `src/lib/storage.ts`, `src/hooks/useDraft.ts`, `tests/storage.test.ts`           |
 | Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md` |
-| Import integrity            | `src/lib/parse.ts` (`documentCount`), `ImportDialog.tsx`, `tests/App.test.tsx`   |
+| Import integrity            | `src/lib/parse.ts` (`documentCount`), `ImportScreen.tsx`, `tests/App.test.tsx`   |
+| Import-first shell          | `src/App.tsx`, `src/hooks/useDraft.ts`, `ImportScreen.tsx`, `Header.tsx`         |
+| Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`  |
+| Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`              |
+| Icons                       | `src/components/Icon.tsx` — inline SVG only                                      |
 | PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                               |
 | Editor controls             | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                            |
 | Toolbar and import flow     | `src/components/Toolbar.tsx`, `ImportDialog.tsx`                                 |
@@ -49,6 +55,10 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - Page count matches the preview on US Letter, A4, and US Legal.
 - A second import replaces the first document entirely.
 - Formatting changes appear in the preview and both exports.
+- First launch shows the import screen; a saved draft opens the editor.
+- New/Import preserve the draft until a successful replacement.
+- Light, dark, and system themes work; the resume page keeps fixed colors.
+- Header and footer remain usable at 375px.
 
 ## Change discipline
 

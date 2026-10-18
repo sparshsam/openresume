@@ -8,8 +8,10 @@ OpenResume is a client-only React application. Its correctness lives in a pure, 
 2. **Points are the unit.** Page geometry, typography, and coordinates are expressed in PostScript points. CSS renders the same numbers with `pt` units; jsPDF consumes them directly.
 3. **Content is preserved.** The parser never rewrites, summarizes, or normalizes user text beyond structural whitespace. Only explicit edits change content.
 4. **Imports replace, never merge.** A new document fully replaces the model; concatenated resumes are rejected.
-5. **No hidden I/O.** There are no runtime network calls, no server, and no telemetry. The only persistence is `localStorage`.
-6. **Exports contain real text and identical content.** Pages are never rasterized. PDF text is selectable; DOCX paragraphs are editable; both carry every content string.
+5. **Import-first, never fabricated.** With no saved draft the app shows the import screen. It never invents a sample document or overwrites a draft before a successful import.
+6. **No hidden I/O.** There are no runtime network calls, no server, and no telemetry. The only persistence is `localStorage`.
+7. **Exports contain real text and identical content.** Pages are never rasterized. PDF text is selectable; DOCX paragraphs are editable; both carry every content string.
+8. **Interface theme never touches the document.** Light/dark tokens style the shell only. The resume page and both exports keep fixed colors.
 
 ## Pipeline
 
@@ -29,22 +31,28 @@ flowchart LR
 
 ## Modules
 
-| Module                   | Responsibility                                       | Must not                     |
-| ------------------------ | ---------------------------------------------------- | ---------------------------- |
-| `src/lib/parse.ts`       | Deterministic text → `Resume`; warnings, no throwing | Know about React or layout   |
-| `src/lib/serialize.ts`   | `Resume` → canonical input text (round-trip)         | Lose information             |
-| `src/lib/normalize.ts`   | Upgrade legacy templates and reject invalid presets  | Invent unsupported values    |
-| `src/lib/metrics.ts`     | Presets → page geometry, typography, and spacing     | Read the DOM                 |
-| `src/lib/measure.ts`     | Helvetica AFM metrics and greedy word wrap           | Depend on the DOM            |
-| `src/lib/paginate.ts`    | Flow blocks → pages at line boundaries               | Drop or duplicate lines      |
-| `src/lib/layout.ts`      | Build flow blocks, header, page assembly             | Render or export             |
-| `src/lib/content.ts`     | Collect every content string for parity checks       | Render or export             |
-| `src/lib/exportPdf.ts`   | Draw `Layout` with jsPDF as selectable text          | Recalculate pagination       |
-| `src/lib/exportDocx.ts`  | Build a DOCX table per logical page                  | Rasterize or flatten text    |
-| `src/lib/storage.ts`     | Versioned, guarded draft persistence                 | Throw on unavailable storage |
-| `src/lib/resumeEdits.ts` | Pure immutable edit helpers                          | Mutate inputs                |
-| `src/hooks/useDraft.ts`  | Load, debounce-save, reset                           | Hold layout state            |
-| `src/App.tsx`            | Wire state, exports, dialogs                         | Contain layout logic         |
+| Module                             | Responsibility                                       | Must not                     |
+| ---------------------------------- | ---------------------------------------------------- | ---------------------------- |
+| `src/components/ImportScreen.tsx`  | Import-first entry view and validation               | Parse without `parseResume`  |
+| `src/components/Header.tsx`        | Brand, document actions, status, theme slot          | Own document state           |
+| `src/components/ThemeProvider.tsx` | Resolve and persist light/dark theme                 | Affect document colors       |
+| `src/lib/theme.ts`                 | Theme context, key, and system detection             | Render UI                    |
+| `src/components/Footer.tsx`        | Kovina attribution, links, and version               | Invent branding              |
+| `src/lib/appMeta.ts`               | Build-time application version                       | Read the network             |
+| `src/lib/parse.ts`                 | Deterministic text → `Resume`; warnings, no throwing | Know about React or layout   |
+| `src/lib/serialize.ts`             | `Resume` → canonical input text (round-trip)         | Lose information             |
+| `src/lib/normalize.ts`             | Upgrade legacy templates and reject invalid presets  | Invent unsupported values    |
+| `src/lib/metrics.ts`               | Presets → page geometry, typography, and spacing     | Read the DOM                 |
+| `src/lib/measure.ts`               | Helvetica AFM metrics and greedy word wrap           | Depend on the DOM            |
+| `src/lib/paginate.ts`              | Flow blocks → pages at line boundaries               | Drop or duplicate lines      |
+| `src/lib/layout.ts`                | Build flow blocks, header, page assembly             | Render or export             |
+| `src/lib/content.ts`               | Collect every content string for parity checks       | Render or export             |
+| `src/lib/exportPdf.ts`             | Draw `Layout` with jsPDF as selectable text          | Recalculate pagination       |
+| `src/lib/exportDocx.ts`            | Build a DOCX table per logical page                  | Rasterize or flatten text    |
+| `src/lib/storage.ts`               | Versioned, guarded draft persistence                 | Throw on unavailable storage |
+| `src/lib/resumeEdits.ts`           | Pure immutable edit helpers                          | Mutate inputs                |
+| `src/hooks/useDraft.ts`            | Load, debounce-save, reset                           | Hold layout state            |
+| `src/App.tsx`                      | Wire state, exports, dialogs                         | Contain layout logic         |
 
 ## Data model
 
@@ -84,13 +92,38 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 - Applying an import replaces the whole model and preserves only the current template (page size and formatting).
 - `collectContentStrings()` extracts every field from the model and is used to assert PDF/DOCX parity.
 
+## Views and workflow
+
+`App` owns a two-value view state:
+
+| View     | When                                 | Content                                             |
+| -------- | ------------------------------------ | --------------------------------------------------- |
+| `import` | No draft, or New/Import selected     | `ImportScreen` with paste area, example, validation |
+| `editor` | A draft exists and loading succeeded | Existing editor rail and live preview               |
+
+- `useDraft` returns `Resume | null`. It does not fabricate a sample.
+- `ImportScreen` requires exactly one top-level `#` heading. Zero or multiple headings produce a clear error and no state change.
+- A successful import replaces the model, preserves the current template (page size/formatting), and switches to the editor.
+- New and Import return to the import screen without discarding the draft. Back returns to the editor with the same in-memory content.
+- The header hides document actions on the import view, showing only branding and the theme toggle.
+
+## Theming
+
+- `data-theme="light|dark"` on `<html>`; `color-scheme` follows it.
+- Key `openresume-theme` stores an explicit choice.
+- With no stored choice, the system preference is used and live `prefers-color-scheme` changes apply.
+- An inline script in `index.html` resolves the theme before the stylesheet loads, preventing a flash.
+- Tokens in `src/styles/tokens.css` follow the OpenPalette naming convention (`--bg-base`, `--bg-surface`, `--text-primary`, `--border-default`, `--accent`).
+- The resume page, PDF, and DOCX use `COLORS` and fixed values in `preview.css`; they are never derived from UI theme tokens.
+- Header icons are inline SVGs in `Icon.tsx`, avoiding a new runtime dependency.
+
 ## State and persistence
 
-- `useDraft` initializes from `loadDraft()` or the sample resume.
-- Saves are debounced by 400 ms and flushed on `visibilitychange`.
-- Storage is versioned (`openresume:draft.v1`) and structurally validated with `isResume`. Corrupt payloads fall back to the sample; legacy templates are normalized with defaults.
+- `useDraft` initializes from `loadDraft()` and returns `null` when no valid draft exists.
+- Saves are debounced by 400 ms and flushed on `visibilitychange`; nothing is saved while no resume is loaded.
+- Storage is versioned (`openresume:draft.v1`) and structurally validated with `isResume`. Corrupt payloads are ignored; legacy templates are normalized with defaults.
 - Formatting lives in `Resume.template`, so it persists with the draft and survives imports.
-- `clearDraft()` runs before resetting to the sample; the current template is preserved.
+- Theme persistence is independent (`openresume-theme`), so content resets and imports never change the interface theme.
 
 ## Dependency policy
 
@@ -115,6 +148,6 @@ No state library, router, CSS framework, parser library, or storage wrapper. Add
 - **Templates.** Introduce a template profile that supplies tokens, column ratios, and section defaults; do not fork the pipeline.
 - **Fonts.** Replace the embedded width tables with a font that is embedded in both the browser and the PDF, keeping measurement and rendering identical.
 
-## Non-goals for v0.1.1
+## Non-goals for v0.1.2
 
 Multi-user accounts, cloud sync, AI generation, PDF/DOCX import, cover letters, and multi-template galleries.

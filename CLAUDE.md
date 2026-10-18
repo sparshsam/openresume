@@ -16,7 +16,7 @@ Required reading before every session:
 
 ## What this is
 
-A client-only React + TypeScript + Vite resume builder. Structured text is parsed deterministically, laid out in a fixed two-column A4 template, previewed, and exported as selectable-text PDF and editable DOCX.
+A client-only React + TypeScript + Vite resume builder. Structured text is imported, parsed deterministically, laid out in a fixed two-column template (US Letter default, plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX. Importing is the primary entry point; manual editing follows.
 
 ## Commands
 
@@ -31,6 +31,13 @@ npm run check        # everything above, in release order
 
 ## Architecture map
 
+- `src/App.tsx` — import/editor view state and wiring.
+- `src/components/ImportScreen.tsx` — import-first entry view and validation.
+- `src/components/Header.tsx` — brand, New/Import, Format, PDF/Word, theme slot.
+- `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
+- `src/components/Footer.tsx` / `src/lib/appMeta.ts` — Kovina attribution and version.
+- `src/components/Icon.tsx` — inline SVG icons; no icon dependency.
+- `docs/interface.md` — workflow, theme, responsive, and accessibility rules.
 - `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
 - `src/lib/serialize.ts` — `Resume` → text (round-trip).
 - `src/lib/normalize.ts` — legacy draft/template upgrade and preset validation.
@@ -53,14 +60,17 @@ Full design: `ARCHITECTURE.md`.
 3. **Preserve content.** The parser must not summarize or rewrite text.
 4. **No I/O.** No network, backend, auth, analytics, cloud storage, or AI. The only persistence is `localStorage`.
 5. **Real text exports.** Never rasterize a page.
-6. **Imports replace, never merge.** Keep the empty-dialog behavior and the multiple-heading rejection.
-7. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.
-8. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Justify anything else.
+6. **Imports replace, never merge.** Keep the empty import screen and the multiple-heading rejection.
+7. **Import-first, never fabricated.** No draft means the import screen, never a sample editor.
+8. **Formatting flows through metrics.** Components and exporters consume `resolveMetrics`/`Layout`; never hard-code page geometry or spacing.
+9. **Theme is interface-only.** Use tokens from `styles/tokens.css`; never theme the resume page, PDF, or DOCX.
+10. **Minimal dependencies.** Runtime deps are React, jsPDF, and docx. Icons are inline SVG. Justify anything else.
 
 ## Working agreement
 
 - Make focused changes and run `npm run check` before claiming completion.
-- Add tests with behavior changes; parser, pagination, and exports are the critical surfaces.
+- Add tests with behavior changes; parser, pagination, exports, import-first flow, and theme persistence are the critical surfaces.
+- Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.
 - Do not push or deploy without explicit permission.
