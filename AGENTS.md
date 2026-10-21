@@ -2,10 +2,11 @@
 
 This file complements `CLAUDE.md`. Read both before changing code.
 
-## Current state (2026-10-18)
+## Current state (2026-10-20)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.7 is tagged at `cc179019b955ed1cdf45c33be399c91faa4deda6`, published as a GitHub pre-release, and deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Release:** v0.1.8 is annotated-tagged on its merge commit, published as a GitHub pre-release, and deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **AI workflow:** both instruction templates require exactly one plain-text code block; both parsers accept one complete enclosing `text` or unlabelled fence and preserve the interior exactly.
 - **README:** includes the full Kovina Collection footer.
 - **Repository:** all work is committed and the working tree is clean.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
@@ -34,7 +35,8 @@ Produce consistent, professional resumes and cover letters from structured text 
 - Page size and formatting flow through `resolveMetrics`; no component hard-codes geometry.
 - Interface themes never change document, PDF, or DOCX colors.
 - No runtime network calls and no document storage.
-- AI instructions are generated from parser aliases and must remain drift-tested.
+- AI instructions are generated from parser aliases, must require exactly one plain-text code block, and must remain drift-tested.
+- Exactly one complete enclosing code fence is stripped before parsing; ambiguous, partial, or prose-wrapped fences are never rewritten.
 - Application icons are generated from the two authoritative masters; never hand-edit generated assets or fabricate SVGs.
 - Logo artwork is cross-assigned by interface theme through `src/lib/themeAssets.ts`: light UI uses dark-background assets, dark UI uses light-background assets.
 - Document accents come only from `template.accent` and must flow through `Layout` to preview, PDF, and DOCX.
@@ -45,6 +47,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 | Task                        | Touch                                                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Resume parsing or aliases   | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                                       |
+| Fenced paste normalization  | `src/lib/codeFence.ts`, `src/lib/parse.ts`, `src/lib/parseCoverLetter.ts`, `tests/codeFence.test.ts`    |
 | Cover letter parsing        | `src/lib/parseCoverLetter.ts`, `docs/input-format.md`, `tests/parseCoverLetter.test.ts`                 |
 | AI instruction templates    | `src/lib/aiInstructions.ts`, `tests/aiInstructions.test.ts`, `docs/ai-instructions.md`                  |
 | Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                                       |

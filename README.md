@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.7.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.8.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.7). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.8). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -82,9 +82,22 @@ The resume template is unchanged. Formatting is stored with each document, so th
 
 ## AI instructions
 
-Both preparation screens include **Copy AI Instructions**. The copied template explains the exact structured format, supported headings and aliases, entry/paragraph rules, optional fields, and the factual-accuracy requirement. Paste it into ChatGPT, Claude, or another assistant, provide your details, and paste the result back into OpenResume.
+Both preparation screens include **Copy AI Instructions**. The copied template explains the exact structured format, supported headings and aliases, entry/paragraph rules, optional fields, and the factual-accuracy requirement.
 
-The templates live beside the parsers in `src/lib/aiInstructions.ts` and are generated from the parsers' supported headings. Tests fail if an alias exists in a parser but not in the instructions. See [docs/ai-instructions.md](docs/ai-instructions.md).
+The template asks the assistant to return exactly one plain-text code block containing the complete document. The code fence is only a delivery container: the first character inside it must be `#`, and the literal `#`, `##`, and `###` markers must survive. This matters because chat interfaces render Markdown headings; copying a rendered response can silently drop the markers OpenResume needs.
+
+The workflow is:
+
+1. Copy AI Instructions.
+2. Paste them into ChatGPT, Claude, or another assistant.
+3. Provide your details and the target job description.
+4. Copy the generated structured text.
+5. Paste it into OpenResume.
+6. Build the document.
+
+OpenResume accepts the code block as copied. It also strips one complete enclosing fence — a fence labelled `text` or an unlabelled fence — before parsing; a fence surrounded by prose or an ambiguous fence is left untouched. See [docs/ai-instructions.md](docs/ai-instructions.md).
+
+The templates live beside the parsers in `src/lib/aiInstructions.ts` and are generated from the parsers' supported headings. Tests fail if an alias exists in a parser but not in the instructions, or if either template stops requiring one code block.
 
 ## Themes
 
@@ -204,7 +217,7 @@ Sincerely,
 Jordan Avery
 ```
 
-Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. Prepare one document at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
+Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. One complete enclosing code fence around the whole document is accepted and removed before parsing, so an AI response can be pasted as-is. Prepare one document at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
 
 ## Page sizes and formatting
 

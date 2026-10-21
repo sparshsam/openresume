@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] — 2026-10-20
+
+### Added
+
+- AI instruction templates now require exactly one plain-text code block containing the complete document, with literal `#`, `##`, and `###` markers preserved inside it.
+- Preparation screens show the six-step copy-and-paste workflow so the delivery container is easy to follow.
+- Both parsers accept one complete enclosing code fence (`text`-labelled or unlabelled) and remove it before parsing, preserving the interior exactly.
+
+### Changed
+
+- Resume and cover letter templates now include role, task, output, formatting, content-quality, and conflict-handling guidance generated from parser-supported headings.
+- The copy confirmation now tells users to paste the instructions into their AI assistant.
+- Version bumped to 0.1.8.
+
+### Fixed
+
+- AI-generated documents copied from ChatGPT or a similar assistant no longer lose literal heading markers when the response is wrapped in a code fence.
+
 ## [0.1.7] — 2026-10-18
 
 ### Added

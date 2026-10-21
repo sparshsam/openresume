@@ -25,6 +25,17 @@ Each document has a preparation screen with:
 - **Use resume details** on the cover letter screen when a resume exists.
 - Back navigation to the previous workspace or the landing page.
 
+The screen also presents the six-step AI workflow:
+
+1. Copy AI Instructions.
+2. Paste them into ChatGPT or another AI assistant.
+3. Provide your details and the target job description.
+4. Copy the generated structured text.
+5. Paste it into OpenResume.
+6. Build the document.
+
+The workflow is an ordered list with an accessible label, not a second panel or wizard. Copying shows “AI instructions copied. Paste them into your AI assistant.”
+
 The old collapsible example-format interaction has been removed. The AI instructions are the canonical format reference and are copied from the same source that tests check against the parsers.
 
 Building replaces the previous document of that type in the current session immediately. No confirmation dialog is shown.

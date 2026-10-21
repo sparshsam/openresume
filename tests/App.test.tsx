@@ -571,6 +571,15 @@ describe('feedback and AI instructions', () => {
     expect(await screen.findByText(/Could not copy/)).toBeInTheDocument();
   });
 
+  it('builds a fenced document without persisting it', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await renderAndBuild(user, 'resume', `\`\`\`text\n${SAMPLE_RESUME_TEXT}\n\`\`\``);
+
+    expect(screen.getByText('Resume built.')).toBeInTheDocument();
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
   it('dismisses a toast accessibly', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);

@@ -18,12 +18,12 @@ Required reading before every session:
 
 A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (two columns for resumes, one for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
-## Current state (2026-10-18)
+## Current state (2026-10-20)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.7 (About/Privacy/Terms, SEO, reversed logo placement, and document accent colours), released and deployed.
-- **Release:** annotated tag `v0.1.7` at `cc179019b955ed1cdf45c33be399c91faa4deda6`; GitHub pre-release published.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.7 run passed with 208 tests across 19 files.
+- **Version:** v0.1.8 (AI instruction copy compatibility: one plain-text code block, parser-generated templates, and defensive fence stripping), released and deployed.
+- **Release:** annotated tag `v0.1.8` on the v0.1.8 merge commit; GitHub pre-release published.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.8 run passed with 231 tests across 20 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -65,6 +65,7 @@ npm run check        # everything above, in release order
 - `docs/branding.md` — asset inventory, standards, and generation pipeline.
 - `src/components/Icon.tsx` — inline SVG icons; no icon dependency.
 - `docs/interface.md` — workflow, navigation, theme, responsive, and accessibility rules.
+- `src/lib/codeFence.ts` — strips one complete enclosing code fence before parsing; leaves ambiguous input untouched.
 - `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
 - `src/lib/parseCoverLetter.ts` — text → `CoverLetter`; reports `documentCount`.
 - `src/lib/contact.ts` — shared contact-line classification.
@@ -105,6 +106,7 @@ Full design: `ARCHITECTURE.md`.
 16. **Every page shares the shell and metadata.** Header, footer, theme controls, canonical URL, and page-specific title/description must remain consistent across the builder and information pages.
 17. **One document accent model.** `template.accent` feeds `Layout`; preview, PDF, and DOCX must read the same value. Never introduce an independent export palette.
 18. **Logo cross-assignment is intentional.** Light interface → dark-background asset; dark interface → light-background asset. Use `themeAssets.ts`; do not rename or alter the generated masters.
+19. **One enclosing fence is a container, not content.** Both parsers strip exactly one complete enclosing `text` or unlabelled fence before reading markers. Never strip prose-wrapped, partial, or ambiguous fences, and never alter the interior.
 
 ## Working agreement
 
