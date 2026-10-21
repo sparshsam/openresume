@@ -1,0 +1,2 @@
+export const RESUME_DELIMITER = '=== OPENRESUME: RESUME ===';
+export const COVER_LETTER_DELIMITER = '=== OPENRESUME: COVER LETTER ===';
