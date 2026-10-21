@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ApplicationKitToolbar } from './components/ApplicationKitToolbar';
 import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
 import { Footer } from './components/Footer';
@@ -21,9 +22,10 @@ import {
   updateLetterTemplate,
 } from './lib/coverLetterEdits';
 import { layoutCoverLetter } from './lib/coverLetterLayout';
+import { copyAiInstructions } from './lib/aiClipboard';
 import { buildCoverLetterScaffold } from './lib/coverLetterScaffold';
 import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
-import { documentFilename } from './lib/filename';
+import { applicationKitFilename, documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
 import { applyPageMeta, infoPageFromPath, navigate, type InfoPageKey } from './lib/publicPages';
 import { clearLegacyDrafts } from './lib/storage';
@@ -45,7 +47,7 @@ import {
   updateTemplate,
 } from './lib/resumeEdits';
 import type { CoverLetter } from './types/coverLetter';
-import type { DocumentKind } from './types/document';
+import type { DocumentKind, PrepareKind, WorkspaceMode } from './types/document';
 import type {
   FormatSettings,
   PageSize,
@@ -71,6 +73,7 @@ type View = 'landing' | 'prepare' | 'workspace';
 interface PrepareBack {
   view: 'landing' | 'workspace';
   kind: DocumentKind;
+  mode: WorkspaceMode;
 }
 
 export default function App() {
@@ -78,6 +81,9 @@ export default function App() {
   const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
 
   const [view, setView] = useState<View>('landing');
+  const [prepareKind, setPrepareKind] = useState<PrepareKind>('resume');
+  const [kitBuilt, setKitBuilt] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('single');
   const [infoPage, setInfoPage] = useState<InfoPageKey | null>(() =>
     infoPageFromPath(window.location.pathname),
   );
@@ -88,6 +94,7 @@ export default function App() {
   const [prepareBack, setPrepareBack] = useState<PrepareBack>({
     view: 'landing',
     kind: 'resume',
+    mode: 'single',
   });
   const [formattingOpen, setFormattingOpen] = useState(false);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
@@ -96,13 +103,12 @@ export default function App() {
 
   const activeTemplate = activeKind === 'resume' ? resume?.template : coverLetter?.template;
 
-  const layout = useMemo(() => {
-    if (activeKind === 'resume' && resume) return layoutResume(resume);
-    if (activeKind === 'coverLetter' && coverLetter) {
-      return layoutCoverLetter(coverLetter);
-    }
-    return null;
-  }, [activeKind, resume, coverLetter]);
+  const resumeLayout = useMemo(() => (resume ? layoutResume(resume) : null), [resume]);
+  const coverLetterLayout = useMemo(
+    () => (coverLetter ? layoutCoverLetter(coverLetter) : null),
+    [coverLetter],
+  );
+  const layout = activeKind === 'resume' ? resumeLayout : coverLetterLayout;
 
   useEffect(() => {
     clearLegacyDrafts();
@@ -133,12 +139,13 @@ export default function App() {
   }, []);
 
   const openPrepare = (
-    kind: DocumentKind,
+    kind: PrepareKind,
     back: PrepareBack,
     text?: string,
     reusedFromResume = false,
   ) => {
-    setActiveKind(kind);
+    setPrepareKind(kind);
+    setActiveKind(kind === 'applicationKit' ? 'resume' : kind);
     setPrepareText(text);
     setPrepareFromResume(reusedFromResume);
     setPrepareBack(back);
@@ -148,8 +155,9 @@ export default function App() {
     setView('prepare');
   };
 
-  const openWorkspace = (kind: DocumentKind) => {
+  const openWorkspace = (kind: DocumentKind, mode: WorkspaceMode = 'single') => {
     setActiveKind(kind);
+    setWorkspaceMode(mode);
     setFormattingOpen(false);
     setFocusTarget(null);
     setView('workspace');
@@ -163,17 +171,33 @@ export default function App() {
   };
 
   const handleNew = () => {
+    if (workspaceMode === 'kit') {
+      openPrepare('applicationKit', {
+        view: 'workspace',
+        kind: activeKind,
+        mode: 'kit',
+      });
+      return;
+    }
+
     const exists = activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
     openPrepare(activeKind, {
       view: exists ? 'workspace' : 'landing',
       kind: activeKind,
+      mode: 'single',
     });
   };
 
   const handlePrepareBack = () => {
     if (prepareBack.view === 'workspace') {
-      const targetExists = prepareBack.kind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
+      const targetExists =
+        prepareBack.mode === 'kit'
+          ? Boolean(resume && coverLetter)
+          : prepareBack.kind === 'resume'
+            ? Boolean(resume)
+            : Boolean(coverLetter);
       if (targetExists) {
+        setWorkspaceMode(prepareBack.mode);
         setActiveKind(prepareBack.kind);
         setView('workspace');
         return;
@@ -188,6 +212,7 @@ export default function App() {
       template: current?.template ?? next.template,
     }));
     setActiveKind('resume');
+    setWorkspaceMode('single');
     setView('workspace');
     notify(
       warnings.length > 0
@@ -202,6 +227,7 @@ export default function App() {
       template: current?.template ?? resume?.template ?? next.template,
     }));
     setActiveKind('coverLetter');
+    setWorkspaceMode('single');
     setView('workspace');
     notify(
       warnings.length > 0
@@ -210,11 +236,50 @@ export default function App() {
     );
   };
 
+  const handleBuildApplicationKit = (
+    nextResume: Resume,
+    nextCoverLetter: CoverLetter,
+    warnings: string[],
+  ) => {
+    setResume((current) => ({
+      ...nextResume,
+      template: current?.template ?? nextResume.template,
+    }));
+    setCoverLetter((current) => ({
+      ...nextCoverLetter,
+      template: current?.template ?? nextCoverLetter.template,
+    }));
+    setKitBuilt(true);
+    setWorkspaceMode('kit');
+    setActiveKind('resume');
+    setFormattingOpen(false);
+    setFocusTarget(null);
+    setView('workspace');
+    notify(
+      warnings.length > 0
+        ? `Application kit built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}. Review both documents.`
+        : 'Application kit built. Review both documents before exporting.',
+    );
+  };
+
+  const handleCopyInstructions = useCallback(
+    async (kind: PrepareKind) => {
+      const copied = await copyAiInstructions(kind);
+      notify(
+        copied
+          ? 'AI instructions copied. Paste them into your AI assistant.'
+          : 'Could not copy. Allow clipboard access and try again.',
+        copied ? 'success' : 'error',
+      );
+    },
+    [notify],
+  );
+
   const handleCreateMatchingCoverLetter = () => {
     if (!resume) return;
     openPrepare(
       'coverLetter',
-      { view: 'workspace', kind: 'resume' },
+      { view: 'workspace', kind: 'resume', mode: 'single' },
       buildCoverLetterScaffold(resume),
       true,
     );
@@ -295,6 +360,63 @@ export default function App() {
     }
   };
 
+  const handleExportCombinedPdf = async () => {
+    if (!resume || !coverLetter || !resumeLayout || !coverLetterLayout) return;
+    try {
+      const { exportCombinedPdf } = await import('./lib/exportPdf');
+      exportCombinedPdf(resume.header.name, coverLetterLayout, resumeLayout);
+      notify('Combined PDF exported.');
+    } catch {
+      notify('Combined PDF export failed.', 'error');
+    }
+  };
+
+  const handleExportCombinedDocx = async () => {
+    if (!resume || !coverLetter || !resumeLayout || !coverLetterLayout) return;
+    try {
+      const { exportApplicationKitDocx } = await import('./lib/exportDocx');
+      const blob = await exportApplicationKitDocx(
+        resume,
+        resumeLayout,
+        coverLetter,
+        coverLetterLayout,
+      );
+      downloadBlob(blob, applicationKitFilename(resume.header.name, 'docx'));
+      notify('Combined Word document exported.');
+    } catch {
+      notify('Combined Word export failed.', 'error');
+    }
+  };
+
+  const handleExportSeparate = async (kind: DocumentKind, format: 'pdf' | 'docx') => {
+    const targetLayout = kind === 'resume' ? resumeLayout : coverLetterLayout;
+    if (!targetLayout) return;
+    const label = kind === 'resume' ? 'Resume' : 'Cover letter';
+    try {
+      if (format === 'pdf') {
+        const { exportPdf } = await import('./lib/exportPdf');
+        if (kind === 'resume' && resume) exportPdf(resumeMeta(resume), targetLayout);
+        else if (kind === 'coverLetter' && coverLetter) {
+          exportPdf(coverLetterMeta(coverLetter), targetLayout);
+        }
+        notify(`${label} PDF exported.`);
+        return;
+      }
+
+      const { exportDocx, exportCoverLetterDocx } = await import('./lib/exportDocx');
+      if (kind === 'resume' && resume) {
+        const blob = await exportDocx(resume, targetLayout);
+        downloadBlob(blob, documentFilename(resume.header.name, 'resume', 'docx'));
+      } else if (coverLetter) {
+        const blob = await exportCoverLetterDocx(coverLetter, targetLayout);
+        downloadBlob(blob, documentFilename(coverLetter.applicant.name, 'coverLetter', 'docx'));
+      }
+      notify(`${label} Word document exported.`);
+    } catch {
+      notify(`${label} export failed.`, 'error');
+    }
+  };
+
   const sectionHandlers = {
     onAddSection: (kind: SectionKind) =>
       setResume((current) => (current ? addSection(current, kind) : current)),
@@ -344,6 +466,7 @@ export default function App() {
       <Header
         view={headerView}
         kind={headerView === 'workspace' ? activeKind : null}
+        kitMode={headerView === 'workspace' && workspaceMode === 'kit'}
         formattingOpen={formattingOpen}
         onHome={goHome}
         onNew={handleNew}
@@ -362,22 +485,33 @@ export default function App() {
         <LandingPage
           hasResume={Boolean(resume)}
           hasCoverLetter={Boolean(coverLetter)}
-          onResume={() => openPrepare('resume', { view: 'landing', kind: 'resume' })}
-          onCoverLetter={() => openPrepare('coverLetter', { view: 'landing', kind: 'coverLetter' })}
+          hasApplicationKit={kitBuilt && Boolean(resume) && Boolean(coverLetter)}
+          onResume={() =>
+            openPrepare('resume', { view: 'landing', kind: 'resume', mode: 'single' })
+          }
+          onCoverLetter={() =>
+            openPrepare('coverLetter', { view: 'landing', kind: 'coverLetter', mode: 'single' })
+          }
+          onApplicationKit={() =>
+            openPrepare('applicationKit', { view: 'landing', kind: 'resume', mode: 'kit' })
+          }
           onOpenResume={() => openWorkspace('resume')}
           onOpenCoverLetter={() => openWorkspace('coverLetter')}
+          onOpenApplicationKit={() => openWorkspace('resume', 'kit')}
+          onCopyInstructions={handleCopyInstructions}
         />
       ) : renderView === 'prepare' ? (
         <PrepareScreen
-          key={`${activeKind}-${prepareNonce}`}
-          kind={activeKind}
+          key={`${prepareKind}-${prepareNonce}`}
+          kind={prepareKind}
           initialText={prepareText}
           reusedFromResume={prepareFromResume}
           resumeScaffold={
-            activeKind === 'coverLetter' && resume ? buildCoverLetterScaffold(resume) : undefined
+            prepareKind === 'coverLetter' && resume ? buildCoverLetterScaffold(resume) : undefined
           }
           onBuildResume={handleBuildResume}
           onBuildCoverLetter={handleBuildCoverLetter}
+          onBuildApplicationKit={handleBuildApplicationKit}
           onNotify={notify}
           onBack={handlePrepareBack}
         />
@@ -394,7 +528,27 @@ export default function App() {
             />
           ) : null}
 
-          <main className="workspace" id="main">
+          {workspaceMode === 'kit' ? (
+            <ApplicationKitToolbar
+              activeKind={activeKind}
+              onSelect={(kind) => {
+                setActiveKind(kind);
+                setFormattingOpen(false);
+                setFocusTarget(null);
+              }}
+              onExportCombinedPdf={handleExportCombinedPdf}
+              onExportCombinedDocx={handleExportCombinedDocx}
+              onExportSeparate={handleExportSeparate}
+            />
+          ) : null}
+
+          <main
+            className="workspace"
+            id="main"
+            role={workspaceMode === 'kit' ? 'tabpanel' : undefined}
+            aria-labelledby={workspaceMode === 'kit' ? `kit-tab-${activeKind}` : undefined}
+            tabIndex={workspaceMode === 'kit' ? 0 : undefined}
+          >
             {activeKind === 'resume' && resume ? (
               <>
                 <EditorPanel

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  COVER_LETTER_DELIMITER,
-  RESUME_DELIMITER,
-} from '../src/lib/applicationKitFormat';
+import { COVER_LETTER_DELIMITER, RESUME_DELIMITER } from '../src/lib/applicationKitFormat';
 import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { SAMPLE_COVER_LETTER_TEXT } from '../src/lib/coverLetterSample';
 import { SAMPLE_RESUME_TEXT } from '../src/lib/sample';

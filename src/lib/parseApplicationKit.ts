@@ -24,9 +24,7 @@ export function parseApplicationKit(input: string): ApplicationKitParseResult {
 
   const normalized = input.replace(/\r\n?/g, '\n');
   const stripped = stripEnclosingCodeFence(normalized);
-  const hasFenceLine = normalized
-    .split('\n')
-    .some((line) => line.trim().startsWith('```'));
+  const hasFenceLine = normalized.split('\n').some((line) => line.trim().startsWith('```'));
 
   if (hasFenceLine && stripped === normalized) {
     return failure([
@@ -53,7 +51,9 @@ export function parseApplicationKit(input: string): ApplicationKitParseResult {
     errors.push('The resume delimiter appears more than once. Include one resume only.');
   }
   if (coverLetterDelimiters.length > 1) {
-    errors.push('The cover letter delimiter appears more than once. Include one cover letter only.');
+    errors.push(
+      'The cover letter delimiter appears more than once. Include one cover letter only.',
+    );
   }
   if (errors.length > 0) return failure(errors);
 
