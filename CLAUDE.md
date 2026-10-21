@@ -21,9 +21,9 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.9 (Application Kit: one combined input, atomic build, tabbed workspace, combined and separate exports), released and deployed.
-- **Release:** annotated tag `v0.1.9` on the v0.1.9 merge commit; GitHub pre-release published.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.9 run passed with 276 tests across 22 files.
+- **Version:** v0.1.10 (Application Kit Load Example fix and one canonical combined sample), released and deployed.
+- **Release:** annotated tag `v0.1.10` on the v0.1.10 merge commit; GitHub pre-release published.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.10 run passed with 279 tests across 22 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -68,6 +68,7 @@ npm run check        # everything above, in release order
 - `docs/interface.md` — workflow, navigation, theme, responsive, and accessibility rules.
 - `src/lib/codeFence.ts` — strips one complete enclosing code fence before parsing; leaves ambiguous input untouched.
 - `src/lib/applicationKitFormat.ts` — shared Application Kit delimiter constants.
+- `src/lib/applicationKitSample.ts` — canonical combined sample shared by Load Example and the AI template.
 - `src/lib/parseApplicationKit.ts` — splits one delimited input into the two existing parsers; validates order, count, emptiness, names, and body; warns on cross-document differences.
 - `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
 - `src/lib/parseCoverLetter.ts` — text → `CoverLetter`; reports `documentCount`.
@@ -114,6 +115,7 @@ Full design: `ARCHITECTURE.md`.
 21. **Kit builds are atomic.** Parse and validate both sections before replacing either model. A failed kit build must leave both previous documents untouched. Cross-document name or contact differences are warnings only; never rewrite them.
 22. **Combined exports preserve document integrity.** Combined PDF is cover letter then resume, with each document on its own pages and selectable text. Combined DOCX is one editable document: explicit page break when geometry matches, `nextPage` Word sections when page sizes or margins differ. Never concatenate ZIP files.
 23. **Kit tabs are accessible and independent.** Resume and Cover Letter tabs use `tablist`/`tab`/`tabpanel`, arrow/Home/End navigation, and roving `tabIndex`. Switching tabs preserves edits and each document's own formatting and accent.
+24. **One canonical kit sample.** `applicationKitSample.ts` supplies both the AI template's example and Load Example. Never add a second combined sample; select examples by `PrepareKind`, never by assuming every non-resume kind is a cover letter.
 
 ## Working agreement
 

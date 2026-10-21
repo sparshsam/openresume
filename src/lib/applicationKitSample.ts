@@ -1,0 +1,9 @@
+import { COVER_LETTER_DELIMITER, RESUME_DELIMITER } from './applicationKitFormat';
+import { SAMPLE_COVER_LETTER_TEXT } from './coverLetterSample';
+import { SAMPLE_RESUME_TEXT } from './sample';
+
+export const APPLICATION_KIT_SAMPLE_TEXT = `${RESUME_DELIMITER}
+${SAMPLE_RESUME_TEXT}
+
+${COVER_LETTER_DELIMITER}
+${SAMPLE_COVER_LETTER_TEXT}`;

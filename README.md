@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.9.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.10.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.9). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.10). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -270,7 +270,6 @@ Formatting applies to the preview, PDF, and DOCX, and stays with each document f
 - Cover letters are not generated. **Create matching cover letter** reuses identity and contact details and scaffolds the section markers; you write the body.
 - No cloud sync, backup, or reload recovery. Reloading or closing the page discards the current documents.
 - Desktop-first. Editing works on smaller screens but is not the primary workflow.
-- The app icon is an intentional placeholder and will be replaced.
 
 ## Privacy model
 
