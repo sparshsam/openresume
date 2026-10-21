@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { copyAiInstructions } from '../lib/aiClipboard';
+import { APPLICATION_KIT_SAMPLE_TEXT } from '../lib/applicationKitSample';
 import { SAMPLE_COVER_LETTER_TEXT } from '../lib/coverLetterSample';
 import { parseApplicationKit } from '../lib/parseApplicationKit';
 import { parseCoverLetter } from '../lib/parseCoverLetter';
@@ -21,6 +22,12 @@ interface PrepareScreenProps {
   onNotify?: (message: string, tone?: 'success' | 'error') => void;
   onBack: () => void;
 }
+
+const EXAMPLE_TEXT: Record<PrepareKind, string> = {
+  resume: SAMPLE_RESUME_TEXT,
+  coverLetter: SAMPLE_COVER_LETTER_TEXT,
+  applicationKit: APPLICATION_KIT_SAMPLE_TEXT,
+};
 
 const PLACEHOLDER: Record<PrepareKind, string> = {
   resume:
@@ -232,7 +239,7 @@ export function PrepareScreen({
               type="button"
               className="button"
               onClick={() => {
-                setText(isResume ? SAMPLE_RESUME_TEXT : SAMPLE_COVER_LETTER_TEXT);
+                setText(EXAMPLE_TEXT[kind]);
                 setError(null);
                 textareaRef.current?.focus();
               }}

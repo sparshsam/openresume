@@ -8,6 +8,7 @@ import {
   RESUME_AI_INSTRUCTIONS,
   getAiInstructions,
 } from '../src/lib/aiInstructions';
+import { APPLICATION_KIT_SAMPLE_TEXT } from '../src/lib/applicationKitSample';
 import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { COVER_LETTER_SECTION_ALIASES, parseCoverLetter } from '../src/lib/parseCoverLetter';
 import { RESUME_SECTION_ALIASES, parseResume } from '../src/lib/parse';
@@ -107,6 +108,11 @@ describe('AI instructions', () => {
     for (const alias of Object.keys(COVER_LETTER_SECTION_ALIASES)) {
       expect(instructions).toContain(alias.toUpperCase());
     }
+  });
+
+  it('uses one canonical kit sample for instructions and Load Example', () => {
+    expect(APPLICATION_KIT_AI_EXAMPLE).toContain(APPLICATION_KIT_SAMPLE_TEXT);
+    expect(APPLICATION_KIT_AI_EXAMPLE.startsWith('```text\n')).toBe(true);
   });
 
   it('orders the kit example resume before the cover letter', () => {

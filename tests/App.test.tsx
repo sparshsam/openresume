@@ -11,6 +11,8 @@ import {
 import { APP_VERSION } from '../src/lib/appMeta';
 import { SAMPLE_COVER_LETTER_TEXT, createSampleCoverLetter } from '../src/lib/coverLetterSample';
 import { createSampleResume, SAMPLE_RESUME_TEXT } from '../src/lib/sample';
+import { COVER_LETTER_DELIMITER, RESUME_DELIMITER } from '../src/lib/applicationKitFormat';
+import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { COVER_LETTER_DRAFT_KEY, DRAFT_KEY } from '../src/lib/storage';
 import { DEFAULT_DOCUMENT_ACCENT, DOCUMENT_ACCENTS } from '../src/lib/tokens';
 import { THEME_KEY } from '../src/lib/theme';
@@ -746,6 +748,45 @@ describe('application kit workflow', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
   });
 
+  it('loads a combinable kit example and builds both documents', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    await user.click(screen.getByRole('button', { name: 'Load Example' }));
+
+    const textarea = screen.getByLabelText('Application kit text') as HTMLTextAreaElement;
+    expect(textarea.value).toContain(RESUME_DELIMITER);
+    expect(textarea.value).toContain(COVER_LETTER_DELIMITER);
+    expect(textarea.value.indexOf(RESUME_DELIMITER)).toBeLessThan(
+      textarea.value.indexOf(COVER_LETTER_DELIMITER),
+    );
+
+    const parsed = parseApplicationKit(textarea.value);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.resume.header.name).toBe('Jordan Avery');
+      expect(parsed.coverLetter.applicant.name).toBe('Jordan Avery');
+      expect(parsed.resume.sections.length).toBeGreaterThan(0);
+      expect(parsed.coverLetter.body.length).toBeGreaterThan(0);
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Resume' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+    expect(screen.getAllByText('EXPERIENCE').length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+    expect(screen.getAllByText('Dear Ms. Lee,').length).toBeGreaterThan(0);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
   it('builds a kit without making a network request', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -864,7 +905,7 @@ describe('feedback and AI instructions', () => {
     expect(screen.queryByText('Resume built.')).not.toBeInTheDocument();
   });
 
-  it('loads the example without copying instructions', async () => {
+  it('loads the resume example without copying instructions', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     renderApp();
     await openPrepare(user, 'resume');
@@ -873,6 +914,16 @@ describe('feedback and AI instructions', () => {
     expect(screen.getByLabelText('Resume text')).toHaveValue(SAMPLE_RESUME_TEXT);
     expect(writeText).not.toHaveBeenCalled();
     expect(screen.queryByText('Example input format')).not.toBeInTheDocument();
+  });
+
+  it('loads the cover letter example', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await openPrepare(user, 'coverLetter');
+    await user.click(screen.getByRole('button', { name: 'Load Example' }));
+
+    expect(screen.getByLabelText('Cover letter text')).toHaveValue(SAMPLE_COVER_LETTER_TEXT);
+    expect(screen.getByLabelText('Cover letter text')).not.toHaveValue(SAMPLE_RESUME_TEXT);
   });
 
   it('supports Escape and Ctrl+Enter from preparation', async () => {

@@ -1,4 +1,5 @@
 import { COVER_LETTER_DELIMITER, RESUME_DELIMITER } from './applicationKitFormat';
+import { APPLICATION_KIT_SAMPLE_TEXT } from './applicationKitSample';
 import { COVER_LETTER_SECTION_ALIASES } from './parseCoverLetter';
 import { LIST_KINDS, RESUME_SECTION_ALIASES, RESUME_SECTION_TITLES } from './parse';
 import type { PrepareKind } from '../types/document';
@@ -238,59 +239,8 @@ If supplied records materially conflict and the conflict cannot be resolved from
 Example output:
 ${COVER_LETTER_AI_EXAMPLE}`;
 
-const KIT_RESUME_EXAMPLE = `# Jordan Avery
-Product engineer | jordan.avery@example.com | +1 555 0142 | Toronto, ON
-
-## SUMMARY
-Product engineer focused on calm, reliable document tools.
-
-## EXPERIENCE
-### Example Company — Senior Product Engineer
-2022 – Present | Toronto, ON
-- Rebuilt a document workflow used by 12,000 people.
-- Reduced time-to-first-draft from nine minutes to under two.
-
-## EDUCATION
-### Example University — B.Sc. Computer Science
-2014 – 2018 | Toronto, ON
-
-## SKILLS
-Languages: TypeScript, Python, SQL`;
-
-const KIT_COVER_LETTER_EXAMPLE = `# Jordan Avery
-Product engineer | jordan.avery@example.com | +1 555 0142 | Toronto, ON
-
-## DATE
-October 18, 2026
-
-## RECIPIENT
-Morgan Lee
-Hiring Manager
-Brightline Labs
-
-## POSITION
-Senior Product Engineer
-
-## SALUTATION
-Dear Ms. Lee,
-
-## BODY
-I am writing to apply for the Senior Product Engineer role at Brightline Labs. My work has focused on calm, dependable document tools.
-
-At Northwind Studio I led the rebuild of a document workflow used by 12,000 people.
-
-## CLOSING
-Sincerely,
-
-## SIGNATURE
-Jordan Avery`;
-
 export const APPLICATION_KIT_AI_EXAMPLE = `${FENCE}text
-${RESUME_DELIMITER}
-${KIT_RESUME_EXAMPLE}
-
-${COVER_LETTER_DELIMITER}
-${KIT_COVER_LETTER_EXAMPLE}
+${APPLICATION_KIT_SAMPLE_TEXT}
 ${FENCE}`;
 
 export const APPLICATION_KIT_AI_INSTRUCTIONS = `ROLE
