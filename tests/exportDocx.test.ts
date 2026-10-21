@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { Packer } from 'docx';
 import JSZip from 'jszip';
 import { collectContentStrings } from '../src/lib/content';
-import { createDocxDocument, docxTextContent, exportDocx } from '../src/lib/exportDocx';
+import { layoutCoverLetter } from '../src/lib/coverLetterLayout';
+import { createSampleCoverLetter } from '../src/lib/coverLetterSample';
+import {
+  createApplicationKitDocxDocument,
+  createDocxDocument,
+  docxTextContent,
+  exportDocx,
+} from '../src/lib/exportDocx';
 import { layoutResume } from '../src/lib/layout';
 import { parseResume } from '../src/lib/parse';
 import { createSampleResume } from '../src/lib/sample';
@@ -50,6 +57,60 @@ function pageSize(xml: string): { width: number; height: number } {
   if (!width || !height) throw new Error('page size missing');
   return { width: Number(width), height: Number(height) };
 }
+
+async function combinedXml(resume: Resume): Promise<string> {
+  const letter = createSampleCoverLetter();
+  const buffer = await Packer.toBuffer(
+    createApplicationKitDocxDocument(
+      resume,
+      layoutResume(resume),
+      letter,
+      layoutCoverLetter(letter),
+    ),
+  );
+  const zip = await JSZip.loadAsync(buffer);
+  const file = zip.file('word/document.xml');
+  if (!file) throw new Error('document.xml missing');
+  return file.async('string');
+}
+
+describe('combined DOCX export', () => {
+  it('contains the cover letter first and the resume second', async () => {
+    const xml = await combinedXml(createSampleResume());
+    expect(xml).toContain('I am writing to apply');
+    expect(xml).toContain('Led the rebuild of a document workflow');
+    expect(xml.indexOf('I am writing to apply')).toBeLessThan(
+      xml.indexOf('Led the rebuild of a document workflow'),
+    );
+    expect(xml).not.toContain('<w:drawing');
+  });
+
+  it('inserts an explicit page break before the resume when geometry matches', async () => {
+    const xml = await combinedXml(createSampleResume());
+    const breakIndex = xml.indexOf('<w:br w:type="page"/>');
+    expect(breakIndex).toBeGreaterThan(-1);
+    expect(breakIndex).toBeLessThan(xml.indexOf('Led the rebuild of a document workflow'));
+  });
+
+  it('uses Word sections when the page sizes differ', async () => {
+    const xml = await combinedXml(withPageSize(createSampleResume(), 'a4'));
+    expect((xml.match(/<w:sectPr/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(xml).toContain('<w:type w:val="nextPage"/>');
+    expect(xml).toContain('w:w="12240"');
+    expect(xml).toContain('w:w="11906"');
+  });
+
+  it("keeps each document's accent colour", async () => {
+    const sample = createSampleResume();
+    const resume: Resume = {
+      ...sample,
+      template: { ...sample.template, accent: '#1D4ED8' },
+    };
+    const xml = await combinedXml(resume);
+    expect(xml).toContain('w:color w:val="1D4ED8"');
+    expect(xml).toContain('w:color w:val="14532D"');
+  });
+});
 
 describe('DOCX export', () => {
   it('produces a non-empty Office Open XML package', async () => {

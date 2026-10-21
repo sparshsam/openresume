@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { collectContentStrings } from '../src/lib/content';
+import { layoutCoverLetter } from '../src/lib/coverLetterLayout';
+import { createSampleCoverLetter } from '../src/lib/coverLetterSample';
 import { resumeMeta } from '../src/lib/documentMeta';
-import { createPdfDocument } from '../src/lib/exportPdf';
-import { resumeFilename } from '../src/lib/filename';
+import { createCombinedPdfDocument, createPdfDocument } from '../src/lib/exportPdf';
+import { applicationKitFilename, resumeFilename } from '../src/lib/filename';
 import { layoutResume } from '../src/lib/layout';
 import { parseResume } from '../src/lib/parse';
 import { createSampleResume } from '../src/lib/sample';
@@ -106,10 +108,47 @@ describe('PDF export', () => {
   });
 });
 
+describe('combined PDF export', () => {
+  it('puts the cover letter first and the resume on a new page', () => {
+    const resume = createSampleResume();
+    const letter = createSampleCoverLetter();
+    const letterLayout = layoutCoverLetter(letter);
+    const resumeLayout = layoutResume(resume);
+
+    const doc = createCombinedPdfDocument('Jordan Avery', letterLayout, resumeLayout);
+    const output = doc.output();
+
+    expect(doc.getNumberOfPages()).toBe(letterLayout.pages.length + resumeLayout.pages.length);
+    expect(output.indexOf('I am writing to apply')).toBeLessThan(
+      output.indexOf('Led the rebuild of a document workflow'),
+    );
+    expect(output).not.toContain('/Subtype /Image');
+  });
+
+  it("uses each document's page size", () => {
+    const letter = createSampleCoverLetter();
+    const resume = withPageSize(createSampleResume(), 'a4');
+    const letterLayout = layoutCoverLetter(letter);
+    const resumeLayout = layoutResume(resume);
+
+    const doc = createCombinedPdfDocument('Jordan Avery', letterLayout, resumeLayout);
+    doc.setPage(1);
+    expect(doc.internal.pageSize.getWidth()).toBeCloseTo(letterLayout.pageWidthPt, 1);
+    doc.setPage(letterLayout.pages.length + 1);
+    expect(doc.internal.pageSize.getWidth()).toBeCloseTo(resumeLayout.pageWidthPt, 1);
+    expect(doc.internal.pageSize.getHeight()).toBeCloseTo(resumeLayout.pageHeightPt, 1);
+  });
+});
+
 describe('resumeFilename', () => {
   it('sanitizes the name and adds the extension', () => {
     expect(resumeFilename('Jordan Avery', 'pdf')).toBe('Jordan-Avery-Resume.pdf');
     expect(resumeFilename('  Ada / Lovelace  ', 'docx')).toBe('Ada-Lovelace-Resume.docx');
     expect(resumeFilename('', 'pdf')).toBe('Resume-Resume.pdf');
+  });
+
+  it('names the combined application kit', () => {
+    expect(applicationKitFilename('Jordan Avery', 'pdf')).toBe('Jordan-Avery-Application-Kit.pdf');
+    expect(applicationKitFilename('', 'docx')).toBe('Application-Application-Kit.docx');
   });
 });

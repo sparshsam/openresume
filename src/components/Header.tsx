@@ -7,6 +7,7 @@ import type { DocumentKind } from '../types/document';
 interface HeaderProps {
   view: 'landing' | 'prepare' | 'workspace';
   kind: DocumentKind | null;
+  kitMode: boolean;
   formattingOpen: boolean;
   onHome: () => void;
   onNew: () => void;
@@ -18,6 +19,7 @@ interface HeaderProps {
 export function Header({
   view,
   kind,
+  kitMode,
   formattingOpen,
   onHome,
   onNew,
@@ -27,7 +29,8 @@ export function Header({
 }: HeaderProps) {
   const { theme } = useTheme();
   const isWorkspace = view === 'workspace' && kind !== null;
-  const kindLabel = kind === 'resume' ? 'Resume' : 'Cover Letter';
+  const kindLabel = kitMode ? 'Application Kit' : kind === 'resume' ? 'Resume' : 'Cover Letter';
+  const newLabel = kitMode ? 'application kit' : kind === 'resume' ? 'resume' : 'cover letter';
 
   return (
     <header className="app-header">
@@ -54,8 +57,8 @@ export function Header({
                 type="button"
                 className="button"
                 onClick={onNew}
-                aria-label={`New ${kind === 'resume' ? 'resume' : 'cover letter'}`}
-                title={`Start a new ${kind === 'resume' ? 'resume' : 'cover letter'}`}
+                aria-label={`New ${newLabel}`}
+                title={`Start a new ${newLabel}`}
               >
                 <Icon name="plus" />
                 <span className="button-label">New</span>
@@ -76,30 +79,34 @@ export function Header({
                 <span className="button-label">Format</span>
               </button>
 
-              <span className="action-divider" aria-hidden="true" />
+              {kitMode ? null : (
+                <>
+                  <span className="action-divider" aria-hidden="true" />
 
-              <div className="action-group">
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={onExportPdf}
-                  aria-label="Export PDF"
-                  title="Export PDF"
-                >
-                  <Icon name="fileText" />
-                  <span className="button-label">PDF</span>
-                </button>
-                <button
-                  type="button"
-                  className="button button-export"
-                  onClick={onExportDocx}
-                  aria-label="Export Word document"
-                  title="Export Word document"
-                >
-                  <Icon name="fileWord" />
-                  <span className="button-label">Word</span>
-                </button>
-              </div>
+                  <div className="action-group">
+                    <button
+                      type="button"
+                      className="button button-primary"
+                      onClick={onExportPdf}
+                      aria-label="Export PDF"
+                      title="Export PDF"
+                    >
+                      <Icon name="fileText" />
+                      <span className="button-label">PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-export"
+                      onClick={onExportDocx}
+                      aria-label="Export Word document"
+                      title="Export Word document"
+                    >
+                      <Icon name="fileWord" />
+                      <span className="button-label">Word</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </nav>
           </>
         ) : null}

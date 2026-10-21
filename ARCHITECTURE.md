@@ -15,14 +15,19 @@ OpenResume is a client-only React application. Its correctness lives in a pure, 
 9. **Independent session documents.** Resume and cover letter models are separate in-memory state and can use different formatting. Building one never changes the other.
 10. **AI instructions cannot drift.** Templates are generated from parser constants and tested against every alias.
 11. **Public pages do not reload the builder.** Internal information-page navigation uses the History API, so both session documents survive. Direct loads use static HTML shells with page-specific metadata.
+12. **The Application Kit is orchestration, not a third copy.** It splits one delimited input into the two existing parsers and reuses the same `resume` and `coverLetter` models, editors, layouts, and exporters. A kit build validates both sections before replacing either model, and failed validation leaves both previous documents untouched.
 
 ## Pipeline
 
 ```mermaid
 flowchart LR
-  A[Structured text] --> P[stripEnclosingCodeFence]
-  P --> B[parseResume]
-  P --> L[parseCoverLetter]
+  A[Structured text] --> K{Application Kit?}
+  K -->|yes| Q[parseApplicationKit]
+  K -->|no| P[stripEnclosingCodeFence]
+  Q --> B[parseResume]
+  Q --> L[parseCoverLetter]
+  P --> B
+  P --> L
   B --> C[Resume model]
   L --> M[CoverLetter model]
   C --> D[measure + wrap]
@@ -41,40 +46,43 @@ flowchart LR
 
 ## Modules
 
-| Module                             | Responsibility                                        | Must not                          |
-| ---------------------------------- | ----------------------------------------------------- | --------------------------------- |
-| `src/components/LandingPage.tsx`   | Document selection and session Open actions           | Own document state                |
-| `src/components/ToastRegion.tsx`   | Dismissible success and error notifications           | Hold document state               |
-| `src/components/InfoPages.tsx`     | About, Privacy, and Terms content                     | Own application state             |
-| `src/components/InternalLink.tsx`  | History-based internal navigation without reloads     | Bypass the app router             |
-| `src/lib/publicPages.ts`           | Path resolution, page metadata, and history push      | Persist documents                 |
-| `src/components/PrepareScreen.tsx` | Shared preparation, validation, AI copy, examples     | Parse with a wrong parser         |
-| `src/components/Header.tsx`        | Brand, context actions, status, theme slot            | Own document state                |
-| `src/components/ThemeProvider.tsx` | Resolve and persist light/dark theme                  | Affect document colors            |
-| `src/lib/theme.ts`                 | Theme context, key, and system detection              | Render UI                         |
-| `src/lib/themeAssets.ts`           | Reversed light/dark header and favicon mapping        | Alter generated artwork           |
-| `src/lib/tokens.ts`                | Document accent palette and fixed neutral colors      | Read UI theme tokens              |
-| `src/components/Footer.tsx`        | Kovina attribution, links, and version                | Invent branding                   |
-| `src/lib/appMeta.ts`               | Build-time application version                        | Read the network                  |
-| `src/lib/codeFence.ts`             | Strip one complete enclosing fence; preserve interior | Touch ambiguous or partial fences |
-| `src/lib/parse.ts`                 | Deterministic text → `Resume`; warnings, no throwing  | Know about React or layout        |
-| `src/lib/parseCoverLetter.ts`      | Deterministic text → `CoverLetter`; warnings          | Know about React or layout        |
-| `src/lib/aiInstructions.ts`        | Parser-generated AI instruction templates             | Duplicate parser rules            |
-| `src/lib/coverLetterLayout.ts`     | Single-column letter layout and pagination            | Recalculate resume layout         |
-| `src/lib/coverLetterEdits.ts`      | Pure cover letter edit helpers                        | Mutate inputs                     |
-| `src/lib/coverLetterScaffold.ts`   | Reuse resume identity in a letter scaffold            | Generate letter body content      |
-| `src/lib/serialize.ts`             | `Resume` → canonical input text (round-trip)          | Lose information                  |
-| `src/lib/normalize.ts`             | Upgrade legacy templates and reject invalid presets   | Invent unsupported values         |
-| `src/lib/metrics.ts`               | Presets → page geometry, typography, and spacing      | Read the DOM                      |
-| `src/lib/measure.ts`               | Helvetica AFM metrics and greedy word wrap            | Depend on the DOM                 |
-| `src/lib/paginate.ts`              | Flow blocks → pages at line boundaries                | Drop or duplicate lines           |
-| `src/lib/layout.ts`                | Resume flow blocks, header, page assembly             | Render or export                  |
-| `src/lib/content.ts`               | Content strings for resume and letter parity checks   | Render or export                  |
-| `src/lib/exportPdf.ts`             | Draw either `Layout` with jsPDF as selectable text    | Recalculate pagination            |
-| `src/lib/exportDocx.ts`            | Resume tables and single-column letter documents      | Rasterize or flatten text         |
-| `src/lib/storage.ts`               | Validate and remove identified legacy draft entries   | Touch unrelated storage           |
-| `src/lib/resumeEdits.ts`           | Pure immutable resume edit helpers                    | Mutate inputs                     |
-| `src/App.tsx`                      | Builder view, public-page route, and both documents   | Contain layout logic              |
+| Module                                     | Responsibility                                        | Must not                          |
+| ------------------------------------------ | ----------------------------------------------------- | --------------------------------- |
+| `src/components/LandingPage.tsx`           | Document selection and session Open actions           | Own document state                |
+| `src/components/ToastRegion.tsx`           | Dismissible success and error notifications           | Hold document state               |
+| `src/components/InfoPages.tsx`             | About, Privacy, and Terms content                     | Own application state             |
+| `src/components/InternalLink.tsx`          | History-based internal navigation without reloads     | Bypass the app router             |
+| `src/lib/publicPages.ts`                   | Path resolution, page metadata, and history push      | Persist documents                 |
+| `src/components/PrepareScreen.tsx`         | Shared preparation, validation, AI copy, examples     | Parse with a wrong parser         |
+| `src/components/Header.tsx`                | Brand, context actions, status, theme slot            | Own document state                |
+| `src/components/ThemeProvider.tsx`         | Resolve and persist light/dark theme                  | Affect document colors            |
+| `src/lib/theme.ts`                         | Theme context, key, and system detection              | Render UI                         |
+| `src/lib/themeAssets.ts`                   | Reversed light/dark header and favicon mapping        | Alter generated artwork           |
+| `src/lib/tokens.ts`                        | Document accent palette and fixed neutral colors      | Read UI theme tokens              |
+| `src/components/Footer.tsx`                | Kovina attribution, links, and version                | Invent branding                   |
+| `src/lib/appMeta.ts`                       | Build-time application version                        | Read the network                  |
+| `src/lib/codeFence.ts`                     | Strip one complete enclosing fence; preserve interior | Touch ambiguous or partial fences |
+| `src/lib/applicationKitFormat.ts`          | Shared Application Kit delimiter constants            | Parse or render                   |
+| `src/lib/parseApplicationKit.ts`           | Split one delimited input into two existing parses    | Duplicate parser rules            |
+| `src/components/ApplicationKitToolbar.tsx` | Kit tabs and combined/separate export actions         | Own document state                |
+| `src/lib/parse.ts`                         | Deterministic text → `Resume`; warnings, no throwing  | Know about React or layout        |
+| `src/lib/parseCoverLetter.ts`              | Deterministic text → `CoverLetter`; warnings          | Know about React or layout        |
+| `src/lib/aiInstructions.ts`                | Parser-generated AI instruction templates             | Duplicate parser rules            |
+| `src/lib/coverLetterLayout.ts`             | Single-column letter layout and pagination            | Recalculate resume layout         |
+| `src/lib/coverLetterEdits.ts`              | Pure cover letter edit helpers                        | Mutate inputs                     |
+| `src/lib/coverLetterScaffold.ts`           | Reuse resume identity in a letter scaffold            | Generate letter body content      |
+| `src/lib/serialize.ts`                     | `Resume` → canonical input text (round-trip)          | Lose information                  |
+| `src/lib/normalize.ts`                     | Upgrade legacy templates and reject invalid presets   | Invent unsupported values         |
+| `src/lib/metrics.ts`                       | Presets → page geometry, typography, and spacing      | Read the DOM                      |
+| `src/lib/measure.ts`                       | Helvetica AFM metrics and greedy word wrap            | Depend on the DOM                 |
+| `src/lib/paginate.ts`                      | Flow blocks → pages at line boundaries                | Drop or duplicate lines           |
+| `src/lib/layout.ts`                        | Resume flow blocks, header, page assembly             | Render or export                  |
+| `src/lib/content.ts`                       | Content strings for resume and letter parity checks   | Render or export                  |
+| `src/lib/exportPdf.ts`                     | Draw either `Layout` with jsPDF as selectable text    | Recalculate pagination            |
+| `src/lib/exportDocx.ts`                    | Resume tables and single-column letter documents      | Rasterize or flatten text         |
+| `src/lib/storage.ts`                       | Validate and remove identified legacy draft entries   | Touch unrelated storage           |
+| `src/lib/resumeEdits.ts`                   | Pure immutable resume edit helpers                    | Mutate inputs                     |
+| `src/App.tsx`                              | Builder view, public-page route, and both documents   | Contain layout logic              |
 
 ## Data model
 
@@ -126,25 +134,30 @@ Both exporters are loaded with dynamic `import()` so the initial bundle stays sm
 - Building replaces the previous document of that type in memory without a confirmation dialog.
 - `collectContentStrings()` and `collectCoverLetterContentStrings()` extract every field from their models and are used to assert PDF/DOCX parity.
 - Both parsers remove one complete enclosing code fence before reading markers; ambiguous, partial, or prose-wrapped fences are left untouched.
+- `parseApplicationKit` removes one enclosing fence, requires the two delimiters exactly once in resume-then-letter order, requires non-empty sections and names, and requires a cover letter body. It reports cross-document name and contact differences as warnings without rewriting either model.
+- A kit build calls both parsers first and only then replaces the two models, preserving each model's existing template when one is present.
 - The AI instruction templates are generated from parser alias constants, require exactly one plain-text code block, and are covered by drift tests.
 
 ## Views and workflow
 
-`App` owns a three-value builder view, an active document kind, and an optional public-page route:
+`App` owns a three-value builder view, a prepare kind, a workspace mode, an active document kind, and an optional public-page route:
 
-| View        | When                                   | Content                                              |
-| ----------- | -------------------------------------- | ---------------------------------------------------- |
-| `landing`   | App start, Home, or no active document | `LandingPage` with Build Resume / Build Cover Letter |
-| `prepare`   | New, replacement, or first build       | `PrepareScreen` for the active kind                  |
-| `workspace` | A session document exists              | Resume or cover letter editor and live preview       |
+| View        | When                                   | Content                                                      |
+| ----------- | -------------------------------------- | ------------------------------------------------------------ |
+| `landing`   | App start, Home, or no active document | `LandingPage` with Resume, Cover Letter, and Application Kit |
+| `prepare`   | New, replacement, or first build       | `PrepareScreen` for the prepare kind                         |
+| `workspace` | A session document exists              | The active document editor and preview; kit tabs in kit mode |
+
+`prepareKind` is `resume`, `coverLetter`, or `applicationKit`. `workspaceMode` is `single` or `kit`; kit mode renders the Application Kit toolbar and tabs but still uses the same two document models. Building a standalone document returns to single mode; building or opening a kit returns to kit mode.
 
 The pathname `/about`, `/privacy`, or `/terms` renders `InfoPages` inside the same header, footer, and theme provider instead of the builder view. The builder view and both documents stay mounted in React state while a public page is open. Internal links use `history.pushState` and a synthetic `popstate`; browser Back and Forward use the same listener. A full reload is never used for internal navigation, so session documents survive. Each public path has a static Vite HTML shell with page-specific metadata and a direct URL; Vercel `cleanUrls` exposes the extensionless paths.
 
 - `App` owns nullable resume and cover letter state initialized to `null`; neither fabricates a sample.
 - The landing card's primary action always opens preparation, with or without a session document.
 - A separate Open action opens an existing workspace and is rendered only while that document exists in memory.
-- `PrepareScreen` requires exactly one top-level `#` heading and validates the selected parser's required fields. Zero or multiple headings produce a clear error and no state change.
+- `PrepareScreen` requires exactly one top-level `#` heading and validates the selected parser's required fields. Zero or multiple headings produce a clear error and no state change. The kit variant validates both sections and shows every combined-parser error inline.
 - A successful build replaces that model, preserves its template (or reuses the resume template for a first cover letter), and switches to the workspace.
+- A successful kit build replaces both models together, preserving each existing template, sets `kitBuilt`, and opens the kit workspace on the Resume tab. A failed kit build changes no document state.
 - New returns to preparation without changing the in-memory document; Back returns to the previous workspace or landing.
 - The header hides document actions outside the workspace, showing only branding and the theme toggle.
 - A matching-letter flow opens cover letter preparation with resume identity/contact prefilled and a return path to the resume. The resume is never modified.
@@ -184,7 +197,8 @@ No state library, router, CSS framework, parser library, or storage wrapper. Pil
 - Parser, serializer, measurement, pagination, layout, edits, cleanup, and exports have focused unit tests for both document types.
 - The long-resume and long-letter tests assert every bullet or paragraph appears exactly once across pages.
 - Export tests assert `%PDF`, page count, real text presence, ZIP magic bytes, text inclusion, and resume/letter single-vs-two-column structure.
-- AI instruction tests assert every parser alias appears in the matching template, that both templates require exactly one plain-text code block, and that the bundled examples parse.
+- AI instruction tests assert every parser alias appears in the matching template, that all three templates require exactly one plain-text code block, that the kit delimiters are documented in order, and that the bundled examples parse.
+- Application Kit tests cover raw and fenced input, missing/duplicate/reversed/empty sections, missing names, malformed fences, cross-document warnings, atomic replacement, tab switching, independent formatting, and the combined exporters.
 - Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, toast feedback, examples, coexisting session documents, matching-letter reuse, replacement without confirmation, legacy cleanup, no document persistence, theme persistence, public-page rendering, metadata, footer links, and history navigation.
 - Public-page tests check static HTML metadata, direct path mapping, robots/sitemap contents, and the Vercel clean-URL configuration.
 

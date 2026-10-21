@@ -4,7 +4,7 @@ OpenResume parses a small, deterministic subset of Markdown. Structure comes fro
 
 ## One document at a time
 
-Building a document replaces that document after an explicit confirmation when a draft already exists. The other document is never touched.
+Building a document replaces that document silently when a draft already exists. The other document is never touched.
 
 Text containing more than one top-level `#` heading is rejected with an error. This prevents concatenated documents from being merged into a single, mixed file.
 
@@ -19,6 +19,28 @@ AI assistants often wrap the whole document in one plain-text code block. OpenRe
 - The fence is not document content. Copy the block contents directly when the assistant offers that option.
 
 The compatibility rule applies to both the resume and cover letter parsers. It runs before any marker is read, so `documentCount`, warnings, and validation behave the same as for unfenced input.
+
+## Application Kit format
+
+An Application Kit combines both documents in one input. Use these exact delimiters on their own lines, resume first:
+
+```text
+=== OPENRESUME: RESUME ===
+# Jordan Avery
+...
+
+=== OPENRESUME: COVER LETTER ===
+# Jordan Avery
+...
+```
+
+- Each section uses the same format as its standalone document, including its own `#` name heading.
+- The delimiters must each appear exactly once, in that order.
+- Nothing may appear before the resume delimiter.
+- The cover letter section must include a `## BODY` with at least one paragraph.
+- One complete enclosing code fence may wrap the whole input.
+
+The combined build is atomic: both sections are parsed and validated before either document model is replaced. Missing, duplicated, reversed, or empty sections are rejected with a specific message. If the two documents use different applicant names, emails, phones, or locations, the kit still builds, but a warning is shown and neither value is rewritten.
 
 ## Resume format
 

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  APPLICATION_KIT_AI_EXAMPLE,
+  APPLICATION_KIT_AI_INSTRUCTIONS,
   COVER_LETTER_AI_EXAMPLE,
   COVER_LETTER_AI_INSTRUCTIONS,
   RESUME_AI_EXAMPLE,
   RESUME_AI_INSTRUCTIONS,
   getAiInstructions,
 } from '../src/lib/aiInstructions';
+import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { COVER_LETTER_SECTION_ALIASES, parseCoverLetter } from '../src/lib/parseCoverLetter';
 import { RESUME_SECTION_ALIASES, parseResume } from '../src/lib/parse';
 
@@ -60,6 +63,16 @@ describe('AI instructions', () => {
     expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('natural paragraphs');
   });
 
+  it('ships a kit example that parses with the real combined parser', () => {
+    const result = parseApplicationKit(APPLICATION_KIT_AI_EXAMPLE);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.resume.header.name).toBe('Jordan Avery');
+    expect(result.coverLetter.applicant.name).toBe('Jordan Avery');
+    expect(result.coverLetter.body.length).toBeGreaterThan(0);
+    expect(result.warnings).toEqual([]);
+  });
+
   it('ships examples that parse with the real parsers', () => {
     const resume = parseResume(RESUME_AI_EXAMPLE).resume;
     expect(resume.header.name).toBe('Jordan Avery');
@@ -70,8 +83,42 @@ describe('AI instructions', () => {
     expect(coverLetter.body.length).toBeGreaterThan(0);
   });
 
+  it('requires one plain-text code block for application kit output', () => {
+    const instructions = APPLICATION_KIT_AI_INSTRUCTIONS;
+    expect(instructions).toContain('Return exactly ONE plain-text code block');
+    expect(instructions).toMatch(/delivery container/i);
+    expect(instructions).toContain('Each document must begin with # ');
+    expect(instructions).toContain('Preserve the literal #, ##, and ### markers');
+    expect(instructions).toContain('=== OPENRESUME: RESUME ===');
+    expect(instructions).toContain('=== OPENRESUME: COVER LETTER ===');
+    expect(instructions.indexOf('=== OPENRESUME: RESUME ===')).toBeLessThan(
+      instructions.indexOf('=== OPENRESUME: COVER LETTER ==='),
+    );
+    expect((instructions.match(/^```/gm) ?? []).length).toBe(2);
+    expect(instructions).toContain('Canadian English');
+    expect(instructions).toContain('ask a concise clarification question');
+  });
+
+  it('mentions every resume and cover letter alias in the kit template', () => {
+    const instructions = APPLICATION_KIT_AI_INSTRUCTIONS.toUpperCase();
+    for (const alias of Object.keys(RESUME_SECTION_ALIASES)) {
+      expect(instructions).toContain(alias.toUpperCase());
+    }
+    for (const alias of Object.keys(COVER_LETTER_SECTION_ALIASES)) {
+      expect(instructions).toContain(alias.toUpperCase());
+    }
+  });
+
+  it('orders the kit example resume before the cover letter', () => {
+    expect(APPLICATION_KIT_AI_EXAMPLE.indexOf('=== OPENRESUME: RESUME ===')).toBeLessThan(
+      APPLICATION_KIT_AI_EXAMPLE.indexOf('=== OPENRESUME: COVER LETTER ==='),
+    );
+    expect((APPLICATION_KIT_AI_EXAMPLE.match(/^```/gm) ?? []).length).toBe(2);
+  });
+
   it('returns the template for the requested document kind', () => {
     expect(getAiInstructions('resume')).toBe(RESUME_AI_INSTRUCTIONS);
     expect(getAiInstructions('coverLetter')).toBe(COVER_LETTER_AI_INSTRUCTIONS);
+    expect(getAiInstructions('applicationKit')).toBe(APPLICATION_KIT_AI_INSTRUCTIONS);
   });
 });

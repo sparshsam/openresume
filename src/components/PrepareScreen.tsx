@@ -1,30 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { getAiInstructions } from '../lib/aiInstructions';
+import { copyAiInstructions } from '../lib/aiClipboard';
 import { SAMPLE_COVER_LETTER_TEXT } from '../lib/coverLetterSample';
+import { parseApplicationKit } from '../lib/parseApplicationKit';
 import { parseCoverLetter } from '../lib/parseCoverLetter';
 import { parseResume } from '../lib/parse';
 import { SAMPLE_RESUME_TEXT } from '../lib/sample';
 import type { CoverLetter } from '../types/coverLetter';
-import type { DocumentKind } from '../types/document';
+import type { PrepareKind } from '../types/document';
 import type { Resume } from '../types/resume';
 
 interface PrepareScreenProps {
-  kind: DocumentKind;
+  kind: PrepareKind;
   initialText?: string;
   reusedFromResume?: boolean;
   resumeScaffold?: string;
   onBuildResume?: (resume: Resume, warnings: string[]) => void;
   onBuildCoverLetter?: (letter: CoverLetter, warnings: string[]) => void;
+  onBuildApplicationKit?: (resume: Resume, coverLetter: CoverLetter, warnings: string[]) => void;
   onNotify?: (message: string, tone?: 'success' | 'error') => void;
   onBack: () => void;
 }
 
-const PLACEHOLDER: Record<DocumentKind, string> = {
+const PLACEHOLDER: Record<PrepareKind, string> = {
   resume:
     '# Your Name\nHeadline | email@example.com | Toronto, ON\n\n## SUMMARY\nA short positioning line.\n\n## EXPERIENCE\n### Company — Role\n2022 – Present | Toronto, ON\n- A specific achievement.',
   coverLetter:
     '# Your Name\nHeadline | email@example.com | Toronto, ON\n\n## DATE\nOctober 18, 2026\n\n## RECIPIENT\nHiring Manager\nExample Company\n\n## BODY\nYour first paragraph.',
+  applicationKit:
+    '=== OPENRESUME: RESUME ===\n# Your Name\nHeadline | email@example.com | Toronto, ON\n\n## SUMMARY\nA short positioning line.\n\n=== OPENRESUME: COVER LETTER ===\n# Your Name\nHeadline | email@example.com | Toronto, ON\n\n## BODY\nYour first paragraph.',
 };
 
 export function PrepareScreen({
@@ -34,6 +38,7 @@ export function PrepareScreen({
   resumeScaffold,
   onBuildResume,
   onBuildCoverLetter,
+  onBuildApplicationKit,
   onNotify,
   onBack,
 }: PrepareScreenProps) {
@@ -55,11 +60,38 @@ export function PrepareScreen({
   }, [onBack]);
 
   const isResume = kind === 'resume';
-  const label = isResume ? 'resume' : 'cover letter';
+  const isApplicationKit = kind === 'applicationKit';
+  const label = isResume ? 'resume' : isApplicationKit ? 'application kit' : 'cover letter';
+  const title = isResume
+    ? 'Create your resume'
+    : isApplicationKit
+      ? 'Create your application kit'
+      : 'Create your cover letter';
+  const textareaLabel = isResume
+    ? 'Resume text'
+    : isApplicationKit
+      ? 'Application kit text'
+      : 'Cover letter text';
+  const buildLabel = isResume
+    ? 'Build Resume'
+    : isApplicationKit
+      ? 'Build Application Kit'
+      : 'Build Cover Letter';
 
   const build = () => {
     if (!text.trim()) {
       setError(`Paste ${label} text before building.`);
+      return;
+    }
+
+    if (isApplicationKit) {
+      const parsed = parseApplicationKit(text);
+      if (!parsed.ok) {
+        setError(parsed.errors.join(' '));
+        return;
+      }
+      setError(null);
+      onBuildApplicationKit?.(parsed.resume, parsed.coverLetter, parsed.warnings);
       return;
     }
 
@@ -108,12 +140,13 @@ export function PrepareScreen({
   };
 
   const copyInstructions = async () => {
-    try {
-      await navigator.clipboard.writeText(getAiInstructions(kind));
-      onNotify?.('AI instructions copied. Paste them into your AI assistant.');
-    } catch {
-      onNotify?.('Could not copy. Allow clipboard access and try again.', 'error');
-    }
+    const copied = await copyAiInstructions(kind);
+    onNotify?.(
+      copied
+        ? 'AI instructions copied. Paste them into your AI assistant.'
+        : 'Could not copy. Allow clipboard access and try again.',
+      copied ? 'success' : 'error',
+    );
   };
 
   return (
@@ -124,9 +157,7 @@ export function PrepareScreen({
         </button>
 
         <p className="prepare-eyebrow">OpenResume</p>
-        <h1 className="prepare-title">
-          {isResume ? 'Create your resume' : 'Create your cover letter'}
-        </h1>
+        <h1 className="prepare-title">{title}</h1>
         <p className="prepare-lede">
           Paste structured content from ChatGPT or any AI assistant. Copy the AI instructions first
           if you want the assistant to produce a format OpenResume can parse exactly.
@@ -138,7 +169,7 @@ export function PrepareScreen({
           <li>Provide your details and the target job description.</li>
           <li>Copy the generated structured text.</li>
           <li>Paste it into OpenResume.</li>
-          <li>Build the document.</li>
+          <li>{isApplicationKit ? 'Build both documents.' : 'Build the document.'}</li>
         </ol>
 
         {reusedFromResume ? (
@@ -156,7 +187,7 @@ export function PrepareScreen({
           }}
         >
           <label className="prepare-label" htmlFor="prepare-text">
-            {isResume ? 'Resume text' : 'Cover letter text'}
+            {textareaLabel}
           </label>
           <textarea
             ref={textareaRef}
@@ -191,8 +222,8 @@ export function PrepareScreen({
 
           <div className="prepare-actions">
             <button type="submit" className="button button-primary">
-              <Icon name={isResume ? 'fileText' : 'mail'} />
-              <span>{isResume ? 'Build Resume' : 'Build Cover Letter'}</span>
+              <Icon name={isResume ? 'fileText' : isApplicationKit ? 'files' : 'mail'} />
+              <span>{buildLabel}</span>
             </button>
             <button type="button" className="button" onClick={copyInstructions}>
               Copy AI Instructions

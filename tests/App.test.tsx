@@ -3,7 +3,11 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
 import { ThemeProvider } from '../src/components/ThemeProvider';
-import { COVER_LETTER_AI_INSTRUCTIONS, RESUME_AI_INSTRUCTIONS } from '../src/lib/aiInstructions';
+import {
+  APPLICATION_KIT_AI_INSTRUCTIONS,
+  COVER_LETTER_AI_INSTRUCTIONS,
+  RESUME_AI_INSTRUCTIONS,
+} from '../src/lib/aiInstructions';
 import { APP_VERSION } from '../src/lib/appMeta';
 import { SAMPLE_COVER_LETTER_TEXT, createSampleCoverLetter } from '../src/lib/coverLetterSample';
 import { createSampleResume, SAMPLE_RESUME_TEXT } from '../src/lib/sample';
@@ -12,6 +16,8 @@ import { DEFAULT_DOCUMENT_ACCENT, DOCUMENT_ACCENTS } from '../src/lib/tokens';
 import { THEME_KEY } from '../src/lib/theme';
 
 const writeText = vi.fn();
+
+const APPLICATION_KIT_TEXT = `=== OPENRESUME: RESUME ===\n${SAMPLE_RESUME_TEXT}\n\n=== OPENRESUME: COVER LETTER ===\n${SAMPLE_COVER_LETTER_TEXT}`;
 
 function rgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -96,6 +102,14 @@ async function buildSampleCoverLetter(user: ReturnType<typeof userEvent.setup>) 
   await renderAndBuild(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
 }
 
+async function buildApplicationKit(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+  fireEvent.change(screen.getByLabelText('Application kit text'), {
+    target: { value: APPLICATION_KIT_TEXT },
+  });
+  await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+}
+
 async function goHome(user: ReturnType<typeof userEvent.setup>) {
   await user.click(
     screen.getByRole('button', { name: /OpenResume home|Back to document selection/ }),
@@ -116,17 +130,85 @@ beforeEach(() => {
 });
 
 describe('landing and navigation', () => {
-  it('shows the two document choices before either document exists', () => {
+  it('shows the three document choices before either document exists', () => {
     renderApp();
 
     expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Resume' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cover Letter' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Application Kit' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Build Resume' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Build Cover Letter' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Build Application Kit' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Copy AI Instructions' })).toHaveLength(3);
     expect(screen.queryByRole('button', { name: 'Open resume' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Open cover letter' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open application kit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Formatting' })).not.toBeInTheDocument();
+  });
+
+  it('copies each homepage template without entering the builder', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    installClipboardMock();
+    renderApp();
+    const copyButtons = screen.getAllByRole('button', { name: 'Copy AI Instructions' });
+
+    await user.click(copyButtons[0]);
+    expect(writeText).toHaveBeenLastCalledWith(RESUME_AI_INSTRUCTIONS);
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+
+    await user.click(copyButtons[1]);
+    expect(writeText).toHaveBeenLastCalledWith(COVER_LETTER_AI_INSTRUCTIONS);
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+
+    await user.click(copyButtons[2]);
+    expect(writeText).toHaveBeenLastCalledWith(APPLICATION_KIT_AI_INSTRUCTIONS);
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText('AI instructions copied. Paste them into your AI assistant.'))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('operates the homepage copy button with the keyboard', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    installClipboardMock();
+    renderApp();
+    const copyButtons = screen.getAllByRole('button', { name: 'Copy AI Instructions' });
+    copyButtons[2].focus();
+    await user.keyboard('{Enter}');
+
+    expect(writeText).toHaveBeenCalledWith(APPLICATION_KIT_AI_INSTRUCTIONS);
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
+  });
+
+  it('opens Application Kit preparation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+
+    expect(
+      screen.getByRole('heading', { name: 'Create your application kit' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Application kit text')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Build Application Kit' })).toBeInTheDocument();
+    const workflow = screen.getByRole('list', { name: 'AI workflow' });
+    expect(within(workflow).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(workflow).getAllByRole('listitem')[5]).toHaveTextContent('Build both documents.');
+  });
+
+  it('shows combined-parser errors inline', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    fireEvent.change(screen.getByLabelText('Application kit text'), {
+      target: { value: 'not a combined document' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('=== OPENRESUME: RESUME ===');
+    expect(screen.getByLabelText('Application kit text')).toHaveValue('not a combined document');
   });
 
   it('routes to the matching preparation screen and back', async () => {
@@ -508,6 +590,199 @@ describe('matching cover letter flow', () => {
     const textarea = screen.getByLabelText('Cover letter text') as HTMLTextAreaElement;
     expect(textarea.value).toContain('# Jordan Avery');
     expect(textarea.value).toContain('jordan.avery@example.com');
+  });
+});
+
+describe('application kit workflow', () => {
+  it('builds both documents and opens the combined workspace', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    expect(
+      screen.getByText('Application kit built. Review both documents before exporting.'),
+    ).toBeInTheDocument();
+    expect(within(screen.getByRole('banner')).getByText('Application Kit')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Resume' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Cover Letter' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+    expect(screen.getByRole('button', { name: 'Download combined PDF' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Download combined Word document' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Download separately')).toBeInTheDocument();
+  });
+
+  it('switches tabs without losing either document', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    await user.clear(screen.getByLabelText('Name'));
+    await user.type(screen.getByLabelText('Name'), 'Kit Resumer');
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+
+    await user.clear(screen.getByLabelText('Name'));
+    await user.type(screen.getByLabelText('Name'), 'Letter Writer');
+    await user.click(screen.getByRole('tab', { name: 'Resume' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Kit Resumer');
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Letter Writer');
+  });
+
+  it('supports arrow-key tab navigation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    const resumeTab = screen.getByRole('tab', { name: 'Resume' });
+    resumeTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Cover Letter' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: 'Cover Letter' })).toHaveFocus();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Resume' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Resume' })).toHaveFocus();
+
+    await user.keyboard('{End}');
+    expect(screen.getByRole('tab', { name: 'Cover Letter' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await user.keyboard('{Home}');
+    expect(screen.getByRole('tab', { name: 'Resume' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps resume and cover letter formatting independent inside the kit', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Blue' }));
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('radio', { name: 'Red' }));
+
+    await user.click(screen.getByRole('tab', { name: 'Resume' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Blue' })).toBeChecked();
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByRole('radio', { name: 'Red' })).toBeChecked();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
+  it('does not replace existing documents when the kit fails validation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildDocument(user, 'resume', SAMPLE_RESUME_TEXT);
+    await user.clear(screen.getByLabelText('Name'));
+    await user.type(screen.getByLabelText('Name'), 'Prior Resumer');
+    await goHome(user);
+
+    await buildDocument(user, 'coverLetter', SAMPLE_COVER_LETTER_TEXT);
+    await user.clear(screen.getByLabelText('Name'));
+    await user.type(screen.getByLabelText('Name'), 'Prior Letter');
+    await goHome(user);
+
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    fireEvent.change(screen.getByLabelText('Application kit text'), {
+      target: { value: 'not a valid kit' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('=== OPENRESUME: RESUME ===');
+
+    await user.click(screen.getByRole('button', { name: /^← Back$/ }));
+    await user.click(screen.getByRole('button', { name: 'Open resume' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Prior Resumer');
+
+    await goHome(user);
+    await user.click(screen.getByRole('button', { name: 'Open cover letter' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Prior Letter');
+  });
+
+  it('offers Open application kit only after a kit is built', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await goHome(user);
+
+    expect(screen.queryByRole('button', { name: 'Open application kit' })).not.toBeInTheDocument();
+
+    await buildApplicationKit(user);
+    await goHome(user);
+    const openKit = screen.getByRole('button', { name: 'Open application kit' });
+    await user.click(openKit);
+
+    expect(screen.getByRole('tab', { name: 'Resume' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+  });
+
+  it('preserves the kit across public-page navigation', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+    await goHome(user);
+
+    await user.click(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'About' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Your documents. Your words.',
+    );
+
+    await user.click(screen.getAllByRole('link', { name: 'Back to builder' })[0]);
+    await user.click(screen.getByRole('button', { name: 'Open application kit' }));
+    expect(screen.getByRole('tab', { name: 'Resume' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
+  });
+
+  it('builds a kit without making a network request', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces a cross-document inconsistency warning', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const mismatched = APPLICATION_KIT_TEXT.replace('# Jordan Avery', '# Jordan A. Avery');
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    fireEvent.change(screen.getByLabelText('Application kit text'), {
+      target: { value: mismatched },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+
+    expect(screen.getByText(/different applicant names/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Resume' })).toBeInTheDocument();
+  });
+
+  it('clears the kit on reload without persisting document content', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const first = renderApp();
+    await buildApplicationKit(user);
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+
+    first.unmount();
+    renderApp();
+
+    expect(screen.queryByRole('button', { name: 'Open application kit' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Your next application/i })).toBeInTheDocument();
   });
 });
 

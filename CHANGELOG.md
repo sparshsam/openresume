@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.9] — 2026-10-21
+
+### Added
+
+- Application Kit: a third document-building workflow that creates a tailored resume and matching cover letter from one combined AI response.
+- Combined AI instruction template with one plain-text code block and the exact `=== OPENRESUME: RESUME ===` and `=== OPENRESUME: COVER LETTER ===` delimiters.
+- Combined parser (`parseApplicationKit`) that validates both documents atomically, rejects ambiguous boundaries, and warns about cross-document applicant or contact inconsistencies without rewriting them.
+- Copy AI Instructions on every homepage card, including the new Application Kit card.
+- Tabbed Application Kit workspace with accessible Resume and Cover Letter tabs, independent editing and formatting, and the existing editors and preview.
+- Combined PDF export with the cover letter first and the resume on a new page, preserving selectable text, page sizes, accents, and pagination.
+- Combined DOCX export with the cover letter first, an explicit page break when geometry matches, and Word sections when page sizes or margins differ.
+- Separate resume and cover letter PDF and Word downloads from the kit workspace.
+
+### Changed
+
+- The homepage presents three balanced cards on desktop, two at tablet widths, and one on mobile.
+- The header identifies the combined workflow as Application Kit and starts a new kit from New.
+- Both standalone parsers, editors, exports, and session behavior are unchanged.
+- Version bumped to 0.1.9.
+
+### Fixed
+
+- Documentation no longer says a replacement build requires confirmation; the application has always replaced the selected document silently.
+
 ## [0.1.8] — 2026-10-20
 
 ### Added
