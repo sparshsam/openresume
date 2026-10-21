@@ -1,3 +1,4 @@
+import { stripEnclosingCodeFence } from './codeFence';
 import { parseContactLine } from './contact';
 import { DEFAULT_FORMAT, DEFAULT_TEMPLATE } from '../types/resume';
 import type { CoverLetter, CoverLetterParseResult } from '../types/coverLetter';
@@ -100,7 +101,8 @@ export function parseCoverLetter(input: string): CoverLetterParseResult {
   };
   const unknownLines: string[] = [];
   const unknownTitles: string[] = [];
-  const lines = input.replace(/\r\n?/g, '\n').split('\n');
+  const normalized = stripEnclosingCodeFence(input);
+  const lines = normalized.replace(/\r\n?/g, '\n').split('\n');
 
   let awaitingContact = false;
   let sawContactLine = false;
@@ -191,7 +193,7 @@ export function parseCoverLetter(input: string): CoverLetterParseResult {
     }
   }
 
-  if (!input.trim()) {
+  if (!normalized.trim()) {
     warnings.push('No content found. Start with "# Your Name".');
   } else if (!coverLetter.applicant.name) {
     warnings.push('No name found. Start with "# Your Name".');

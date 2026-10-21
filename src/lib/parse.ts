@@ -1,3 +1,4 @@
+import { stripEnclosingCodeFence } from './codeFence';
 import { parseContactLine } from './contact';
 import {
   DEFAULT_FORMAT,
@@ -127,7 +128,8 @@ function emptyResume(): Resume {
 export function parseResume(input: string): ParseResult {
   const warnings: string[] = [];
   const resume = emptyResume();
-  const lines = input.replace(/\r\n?/g, '\n').split('\n');
+  const normalized = stripEnclosingCodeFence(input);
+  const lines = normalized.replace(/\r\n?/g, '\n').split('\n');
 
   let awaitingContact = false;
   let sawContactLine = false;
@@ -299,7 +301,7 @@ export function parseResume(input: string): ParseResult {
     lastWasBullet = false;
   }
 
-  if (!input.trim()) {
+  if (!normalized.trim()) {
     warnings.push('No content found. Start with "# Your Name".');
   } else if (!resume.header.name) {
     warnings.push('No name found. Start with "# Your Name".');
