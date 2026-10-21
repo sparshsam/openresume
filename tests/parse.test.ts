@@ -169,6 +169,22 @@ describe('parseResume', () => {
     expect(parseResume('').documentCount).toBe(0);
   });
 
+  it('parses fenced structured text identically to unfenced text', () => {
+    const fenced = `\`\`\`text\n${SAMPLE}\n\`\`\``;
+    const direct = parseResume(SAMPLE);
+    const wrapped = parseResume(fenced);
+    expect(wrapped.resume).toEqual(direct.resume);
+    expect(wrapped.documentCount).toBe(1);
+    expect(wrapped.warnings).toEqual([]);
+  });
+
+  it('does not strip a fence that is surrounded by prose', () => {
+    const input = `Here is your resume:\n\`\`\`text\n${SAMPLE}\n\`\`\``;
+    const { resume } = parseResume(input);
+    expect(resume.header.name).toBe('Sparsh Example');
+    expect(resume.sections[0]?.items[0]?.body).toContain('Here is your resume:');
+  });
+
   it('detects concatenated resumes instead of silently merging them', () => {
     const concatenated = `${SAMPLE}\n\n# Second Person\nsecond@example.com\n\n## SUMMARY\nSecond.`;
     const { documentCount, warnings } = parseResume(concatenated);

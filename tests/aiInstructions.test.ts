@@ -24,18 +24,40 @@ describe('AI instructions', () => {
     }
   });
 
-  it('includes the structural and factual rules', () => {
-    expect(RESUME_AI_INSTRUCTIONS).toContain('Output only plain structured text');
+  it('requires one plain-text code block for resume output', () => {
+    const instructions = RESUME_AI_INSTRUCTIONS;
+    expect(instructions).toContain('Return exactly ONE plain-text code block');
+    expect(instructions).toMatch(/delivery container/i);
+    expect(instructions).toContain('The first character INSIDE the code block must be #');
+    expect(instructions).toContain('Preserve the literal #, ##, and ### markers');
+    expect(instructions).toMatch(/no explanatory text outside the code block/i);
+    expect(instructions).toMatch(/no additional code blocks/i);
+    expect(instructions).toMatch(/no tables or HTML/i);
+    expect((instructions.match(/^```/gm) ?? []).length).toBe(2);
+  });
+
+  it('includes the resume structural and factual rules', () => {
     expect(RESUME_AI_INSTRUCTIONS).toContain('Never invent');
     expect(RESUME_AI_INSTRUCTIONS).toContain('## EXPERIENCE');
-    expect(RESUME_AI_INSTRUCTIONS).toContain('### Company — Role');
-    expect(RESUME_AI_INSTRUCTIONS).not.toContain('```');
+    expect(RESUME_AI_INSTRUCTIONS).toContain('### Employer Name — Job Title');
+    expect(RESUME_AI_INSTRUCTIONS).toContain('Canadian English');
+    expect(RESUME_AI_INSTRUCTIONS).toContain('ask a concise clarification question');
+  });
 
-    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Output only plain structured text');
-    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Never invent');
+  it('requires one plain-text code block for cover letter output', () => {
+    const instructions = COVER_LETTER_AI_INSTRUCTIONS;
+    expect(instructions).toContain('Return exactly ONE plain-text code block');
+    expect(instructions).toMatch(/delivery container/i);
+    expect(instructions).toContain('The first character INSIDE the code block must be #');
+    expect(instructions).toContain('Preserve the literal #, ##, and ### markers');
+    expect((instructions.match(/^```/gm) ?? []).length).toBe(2);
+  });
+
+  it('includes the cover letter structural and factual rules', () => {
     expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('## BODY');
-    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Separate paragraphs with a blank line');
-    expect(COVER_LETTER_AI_INSTRUCTIONS).not.toContain('```');
+    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Never invent');
+    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Canadian English');
+    expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('natural paragraphs');
   });
 
   it('ships examples that parse with the real parsers', () => {

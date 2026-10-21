@@ -551,6 +551,19 @@ button:disabled {
   line-height: 1.6;
 }
 
+.prepare-steps {
+  max-width: 64ch;
+  margin-top: 14px;
+  padding-left: 22px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.prepare-steps li + li {
+  margin-top: 2px;
+}
+
 .prepare-note {
   margin-top: 16px;
   padding: 10px 12px;

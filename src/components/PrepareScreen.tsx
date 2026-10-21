@@ -110,7 +110,7 @@ export function PrepareScreen({
   const copyInstructions = async () => {
     try {
       await navigator.clipboard.writeText(getAiInstructions(kind));
-      onNotify?.('AI instructions copied.');
+      onNotify?.('AI instructions copied. Paste them into your AI assistant.');
     } catch {
       onNotify?.('Could not copy. Allow clipboard access and try again.', 'error');
     }
@@ -131,6 +131,15 @@ export function PrepareScreen({
           Paste structured content from ChatGPT or any AI assistant. Copy the AI instructions first
           if you want the assistant to produce a format OpenResume can parse exactly.
         </p>
+
+        <ol className="prepare-steps" aria-label="AI workflow">
+          <li>Copy AI Instructions.</li>
+          <li>Paste them into ChatGPT or another AI assistant.</li>
+          <li>Provide your details and the target job description.</li>
+          <li>Copy the generated structured text.</li>
+          <li>Paste it into OpenResume.</li>
+          <li>Build the document.</li>
+        </ol>
 
         {reusedFromResume ? (
           <p className="prepare-note">

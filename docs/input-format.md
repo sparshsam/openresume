@@ -8,6 +8,18 @@ Building a document replaces that document after an explicit confirmation when a
 
 Text containing more than one top-level `#` heading is rejected with an error. This prevents concatenated documents from being merged into a single, mixed file.
 
+## Code fences on paste
+
+AI assistants often wrap the whole document in one plain-text code block. OpenResume accepts that delivery container so the response can be pasted as-is.
+
+- An unlabelled fence or a `text`-labelled fence is accepted.
+- The first non-empty line must be the opening fence and the last non-empty line must be the closing fence.
+- Exactly one complete enclosing pair is removed; the interior is preserved exactly.
+- A fence surrounded by prose, an unbalanced fence, two separate fence pairs, or a fence containing another fence line is treated as ordinary text and is not removed.
+- The fence is not document content. Copy the block contents directly when the assistant offers that option.
+
+The compatibility rule applies to both the resume and cover letter parsers. It runs before any marker is read, so `documentCount`, warnings, and validation behave the same as for unfenced input.
+
 ## Resume format
 
 ### Canonical example

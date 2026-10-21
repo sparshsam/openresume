@@ -122,6 +122,23 @@ describe('parseCoverLetter', () => {
     expect(warnings.some((warning) => warning.includes('BODY'))).toBe(true);
   });
 
+  it('parses fenced structured text identically to unfenced text', () => {
+    const fenced = `\`\`\`\n${SAMPLE_COVER_LETTER_TEXT}\n\`\`\``;
+    const direct = parseCoverLetter(SAMPLE_COVER_LETTER_TEXT);
+    const wrapped = parseCoverLetter(fenced);
+    expect(wrapped.coverLetter).toEqual(direct.coverLetter);
+    expect(wrapped.documentCount).toBe(1);
+    expect(wrapped.warnings).toEqual([]);
+  });
+
+  it('does not strip a fence that is surrounded by prose', () => {
+    const input = `Here is your letter:\n\`\`\`text\n${SAMPLE_COVER_LETTER_TEXT}\n\`\`\``;
+    const { coverLetter, warnings } = parseCoverLetter(input);
+    expect(coverLetter.applicant.name).toBe('Jordan Avery');
+    expect(coverLetter.body[0]).toContain('Here is your letter:');
+    expect(warnings.some((warning) => warning.includes('before the first'))).toBe(true);
+  });
+
   it('preserves punctuation and capitalization', () => {
     const { coverLetter } = parseCoverLetter(
       ['# Ada Lovelace', '', '## BODY', 'I build things — carefully, with Two  spaces.'].join('\n'),

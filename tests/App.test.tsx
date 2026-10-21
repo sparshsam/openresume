@@ -520,7 +520,35 @@ describe('feedback and AI instructions', () => {
     await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
 
     expect(writeText).toHaveBeenCalledWith(RESUME_AI_INSTRUCTIONS);
-    expect(await screen.findByText('AI instructions copied.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('AI instructions copied. Paste them into your AI assistant.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the six-step AI workflow on the preparation screen', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await openPrepare(user, 'resume');
+
+    const workflow = screen.getByRole('list', { name: 'AI workflow' });
+    const steps = within(workflow).getAllByRole('listitem');
+    expect(steps).toHaveLength(6);
+    expect(steps[0]).toHaveTextContent('Copy AI Instructions.');
+    expect(steps[5]).toHaveTextContent('Build the document.');
+  });
+
+  it('copies instructions without making a network request', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup({ writeToClipboard: false });
+    installClipboardMock();
+    renderApp();
+    await openPrepare(user, 'resume');
+    await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
+
+    expect(writeText).toHaveBeenCalledWith(RESUME_AI_INSTRUCTIONS);
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('copies the complete cover letter instructions', async () => {
@@ -541,6 +569,15 @@ describe('feedback and AI instructions', () => {
     await user.click(screen.getByRole('button', { name: 'Copy AI Instructions' }));
 
     expect(await screen.findByText(/Could not copy/)).toBeInTheDocument();
+  });
+
+  it('builds a fenced document without persisting it', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await renderAndBuild(user, 'resume', `\`\`\`text\n${SAMPLE_RESUME_TEXT}\n\`\`\``);
+
+    expect(screen.getByText('Resume built.')).toBeInTheDocument();
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
   });
 
   it('dismisses a toast accessibly', async () => {
