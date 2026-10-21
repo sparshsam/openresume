@@ -8,6 +8,7 @@ import {
   RESUME_AI_INSTRUCTIONS,
   getAiInstructions,
 } from '../src/lib/aiInstructions';
+import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { COVER_LETTER_SECTION_ALIASES, parseCoverLetter } from '../src/lib/parseCoverLetter';
 import { RESUME_SECTION_ALIASES, parseResume } from '../src/lib/parse';
 
@@ -60,6 +61,16 @@ describe('AI instructions', () => {
     expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Never invent');
     expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('Canadian English');
     expect(COVER_LETTER_AI_INSTRUCTIONS).toContain('natural paragraphs');
+  });
+
+  it('ships a kit example that parses with the real combined parser', () => {
+    const result = parseApplicationKit(APPLICATION_KIT_AI_EXAMPLE);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.resume.header.name).toBe('Jordan Avery');
+    expect(result.coverLetter.applicant.name).toBe('Jordan Avery');
+    expect(result.coverLetter.body.length).toBeGreaterThan(0);
+    expect(result.warnings).toEqual([]);
   });
 
   it('ships examples that parse with the real parsers', () => {
