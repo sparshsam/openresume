@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.8.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.9.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.8). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.9). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -21,7 +21,7 @@ OpenResume exists because document updates should not require an account, a subs
 
 Resumes use a fixed two-column layout. Cover letters use a calm single-column business-letter layout. Both support live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
 
-Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Documents live in memory for the current session only; exports are generated locally. The app never makes a network request at runtime.
+Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Resume, cover letter, and Application Kit content live in memory for the current session only; exports are generated locally. The app never makes a network request at runtime.
 
 The workflow is:
 
@@ -29,7 +29,9 @@ The workflow is:
 Choose document → Prepare content → Build → Edit/Preview → Export
 ```
 
-OpenResume opens on a document-selection screen with two cards: **Resume** and **Cover Letter**. Each card starts a new build in its preparation screen. A document created in the current session can be reopened from its card with **Open resume** or **Open cover letter**.
+OpenResume opens on a document-selection screen with three cards: **Resume**, **Cover Letter**, and **Application Kit**. Each card starts a new build in its preparation screen and offers **Copy AI Instructions**. A document created in the current session can be reopened from its card with **Open resume**, **Open cover letter**, or **Open application kit**.
+
+The **Application Kit** builds a tailored resume and matching cover letter together from one combined AI response. Both documents open in a tabbed workspace, remain independently editable, and can be exported as one combined PDF, one combined Word document, or separate files.
 
 ![OpenResume document selection](assets/hero/hero-light.png)
 
@@ -45,8 +47,10 @@ These pages share the application header, footer, themes, and responsive layout.
 
 ## Features
 
-- **Two-card document-selection landing page** for a resume or a cover letter, with Build and session-only Open actions.
-- **Preparation screens** with a large paste area, Copy AI Instructions, Load Example, and inline validation.
+- **Three-card document-selection landing page** for a resume, a cover letter, or an Application Kit, with Build, Copy AI Instructions, and session-only Open actions.
+- **Preparation screens** with a large paste area, Copy AI Instructions, Load Example, the six-step AI workflow, and inline validation.
+- **Application Kit workflow** that builds both documents atomically, warns about cross-document inconsistencies, and preserves the previous documents if validation fails.
+- **Tabbed kit workspace** with accessible Resume and Cover Letter tabs, independent editing and formatting, and no duplicated document data.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
 - **Resume workspace** preserving the fixed two-column template, section ordering, editing, and pagination.
 - **Cover letter workspace** with applicant details, date, recipient, position, salutation, body paragraphs, closing, and signature.
@@ -60,6 +64,8 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Reliable pagination** that keeps headings and signatures with content and avoids blank pages.
 - **Selectable-text PDF** generated with real text, not screenshots.
 - **Editable DOCX** with readable, naturally flowing paragraphs.
+- **Combined exports** for the kit: cover letter first, resume on a new page, with Word sections when the two documents use different page sizes or margins.
+- **Separate kit downloads** for each document as PDF or Word.
 - **Light, dark, and system themes** with a persistent, flash-free header toggle.
 - **Accessible editors** with labeled controls, keyboard focus, and reduced-motion support.
 - **Theme-aware branding** with light and dark app icons, favicons, and social preview assets generated from the authoritative logo masters.
@@ -82,9 +88,23 @@ The resume template is unchanged. Formatting is stored with each document, so th
 
 ## AI instructions
 
-Both preparation screens include **Copy AI Instructions**. The copied template explains the exact structured format, supported headings and aliases, entry/paragraph rules, optional fields, and the factual-accuracy requirement.
+Every preparation screen and every homepage card includes **Copy AI Instructions**. The copied template explains the exact structured format, supported headings and aliases, entry/paragraph rules, optional fields, and the factual-accuracy requirement.
 
-The template asks the assistant to return exactly one plain-text code block containing the complete document. The code fence is only a delivery container: the first character inside it must be `#`, and the literal `#`, `##`, and `###` markers must survive. This matters because chat interfaces render Markdown headings; copying a rendered response can silently drop the markers OpenResume needs.
+The resume and cover letter templates ask the assistant to return exactly one plain-text code block containing the complete document. The code fence is only a delivery container: the first character inside it must be `#`, and the literal `#`, `##`, and `###` markers must survive. This matters because chat interfaces render Markdown headings; copying a rendered response can silently drop the markers OpenResume needs.
+
+The Application Kit template asks for one code block containing both documents, in this order:
+
+```text
+=== OPENRESUME: RESUME ===
+# Full Name
+...
+
+=== OPENRESUME: COVER LETTER ===
+# Full Name
+...
+```
+
+Each section uses the same format as its standalone document. OpenResume validates both sections together and replaces neither document if either one fails.
 
 The workflow is:
 
@@ -218,6 +238,8 @@ Jordan Avery
 ```
 
 Parsing is deterministic: markers define structure, and content is preserved exactly except for structural whitespace. One complete enclosing code fence around the whole document is accepted and removed before parsing, so an AI response can be pasted as-is. Prepare one document at a time; text containing more than one top-level `#` heading is rejected so documents cannot be mixed.
+
+An Application Kit uses the same rules inside two delimited sections. The delimiters must each appear exactly once, in resume-then-cover-letter order. Missing, duplicated, reversed, empty, or prose-wrapped sections are rejected with a clear message. Cross-document name or contact differences are reported as warnings and are never rewritten.
 
 ## Page sizes and formatting
 

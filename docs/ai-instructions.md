@@ -15,16 +15,38 @@ The code fence solves that problem by making the document plain text:
 
 The templates do not require literal Markdown headings outside the code block.
 
+## Application Kit output
+
+The Application Kit template asks for the same single plain-text code block, but the block contains two documents in a fixed order. Use these exact delimiters on their own lines:
+
+```text
+=== OPENRESUME: RESUME ===
+# Full Name
+...
+
+=== OPENRESUME: COVER LETTER ===
+# Full Name
+...
+```
+
+- The resume comes first and the cover letter second.
+- Each delimiter appears exactly once.
+- Each document keeps its own `#` name heading and its own parser format.
+- Nothing may appear before the resume delimiter or after the cover letter.
+- The two sections share one set of applicant facts. The template must not invent a different identity, employer, date, or qualification for either document.
+
+The combined parser validates both sections before any document is replaced. Missing, duplicated, reversed, empty, or prose-wrapped delimiters are rejected with a specific message. If the two documents use different names, emails, phones, or locations, the build still succeeds with a warning and the details are left exactly as written.
+
 ## Workflow
 
-Each preparation screen shows the same six steps:
+Each preparation screen, and every homepage card, offers **Copy AI Instructions**. The preparation screen shows the same six steps:
 
 1. Copy AI Instructions.
 2. Paste them into ChatGPT or another AI assistant.
 3. Provide your details and the target job description.
 4. Copy the generated structured text.
 5. Paste it into OpenResume.
-6. Build the document.
+6. Build the document (or both documents, for an Application Kit).
 
 Copy the block contents directly when the interface offers a copy button. If the assistant's response includes the fence, OpenResume accepts it: the preparation parser strips one complete enclosing fence before parsing.
 
@@ -32,7 +54,7 @@ Copy the block contents directly when the interface offers a copy button. If the
 
 Each template explains:
 
-- The role, task, and required output container.
+- The role, task, and required output container. The Application Kit template also explains the delimiter contract and the resume-then-letter order.
 - The exact input structure and markers.
 - Every supported section heading and alias, generated from the parser constants.
 - How resume entries or cover letter paragraphs are structured.
@@ -52,6 +74,8 @@ The parsers remove exactly one complete enclosing fence when all of these are tr
 
 Ambiguous input is left unchanged. A fence surrounded by prose, an unbalanced fence, two separate fence pairs, or a fence containing another fence line is parsed as ordinary text. This keeps the defensive behaviour from rewriting unrelated content.
 
+The Application Kit preparation screen applies the same enclosing-fence rule before it looks for the two delimiters. A malformed fence is rejected with a clear message instead of being guessed at.
+
 The primary workflow still encourages copying the block contents directly; fence stripping is a compatibility measure.
 
 ## Single source of truth
@@ -60,6 +84,7 @@ The templates live in [`src/lib/aiInstructions.ts`](../src/lib/aiInstructions.ts
 
 - `RESUME_SECTION_ALIASES` and `RESUME_SECTION_TITLES` in `src/lib/parse.ts`.
 - `COVER_LETTER_SECTION_ALIASES` in `src/lib/parseCoverLetter.ts`.
+- `RESUME_DELIMITER` and `COVER_LETTER_DELIMITER` in `src/lib/applicationKitFormat.ts`, shared by the kit template and the combined parser.
 
 The UI copies these strings directly. There is no separate hand-maintained copy in documentation, so the instructions and parsers cannot silently drift.
 

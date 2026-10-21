@@ -18,12 +18,12 @@ Required reading before every session:
 
 A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (two columns for resumes, one for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
-## Current state (2026-10-20)
+## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.8 (AI instruction copy compatibility: one plain-text code block, parser-generated templates, and defensive fence stripping), released and deployed.
-- **Release:** annotated tag `v0.1.8` on the v0.1.8 merge commit; GitHub pre-release published.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.8 run passed with 231 tests across 20 files.
+- **Version:** v0.1.9 (Application Kit: one combined input, atomic build, tabbed workspace, combined and separate exports), released and deployed.
+- **Release:** annotated tag `v0.1.9` on the v0.1.9 merge commit; GitHub pre-release published.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.9 run passed with 276 tests across 22 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -47,13 +47,14 @@ npm run check        # everything above, in release order
 ## Architecture map
 
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
-- `src/components/LandingPage.tsx` — two-card document selection with Build and session Open actions.
+- `src/components/LandingPage.tsx` — three-card document selection (Resume, Cover Letter, Application Kit) with Build, Copy AI Instructions, and session Open actions.
+- `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs and combined/separate export actions.
 - `src/components/ToastRegion.tsx` — dismissible success and error notifications.
 - `src/components/InfoPages.tsx` — About, Privacy, and Terms content.
 - `src/components/InternalLink.tsx` / `src/lib/publicPages.ts` — history-based public-page navigation and metadata.
 - `about.html`, `privacy.html`, `terms.html` — static public shells with page-specific SEO metadata.
 - `public/robots.txt` / `public/sitemap.xml` — canonical-only discovery files.
-- `src/components/PrepareScreen.tsx` — shared preparation, validation, AI copy, examples.
+- `src/components/PrepareScreen.tsx` — shared preparation for resume, cover letter, and Application Kit, with validation, AI copy, and examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
 - `src/lib/themeAssets.ts` — intentionally reversed light/dark logo assignment for the header and favicons.
 - `src/lib/tokens.ts` — document accent palette and fixed neutral document colors.
@@ -66,6 +67,8 @@ npm run check        # everything above, in release order
 - `src/components/Icon.tsx` — inline SVG icons; no icon dependency.
 - `docs/interface.md` — workflow, navigation, theme, responsive, and accessibility rules.
 - `src/lib/codeFence.ts` — strips one complete enclosing code fence before parsing; leaves ambiguous input untouched.
+- `src/lib/applicationKitFormat.ts` — shared Application Kit delimiter constants.
+- `src/lib/parseApplicationKit.ts` — splits one delimited input into the two existing parsers; validates order, count, emptiness, names, and body; warns on cross-document differences.
 - `src/lib/parse.ts` — text → `Resume` (pure, deterministic); reports `documentCount`.
 - `src/lib/parseCoverLetter.ts` — text → `CoverLetter`; reports `documentCount`.
 - `src/lib/contact.ts` — shared contact-line classification.
@@ -77,9 +80,9 @@ npm run check        # everything above, in release order
 - `src/lib/layout.ts` — resume flow blocks, header, page assembly.
 - `src/lib/coverLetterLayout.ts` — single-column letter layout.
 - `src/lib/coverLetterEdits.ts` / `coverLetterScaffold.ts` — letter edits and resume-detail reuse.
-- `src/lib/aiInstructions.ts` — parser-generated AI instruction templates.
+- `src/lib/aiInstructions.ts` — parser-generated AI instruction templates, including the delimited Application Kit template.
 - `src/lib/content.ts` — content strings for PDF/DOCX parity checks.
-- `src/lib/exportPdf.ts` / `exportDocx.ts` — render either document's `Layout`.
+- `src/lib/exportPdf.ts` / `exportDocx.ts` — render either document's `Layout`; both also expose a combined Application Kit exporter.
 - `src/lib/storage.ts` — validated one-time cleanup of v0.1.x draft entries.
 - `src/components/FormattingPanel.tsx` — document-specific formatting controls.
 - `src/App.tsx` — state wiring only.
@@ -107,11 +110,15 @@ Full design: `ARCHITECTURE.md`.
 17. **One document accent model.** `template.accent` feeds `Layout`; preview, PDF, and DOCX must read the same value. Never introduce an independent export palette.
 18. **Logo cross-assignment is intentional.** Light interface → dark-background asset; dark interface → light-background asset. Use `themeAssets.ts`; do not rename or alter the generated masters.
 19. **One enclosing fence is a container, not content.** Both parsers strip exactly one complete enclosing `text` or unlabelled fence before reading markers. Never strip prose-wrapped, partial, or ambiguous fences, and never alter the interior.
+20. **The Application Kit is orchestration, not a third document.** It reuses the same `resume` and `coverLetter` models, parsers, editors, layouts, formatting, and exporters. Never duplicate document content or parser rules.
+21. **Kit builds are atomic.** Parse and validate both sections before replacing either model. A failed kit build must leave both previous documents untouched. Cross-document name or contact differences are warnings only; never rewrite them.
+22. **Combined exports preserve document integrity.** Combined PDF is cover letter then resume, with each document on its own pages and selectable text. Combined DOCX is one editable document: explicit page break when geometry matches, `nextPage` Word sections when page sizes or margins differ. Never concatenate ZIP files.
+23. **Kit tabs are accessible and independent.** Resume and Cover Letter tabs use `tablist`/`tab`/`tabpanel`, arrow/Home/End navigation, and roving `tabIndex`. Switching tabs preserves edits and each document's own formatting and accent.
 
 ## Working agreement
 
 - Make focused changes and run `npm run check` before claiming completion.
-- Add tests with behavior changes; both parsers, pagination, exports, preparation validation, AI instruction drift, coexisting session documents, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
+- Add tests with behavior changes; both parsers, the combined kit parser, pagination, standalone and combined exports, preparation validation, AI instruction drift, coexisting session documents, kit atomicity and tab independence, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.

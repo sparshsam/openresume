@@ -4,14 +4,17 @@ OpenResume is a document production workspace for two document types: a resume a
 
 ## Landing
 
-The first screen presents two substantial, independently floating cards:
+The first screen presents three substantial, independently floating cards:
 
 - **Resume** — **Build Resume** starts a precise, two-column resume.
 - **Cover Letter** — **Build Cover Letter** starts a calm, single-column business letter.
+- **Application Kit** — **Build Application Kit** starts a combined resume-and-letter workflow.
 
-The cards sit side by side on desktop and stack on smaller screens. Each is a single clickable surface with a visible primary action; the whole card opens the matching preparation screen.
+Each card also offers **Copy AI Instructions**, which copies that document's template without entering the builder. The cards use three balanced columns on desktop, two columns at tablet widths, and one column on mobile.
 
-Build always opens preparation. When a document exists in the current session, its card also offers **Open resume** or **Open cover letter** to return to that workspace. Reloading the page clears both documents; there are no saved-draft badges or restoration controls.
+Each card is a single clickable surface with a visible primary action; the whole card opens the matching preparation screen except for the secondary Copy and Open controls, which sit above the stretched action and do not navigate.
+
+Build always opens preparation. When a document exists in the current session, its card also offers **Open resume**, **Open cover letter**, or **Open application kit** to return to that workspace. Reloading the page clears all documents; there are no saved-draft badges or restoration controls.
 
 ## Preparation
 
@@ -32,7 +35,7 @@ The screen also presents the six-step AI workflow:
 3. Provide your details and the target job description.
 4. Copy the generated structured text.
 5. Paste it into OpenResume.
-6. Build the document.
+6. Build the document (or both documents, for an Application Kit).
 
 The workflow is an ordered list with an accessible label, not a second panel or wizard. Copying shows “AI instructions copied. Paste them into your AI assistant.”
 
@@ -81,6 +84,21 @@ Fields:
 The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes page size, margins, font size, line spacing, section spacing, paragraph spacing, content density, and Accent Colour. Bullet and column spacing are hidden because they do not apply.
 
 When a resume exists, **Back to resume** returns to the resume workspace without changing either document.
+
+## Application Kit workspace
+
+The kit workspace reuses the existing resume editor, cover letter editor, preview, formatting panel, accent palette, and export engines. It adds one compact toolbar below the header:
+
+- **Application Kit** label and “Two coordinated documents” hint.
+- Accessible **Resume** and **Cover Letter** tabs: `role="tablist"`, `aria-selected`, `aria-controls`, roving `tabIndex`, arrow-key/Home/End navigation, and focus moved to the newly selected tab.
+- **Combined PDF** and **Combined Word** export actions.
+- **Download separately** disclosure with Resume PDF, Resume Word, Cover letter PDF, and Cover letter Word.
+
+The header identifies the workspace as **Application Kit**, **New** starts a new kit, and the header's single-document PDF/Word buttons are hidden so exports have one home. The active tab's formatting panel and accent remain independent; switching tabs closes the panel and preserves the other document's settings.
+
+The combined PDF places the cover letter first and starts the resume on a new page, using each document's own page dimensions. The combined Word document places the cover letter first and uses an explicit page break when both documents share page geometry; when sizes or margins differ, it uses a `nextPage` Word section for the resume. Separate downloads use the existing per-document exporters and filenames.
+
+Building a kit is atomic: if either section fails, the preparation screen shows the errors and neither existing document is replaced.
 
 ## Matching cover letter
 

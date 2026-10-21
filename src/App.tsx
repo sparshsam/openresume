@@ -257,7 +257,7 @@ export default function App() {
     setView('workspace');
     notify(
       warnings.length > 0
-        ? `Application kit built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}. Review both documents.`
+        ? `Application kit built with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}. ${warnings[0]}`
         : 'Application kit built. Review both documents before exporting.',
     );
   };

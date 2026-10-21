@@ -1,13 +1,13 @@
 # Privacy model
 
-OpenResume is designed so that a resume or cover letter never has to leave the browser.
+OpenResume is designed so that a resume, cover letter, or Application Kit never has to leave the browser.
 
 ## Guarantees
 
 - **No network at runtime.** The application makes no `fetch`, XHR, WebSocket, or third-party script requests. There is no backend.
 - **No accounts.** There is no authentication, session, or user record.
 - **No telemetry.** No analytics, error reporting, or usage measurement is included.
-- **No document storage.** Resume and cover letter content lives in memory for the current application session only.
+- **No document storage.** Resume and cover letter content lives in memory for the current application session only. An Application Kit reuses those same two in-memory models; it adds no third copy and no storage of its own.
 - **No AI.** Content is parsed deterministically; no model sees it.
 - **No secrets.** The app requires no environment variables or API keys.
 

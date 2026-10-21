@@ -746,6 +746,32 @@ describe('application kit workflow', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Jordan Avery');
   });
 
+  it('builds a kit without making a network request', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces a cross-document inconsistency warning', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    const mismatched = APPLICATION_KIT_TEXT.replace('# Jordan Avery', '# Jordan A. Avery');
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+    fireEvent.change(screen.getByLabelText('Application kit text'), {
+      target: { value: mismatched },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+
+    expect(screen.getByText(/different applicant names/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Resume' })).toBeInTheDocument();
+  });
+
   it('clears the kit on reload without persisting document content', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     const first = renderApp();

@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** production serves v0.1.8 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+> **Deployment status:** production serves v0.1.9 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Production
 

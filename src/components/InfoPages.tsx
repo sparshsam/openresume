@@ -54,19 +54,26 @@ export function AboutPage() {
     <InfoLayout
       eyebrow="About OpenResume"
       title="Your documents. Your words. Your next opportunity."
-      lede="OpenResume is a free, straightforward way to create professional resumes and cover letters without accounts, subscriptions, or unnecessary complexity."
+      lede="OpenResume is a free, straightforward way to create professional resumes, cover letters, and complete application kits without accounts, subscriptions, or unnecessary complexity."
     >
       <p>
         Bring your content, choose a document, make adjustments, and download your finished PDF or
         Word file.
       </p>
       <p>We provide the design and formatting. You remain in control of what your documents say.</p>
-      <p>Choose from a selection of professional accent colours for your resume or cover letter.</p>
+      <p>
+        Build a resume, a cover letter, or an Application Kit that pairs a tailored resume with a
+        matching cover letter from one prepared response.
+      </p>
+      <p>Choose from a selection of professional accent colours for each document.</p>
       <p>
         OpenResume is built by Kovina with a simple idea: useful tools should be accessible, easy to
         use, and respectful of your privacy.
       </p>
-      <p>We&apos;re starting with resumes and cover letters. More features are coming.</p>
+      <p>
+        Resumes and cover letters remain available on their own; the Application Kit simply builds
+        both together when one role needs one coordinated application.
+      </p>
 
       <section aria-labelledby="workflow-heading">
         <h2 id="workflow-heading">How it works</h2>
@@ -85,8 +92,8 @@ export function AboutPage() {
               2
             </span>
             <span>
-              <strong>Build your document.</strong> Choose a resume or cover letter and paste your
-              content.
+              <strong>Build your document.</strong> Choose a resume, cover letter, or Application
+              Kit and paste your content.
             </span>
           </li>
           <li>
@@ -103,8 +110,8 @@ export function AboutPage() {
               4
             </span>
             <span>
-              <strong>Download PDF or DOCX.</strong> Export a finished document generated locally in
-              your browser.
+              <strong>Download PDF or DOCX.</strong> Export each document on its own, or download a
+              combined Application Kit package generated locally in your browser.
             </span>
           </li>
         </ol>
@@ -134,8 +141,8 @@ export function PrivacyPage() {
       <section aria-labelledby="processing-heading">
         <h2 id="processing-heading">Document processing</h2>
         <p>
-          Resume and cover letter content is processed locally in your browser. OpenResume does not
-          send document content to a server, and there is no document upload.
+          Resume, cover letter, and Application Kit content is processed locally in your browser.
+          OpenResume does not send document content to a server, and there is no document upload.
         </p>
       </section>
 
@@ -241,7 +248,7 @@ export function TermsPage() {
         <h2 id="ownership-heading">Document ownership</h2>
         <p>
           You retain ownership and control of the content you enter. OpenResume does not claim
-          ownership of resumes or cover letters created through the application.
+          ownership of resumes, cover letters, or application kits created through the application.
         </p>
       </section>
 
