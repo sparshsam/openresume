@@ -42,6 +42,8 @@ An Application Kit combines both documents in one input. Use these exact delimit
 
 The combined build is atomic: both sections are parsed and validated before either document model is replaced. Missing, duplicated, reversed, or empty sections are rejected with a specific message. If the two documents use different applicant names, emails, phones, or locations, the kit still builds, but a warning is shown and neither value is rewritten.
 
+**Load Example** inserts the canonical combined sample from `src/lib/applicationKitSample.ts`, which uses the same fictional applicant and contact details in both sections. The resume and cover letter preparation screens keep their own standalone examples.
+
 ## Resume format
 
 ### Canonical example

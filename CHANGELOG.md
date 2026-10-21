@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.10] — 2026-10-21
+
+### Fixed
+
+- **Load Example** on the Application Kit preparation screen now inserts the combined resume-and-cover-letter sample instead of the standalone cover letter example.
+- The loaded kit sample uses both required delimiters and parses successfully without validation errors.
+- The resume and cover letter samples remain correct on their standalone preparation screens.
+
+### Changed
+
+- The Application Kit AI instructions and Load Example now share one canonical combined sample, so the two cannot drift.
+- Version bumped to 0.1.10.
+
+### Documentation
+
+- Corrected the README limitation that still described the application icon as a placeholder; the generated light and dark branding assets are already in use.
+
 ## [0.1.9] — 2026-10-21
 
 ### Added

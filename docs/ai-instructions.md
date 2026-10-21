@@ -37,6 +37,8 @@ The Application Kit template asks for the same single plain-text code block, but
 
 The combined parser validates both sections before any document is replaced. Missing, duplicated, reversed, empty, or prose-wrapped delimiters are rejected with a specific message. If the two documents use different names, emails, phones, or locations, the build still succeeds with a warning and the details are left exactly as written.
 
+**Load Example** on the Application Kit preparation screen inserts the same canonical combined sample that the AI template demonstrates. The template wraps it in one enclosing code fence; the preparation screen inserts the unfenced content, which the combined parser accepts. There is one shared sample in `src/lib/applicationKitSample.ts`, so the instructions and the example cannot drift.
+
 ## Workflow
 
 Each preparation screen, and every homepage card, offers **Copy AI Instructions**. The preparation screen shows the same six steps:
