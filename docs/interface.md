@@ -56,7 +56,7 @@ Landing and preparation screens show only the brand and theme controls. All acti
 
 ## Formatting
 
-The workspace formatting panel contains page size, margins, font size, spacing, density, and **Accent Colour**.
+The workspace formatting panel contains page size, margins, font size, spacing, density, and **Accent Colour**. Resumes also show **Resume layout** (Professional Two-Column or ATS Simple); **Column spacing** appears only for the two-column layout, and ATS Simple adds a short note explaining its single-column, table-free output and that no layout guarantees compatibility with every applicant tracking system.
 
 - Accent Colour is a native radio group of nine swatches: Green (default), Blue, Navy, Teal, Purple, Red, Orange, Brown, and Charcoal.
 - Each swatch has an accessible colour name, keyboard operation, a clear selected ring, and a focus indicator.
@@ -91,12 +91,15 @@ The kit workspace reuses the existing resume editor, cover letter editor, previe
 
 - **Application Kit** label and “Two coordinated documents” hint.
 - Accessible **Resume** and **Cover Letter** tabs: `role="tablist"`, `aria-selected`, `aria-controls`, roving `tabIndex`, arrow-key/Home/End navigation, and focus moved to the newly selected tab.
+- **Document order** select: **Cover Letter → Resume** (default) or **Resume → Cover Letter**, applying to both combined exports.
 - **Combined PDF** and **Combined Word** export actions.
 - **Download separately** disclosure with Resume PDF, Resume Word, Cover letter PDF, and Cover letter Word.
 
 The header identifies the workspace as **Application Kit**, **New** starts a new kit, and the header's single-document PDF/Word buttons are hidden so exports have one home. The active tab's formatting panel and accent remain independent; switching tabs closes the panel and preserves the other document's settings.
 
-The combined PDF places the cover letter first and starts the resume on a new page, using each document's own page dimensions. The combined Word document places the cover letter first and uses an explicit page break when both documents share page geometry; when sizes or margins differ, it uses a `nextPage` Word section for the resume. Separate downloads use the existing per-document exporters and filenames.
+The combined PDF follows the selected document order, starts the second document on a new page, and uses each document's own page dimensions. The combined Word document follows the same order and uses an explicit page break when both documents share page geometry; when sizes or margins differ, it uses a `nextPage` Word section for the second document. Separate downloads use the existing per-document exporters and filenames and are unaffected by the order setting.
+
+The order setting is session-only UI state, like the documents. It is not part of either document's template and is never stored.
 
 Building a kit is atomic: if either section fails, the preparation screen shows the errors and neither existing document is replaced.
 

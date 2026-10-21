@@ -7,11 +7,13 @@ import {
   type FormatSettings,
   type MarginPreset,
   type PageSize,
+  type ResumeLayoutId,
   type ResumeTemplate,
   type SpacingPreset,
 } from '../types/resume';
 
 const PAGE_SIZES = new Set<PageSize>(['letter', 'a4', 'legal']);
+const LAYOUTS = new Set<ResumeLayoutId>(['twoColumn', 'atsSimple']);
 const MARGINS = new Set<MarginPreset>(['narrow', 'normal', 'wide']);
 const FONT_SIZES = new Set<FontSizePreset>(['small', 'standard', 'large']);
 const SPACING = new Set<SpacingPreset>(['compact', 'standard', 'relaxed']);
@@ -46,6 +48,7 @@ export function normalizeTemplate(value: unknown): ResumeTemplate {
       typeof source.accent === 'string' && source.accent.trim()
         ? source.accent
         : DEFAULT_TEMPLATE.accent,
+    layout: pick(source.layout, LAYOUTS, DEFAULT_TEMPLATE.layout),
     format: normalizeFormat(source.format),
   };
 }

@@ -52,9 +52,9 @@ const DENSITY_FACTORS: Record<DensityPreset, number> = {
 };
 
 const SECTION_SPACING: Record<SpacingPreset, { beforePt: number; afterPt: number }> = {
-  compact: { beforePt: 10, afterPt: 3 },
-  standard: { beforePt: 14, afterPt: 4 },
-  relaxed: { beforePt: 19, afterPt: 6 },
+  compact: { beforePt: 12, afterPt: 3.5 },
+  standard: { beforePt: 16, afterPt: 5 },
+  relaxed: { beforePt: 22, afterPt: 7 },
 };
 
 const BULLET_SPACING: Record<SpacingPreset, number> = {
@@ -131,7 +131,7 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
   const namePt = 23 * fontScale;
   const headlinePt = 10.5 * fontScale;
   const bodyPt = 9.2 * fontScale;
-  const smallPt = 8.4 * fontScale;
+  const smallPt = 8.8 * fontScale;
   const headingPt = 10 * fontScale;
 
   return {
@@ -152,13 +152,13 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
     bodyPt,
     bodyLinePt: bodyPt * lineFactor,
     smallPt,
-    smallLinePt: smallPt * 1.33,
+    smallLinePt: smallPt * 1.38,
     headingPt,
     headingLinePt: headingPt * 1.3,
     sectionBeforePt: section.beforePt * density,
     sectionAfterPt: section.afterPt * density,
-    itemBeforePt: 7 * density,
-    paragraphAfterPt: 3 * density,
+    itemBeforePt: 9 * density,
+    paragraphAfterPt: 3.5 * density,
     paragraphSpacingPt: PARAGRAPH_SPACING[normalized.format.paragraphSpacing] * density,
     bulletAfterPt: BULLET_SPACING[normalized.format.bulletSpacing] * density,
     densityFactor: density,

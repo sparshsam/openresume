@@ -16,14 +16,14 @@ Required reading before every session:
 
 ## What this is
 
-A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (two columns for resumes, one for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
+A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (Professional Two-Column or ATS Simple for resumes, one column for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
 ## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.10 (Application Kit Load Example fix and one canonical combined sample), released and deployed.
-- **Release:** annotated tag `v0.1.10` on the v0.1.10 merge commit; GitHub pre-release published.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.10 run passed with 279 tests across 22 files.
+- **Version:** v0.1.11 (Application Kit document order, ATS Simple resume layout, and typography/spacing refinements), released and deployed.
+- **Release:** annotated tag `v0.1.11` on the v0.1.11 merge commit; GitHub pre-release published.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.11 run passed with 329 tests across 26 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -48,7 +48,9 @@ npm run check        # everything above, in release order
 
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
 - `src/components/LandingPage.tsx` — three-card document selection (Resume, Cover Letter, Application Kit) with Build, Copy AI Instructions, and session Open actions.
-- `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs and combined/separate export actions.
+- `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs, document-order control, and combined/separate export actions.
+- `src/types/applicationKit.ts` — `ApplicationKitOrder` and its cover-letter-first default.
+- `src/lib/layout.ts` — shared header, section/item block builders, and both resume templates (`twoColumn`, `atsSimple`). `Layout.variant` tells the DOCX exporter whether to emit tables or a linear flow.
 - `src/components/ToastRegion.tsx` — dismissible success and error notifications.
 - `src/components/InfoPages.tsx` — About, Privacy, and Terms content.
 - `src/components/InternalLink.tsx` / `src/lib/publicPages.ts` — history-based public-page navigation and metadata.
@@ -75,7 +77,7 @@ npm run check        # everything above, in release order
 - `src/lib/contact.ts` — shared contact-line classification.
 - `src/lib/serialize.ts` — `Resume` → text (round-trip).
 - `src/lib/normalize.ts` — legacy template upgrade and preset validation.
-- `src/lib/metrics.ts` — page sizes and formatting presets → geometry and typography.
+- `src/lib/metrics.ts` — page sizes and formatting presets → geometry and typography (including the 8.8 pt secondary text and the section/entry spacing scale).
 - `src/lib/measure.ts` — Helvetica AFM widths and wrapping.
 - `src/lib/paginate.ts` — line-boundary pagination with keep-with-next.
 - `src/lib/layout.ts` — resume flow blocks, header, page assembly.
@@ -113,9 +115,11 @@ Full design: `ARCHITECTURE.md`.
 19. **One enclosing fence is a container, not content.** Both parsers strip exactly one complete enclosing `text` or unlabelled fence before reading markers. Never strip prose-wrapped, partial, or ambiguous fences, and never alter the interior.
 20. **The Application Kit is orchestration, not a third document.** It reuses the same `resume` and `coverLetter` models, parsers, editors, layouts, formatting, and exporters. Never duplicate document content or parser rules.
 21. **Kit builds are atomic.** Parse and validate both sections before replacing either model. A failed kit build must leave both previous documents untouched. Cross-document name or contact differences are warnings only; never rewrite them.
-22. **Combined exports preserve document integrity.** Combined PDF is cover letter then resume, with each document on its own pages and selectable text. Combined DOCX is one editable document: explicit page break when geometry matches, `nextPage` Word sections when page sizes or margins differ. Never concatenate ZIP files.
+22. **Combined exports preserve document integrity.** Combined PDF follows the selected `ApplicationKitOrder` (default cover letter then resume), with each document on its own pages and selectable text. Combined DOCX follows the same order as one editable document: explicit page break when geometry matches, `nextPage` Word sections when page sizes or margins differ. Never concatenate ZIP files.
 23. **Kit tabs are accessible and independent.** Resume and Cover Letter tabs use `tablist`/`tab`/`tabpanel`, arrow/Home/End navigation, and roving `tabIndex`. Switching tabs preserves edits and each document's own formatting and accent.
 24. **One canonical kit sample.** `applicationKitSample.ts` supplies both the AI template's example and Load Example. Never add a second combined sample; select examples by `PrepareKind`, never by assuming every non-resume kind is a cover letter.
+25. **Resume layout is one template choice.** `template.layout` (`twoColumn` default, `atsSimple`) is resolved in `layoutResume`; both layouts share `buildSectionBlocks`, item formatting, metrics, accents, and exporters. ATS Simple is a single full-width column in author order and must emit no tables or positioned columns in DOCX. Never fork the pipeline or duplicate item rules for it, and never claim guaranteed ATS compatibility.
+26. **Combined order is session configuration.** `ApplicationKitOrder` lives in `App` state, not in either template. Combined PDF and DOCX must both honour it, preserve per-document page sizes, page breaks, accents, and text, and default to cover letter first. Separate downloads are unaffected.
 
 ## Working agreement
 

@@ -16,19 +16,49 @@ The preview header shows the selected size and the estimated page count.
 
 ## Controls
 
-| Control           | Options                       | Shown for    | Effect                                                                     |
-| ----------------- | ----------------------------- | ------------ | -------------------------------------------------------------------------- |
-| Page margins      | Narrow / Normal / Wide        | Both         | Side margins 28/44/58 pt; top and bottom 30/40/52 pt                       |
-| Font size         | Small / Standard / Large      | Both         | Scales name, headline, heading, body, and small text by 0.93 / 1.00 / 1.08 |
-| Line spacing      | Compact / Standard / Relaxed  | Both         | Body line height factor 1.22 / 1.37 / 1.52                                 |
-| Section spacing   | Compact / Standard / Relaxed  | Both         | Resume heading spacing; cover letter block spacing                         |
-| Paragraph spacing | Compact / Standard / Relaxed  | Cover letter | Space after each body paragraph: 4 / 8 / 14 pt, multiplied by density      |
-| Bullet spacing    | Compact / Standard / Relaxed  | Resume       | Space after each bullet                                                    |
-| Column spacing    | Narrow / Standard / Wide      | Resume       | Gap between the main and side columns: 14 / 22 / 32 pt                     |
-| Content density   | Compact / Balanced / Spacious | Both         | Multiplies vertical spacing by 0.82 / 1.00 / 1.22                          |
-| Accent Colour     | Nine professional presets     | Both         | Name, headings, decorative header rule, and other accent text              |
+| Control           | Options                       | Shown for              | Effect                                                                     |
+| ----------------- | ----------------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| Resume layout     | Two-column / ATS Simple       | Resume                 | Switches the resume template without changing any content                  |
+| Page margins      | Narrow / Normal / Wide        | Both                   | Side margins 28/44/58 pt; top and bottom 30/40/52 pt                       |
+| Font size         | Small / Standard / Large      | Both                   | Scales name, headline, heading, body, and small text by 0.93 / 1.00 / 1.08 |
+| Line spacing      | Compact / Standard / Relaxed  | Both                   | Body line height factor 1.22 / 1.37 / 1.52                                 |
+| Section spacing   | Compact / Standard / Relaxed  | Both                   | Section separation: 12 / 16 / 22 pt before, 3.5 / 5 / 7 pt after           |
+| Paragraph spacing | Compact / Standard / Relaxed  | Cover letter           | Space after each body paragraph: 4 / 8 / 14 pt, multiplied by density      |
+| Bullet spacing    | Compact / Standard / Relaxed  | Resume                 | Space after each bullet                                                    |
+| Column spacing    | Narrow / Standard / Wide      | Two-column resume only | Gap between the main and side columns: 14 / 22 / 32 pt                     |
+| Content density   | Compact / Balanced / Spacious | Both                   | Multiplies vertical spacing by 0.82 / 1.00 / 1.22                          |
+| Accent Colour     | Nine professional presets     | Both                   | Name, headings, decorative header rule, and other accent text              |
 
-Only controls relevant to the selected document are shown. Cover letters are single-column and have no bullets, so those controls are hidden; paragraph spacing is shown only for letters.
+Only controls relevant to the selected document are shown. Cover letters are single-column and have no bullets, so those controls are hidden; paragraph spacing is shown only for letters. **Column spacing** is hidden for ATS Simple because that template has no second column.
+
+## Resume layouts
+
+| Layout                  | Columns | Reading order                            | Word output                 |
+| ----------------------- | ------- | ---------------------------------------- | --------------------------- |
+| Professional Two-Column | Two     | Main column, then side column            | One borderless table/page   |
+| ATS Simple              | One     | Section order as authored, top to bottom | Linear paragraphs, no table |
+
+Both layouts use the same parsers, section model, item formatting, accent palette, page sizes, and spacing controls. Only the geometry differs: ATS Simple gives every block the full content width and ignores each section's two-column `column` assignment (so the per-section Main/Side selector is hidden), while two-column resumes keep main and side blocks separate. Stored column assignments are preserved, so switching back restores them unchanged.
+
+**ATS Simple** keeps conventional uppercase section headings, left-aligned linear text, real Word bullets, and no tables, positioned columns, text boxes, or images. Its combined Word export is a plain paragraph flow so text extraction sees the same order as the page.
+
+ATS Simple reduces common parsing obstacles; it does not guarantee compatibility with any specific applicant tracking system. Recruiters and systems still read content, structure, and keywords, so the strongest improvement remains clear, conventional writing.
+
+Switching layouts never changes content, edits, page size, accent, or spacing presets. The layout is stored in `template.layout`, defaults to `twoColumn`, and resets to it with **Reset to defaults**.
+
+## Typography
+
+| Element         | Standard size | Leading             |
+| --------------- | ------------- | ------------------- |
+| Name            | 23 pt         | 1.17                |
+| Headline        | 10.5 pt       | 1.24                |
+| Section heading | 10 pt         | 1.30                |
+| Body            | 9.2 pt        | 1.37 × line spacing |
+| Secondary text  | 8.8 pt        | 1.38                |
+
+Secondary text covers contact lines, dates, and locations. It is set at 8.8 pt with darker muted ink (`#4A4A4A`, AAA contrast on white) so dates and locations stay readable in print and on screen. Experience entries begin 9 pt apart at balanced density, and section separation is more generous so scans land on the right section.
+
+Every size comes from `resolveMetrics()`, so the preview, PDF, and DOCX receive the same values. DOCX converts points to half-points and twips; rounding is the only difference.
 
 ### Accent colour
 
@@ -71,7 +101,7 @@ Formatting lives in each document's `template` in memory:
 - It does not survive a reload, and it is never written to `localStorage` along with the document.
 - Loading a legacy stored document is no longer part of the application; the old draft entries are removed when identified.
 
-**Reset to defaults** restores US Letter, the Green accent, and every standard preset for the active document.
+**Reset to defaults** restores US Letter, the Green accent, the Professional Two-Column layout, and every standard preset for the active document.
 
 ## Legacy templates
 

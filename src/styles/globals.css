@@ -1079,6 +1079,22 @@ button:disabled {
   outline-offset: 2px;
 }
 
+.kit-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kit-order .formatting-label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.kit-order .select {
+  width: auto;
+  min-width: 190px;
+}
+
 .kit-export-actions {
   display: flex;
   flex-wrap: wrap;

@@ -29,6 +29,6 @@ export function documentAccentName(value: string): string | undefined {
 export const COLORS = {
   accent: DEFAULT_DOCUMENT_ACCENT,
   text: '#1A1A1A',
-  muted: '#555555',
+  muted: '#4A4A4A',
   rule: '#D5DED7',
 } as const;

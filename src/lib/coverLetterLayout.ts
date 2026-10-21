@@ -202,6 +202,7 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
 
   return {
     kind: 'coverLetter',
+    variant: 'letter',
     pages: finalPages,
     pageWidthPt: metrics.pageWidthPt,
     pageHeightPt: metrics.pageHeightPt,
