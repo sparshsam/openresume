@@ -1058,6 +1058,123 @@ describe('public information pages', () => {
   });
 });
 
+describe('resume layout selection', () => {
+  it('offers the professional two-column template by default', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    const layout = screen.getByLabelText('Resume layout') as HTMLSelectElement;
+    expect(layout.value).toBe('twoColumn');
+    expect(
+      within(layout).getByRole('option', { name: 'Professional Two-Column' }),
+    ).toBeInTheDocument();
+    expect(
+      within(layout).getByRole('option', { name: 'ATS Simple (single column)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
+    expect(screen.queryByText(/No layout can guarantee compatibility/)).not.toBeInTheDocument();
+  });
+
+  it('does not offer a resume layout control for cover letters', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleCoverLetter(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    expect(screen.queryByLabelText('Resume layout')).not.toBeInTheDocument();
+  });
+
+  it('switches to ATS Simple without losing content and reflows the preview', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    const pagesBefore = document.querySelectorAll('.page').length;
+
+    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+
+    expect(screen.getByLabelText('Resume layout')).toHaveValue('atsSimple');
+    expect(screen.queryByLabelText('Column spacing')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Column for /)).not.toBeInTheDocument();
+    expect(screen.getByText(/No layout can guarantee compatibility/)).toBeInTheDocument();
+
+    const preview = screen.getByLabelText('Resume preview');
+    expect(within(preview).getByText('Jordan Avery')).toBeInTheDocument();
+    expect(within(preview).getAllByText('EXPERIENCE').length).toBeGreaterThan(0);
+    expect(within(preview).getAllByText('SKILLS').length).toBeGreaterThan(0);
+
+    const pagesAfter = document.querySelectorAll('.page').length;
+    expect(pagesAfter).toBeGreaterThan(pagesBefore);
+
+    await user.selectOptions(screen.getByLabelText('Resume layout'), 'twoColumn');
+    expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/^Column for /).length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.page').length).toBe(pagesBefore);
+    expect(
+      within(screen.getByLabelText('Resume preview')).getByText('Jordan Avery'),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the layout independent per document and out of storage', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.queryByLabelText('Resume layout')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Resume' }));
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    expect(screen.getByLabelText('Resume layout')).toHaveValue('atsSimple');
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+
+  it('resets the layout to the default with the other formatting', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+
+    await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+    expect(screen.getByLabelText('Resume layout')).toHaveValue('twoColumn');
+  });
+});
+
+describe('application kit document order', () => {
+  it('defaults to cover letter then resume and can be reversed', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    const order = screen.getByLabelText('Document order') as HTMLSelectElement;
+    expect(order.value).toBe('coverLetterFirst');
+    expect(
+      within(order).getByRole('option', { name: 'Cover Letter → Resume' }),
+    ).toBeInTheDocument();
+    expect(
+      within(order).getByRole('option', { name: 'Resume → Cover Letter' }),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(order, 'resumeFirst');
+    expect(screen.getByLabelText('Document order')).toHaveValue('resumeFirst');
+
+    await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
+    expect(screen.getByLabelText('Document order')).toHaveValue('resumeFirst');
+  });
+
+  it('is session-only and is not written to storage', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildApplicationKit(user);
+
+    await user.selectOptions(screen.getByLabelText('Document order'), 'resumeFirst');
+    expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
+  });
+});
+
 describe('header, theme, and footer', () => {
   it('shows context actions and the document label in the workspace', async () => {
     const user = userEvent.setup({ writeToClipboard: false });

@@ -64,7 +64,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
             <span
               key={`contact-${index}`}
               className="page-line"
-              style={headerStyle(line, line.font.sizePt * 1.33)}
+              style={headerStyle(line, line.font.sizePt * 1.38)}
               onClick={() => onFocusTarget?.('__header__')}
             >
               {line.text}

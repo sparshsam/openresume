@@ -48,11 +48,13 @@ import {
 } from './lib/resumeEdits';
 import type { CoverLetter } from './types/coverLetter';
 import type { DocumentKind, PrepareKind, WorkspaceMode } from './types/document';
+import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from './types/applicationKit';
 import type {
   FormatSettings,
   PageSize,
   Resume,
   ResumeItem,
+  ResumeLayoutId,
   ResumeSection,
   SectionKind,
 } from './types/resume';
@@ -83,6 +85,7 @@ export default function App() {
   const [view, setView] = useState<View>('landing');
   const [prepareKind, setPrepareKind] = useState<PrepareKind>('resume');
   const [kitBuilt, setKitBuilt] = useState(false);
+  const [kitOrder, setKitOrder] = useState<ApplicationKitOrder>(DEFAULT_APPLICATION_KIT_ORDER);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('single');
   const [infoPage, setInfoPage] = useState<InfoPageKey | null>(() =>
     infoPageFromPath(window.location.pathname),
@@ -302,6 +305,10 @@ export default function App() {
     }
   };
 
+  const handleLayout = (layout: ResumeLayoutId) => {
+    setResume((current) => (current ? updateTemplate(current, { layout }) : current));
+  };
+
   const handleFormat = (patch: Partial<FormatSettings>) => {
     if (activeKind === 'resume') {
       setResume((current) => (current ? updateFormat(current, patch) : current));
@@ -364,7 +371,7 @@ export default function App() {
     if (!resume || !coverLetter || !resumeLayout || !coverLetterLayout) return;
     try {
       const { exportCombinedPdf } = await import('./lib/exportPdf');
-      exportCombinedPdf(resume.header.name, coverLetterLayout, resumeLayout);
+      exportCombinedPdf(resume.header.name, coverLetterLayout, resumeLayout, kitOrder);
       notify('Combined PDF exported.');
     } catch {
       notify('Combined PDF export failed.', 'error');
@@ -380,6 +387,7 @@ export default function App() {
         resumeLayout,
         coverLetter,
         coverLetterLayout,
+        kitOrder,
       );
       downloadBlob(blob, applicationKitFilename(resume.header.name, 'docx'));
       notify('Combined Word document exported.');
@@ -522,6 +530,7 @@ export default function App() {
               kind={activeKind}
               template={activeTemplate}
               onPageSize={handlePageSize}
+              onLayout={handleLayout}
               onFormat={handleFormat}
               onAccent={handleAccent}
               onReset={handleResetFormatting}
@@ -531,6 +540,8 @@ export default function App() {
           {workspaceMode === 'kit' ? (
             <ApplicationKitToolbar
               activeKind={activeKind}
+              order={kitOrder}
+              onOrder={setKitOrder}
               onSelect={(kind) => {
                 setActiveKind(kind);
                 setFormattingOpen(false);

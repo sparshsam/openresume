@@ -92,7 +92,7 @@ flowchart LR
 - `contact` — email, phone, location, and labeled links.
 - `sections[]` — ordered sections with `kind`, `column` (`main`/`side`), `enabled`, and `items[]`.
 - `items[]` — title, subtitle, date range, location, body, and bullets.
-- `template` — page size, accent, and format settings (margins, font size, line/section/bullet/column spacing, density).
+- `template` — page size, accent, layout (`twoColumn` or `atsSimple`), and format settings (margins, font size, line/section/bullet/column spacing, density).
 
 Section IDs and parser-created item IDs are deterministic, so repeated parses of the same text produce deep-equal models.
 
@@ -109,7 +109,8 @@ Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have se
 
 - Page sizes: US Letter 612 × 792 pt (default), A4 595.28 × 841.89 pt, US Legal 612 × 1008 pt.
 - `resolveMetrics()` turns the template into margins, content width, column widths, font sizes, line heights, and spacing, applying the density multiplier on top of individual spacing choices.
-- Two independent columns share the content width (about 63% main, a configurable gap, the remainder side). The gap is reduced before the side column can fall below 100 pt.
+- Two independent columns share the content width (about 63% main, a configurable gap, the remainder side). The gap is reduced before the side column can fall below 100 pt. This geometry applies to the `twoColumn` resume template.
+- The `atsSimple` resume template uses one full-width column. Every enabled section is emitted in author order regardless of its stored `column`, through the same section/item block builders as the two-column template, then paginated with `paginateColumn` against `contentWidthPt`. `Layout.variant` records which template produced the layout so the DOCX exporter can choose tables or a linear flow.
 - The header height is computed from the selected font metrics and the wrapped contact line; both columns start below it on page 1 and at the top margin thereafter.
 - Text width is computed from embedded Helvetica AFM widths, which match the PDF's built-in font metrics. Wrapping is deterministic and independent of browser font rendering.
 - Every flow block carries a semantic `kind` (`heading`, `title`, `subtitle`, `meta`, `body`, `bullet`, `listItem`, `skillLabel`, `skillValue`, plus `letterDate`, `recipient`, `subject`, `salutation`, `letterBody`, `closing`, `signature`) used by the DOCX exporter.
@@ -122,7 +123,9 @@ Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have se
 
 **PDF.** jsPDF in `pt` units using the layout's page dimensions, Helvetica normal/bold, no compression, real text runs at the computed baselines. Page count always equals `Layout.pages.length`.
 
-**DOCX.** For resumes, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For cover letters, it builds one full-width paragraph flow per logical page. Each flow block becomes one paragraph, so wrapped lines are rejoined and Word handles wrapping naturally. Bullets use Word numbering (resume only); headings, titles, metadata, letter closing/signature, and salutation use `keepNext`/`keepLines`; spacing derives from the same metrics. Page size, margins, and table widths follow the selected settings. Heading colors come from the layout lines, and the header name uses `Layout.accent`, so PDF and DOCX share one semantic accent. Text remains editable, though Word may re-flow within a page after edits.
+**DOCX.** For two-column resumes, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For ATS Simple resumes and for cover letters, it builds one full-width paragraph flow per logical page with no table cells.
+
+**Application Kit order.** Combined PDF and DOCX exports accept an `ApplicationKitOrder` (`coverLetterFirst` by default, or `resumeFirst`) and assemble the two documents in that order. The PDF appends each layout's pages in sequence with per-page dimensions; the DOCX either inserts an explicit page break inside one section when geometry matches or emits two `nextPage` sections in the chosen order. The setting lives in `App` state and is not part of either document template. Each flow block becomes one paragraph, so wrapped lines are rejoined and Word handles wrapping naturally. Bullets use Word numbering (resume only); headings, titles, metadata, letter closing/signature, and salutation use `keepNext`/`keepLines`; spacing derives from the same metrics. Page size, margins, and table widths follow the selected settings. Heading colors come from the layout lines, and the header name uses `Layout.accent`, so PDF and DOCX share one semantic accent. Text remains editable, though Word may re-flow within a page after edits.
 
 Both exporters are loaded with dynamic `import()` so the initial bundle stays small.
 
@@ -197,6 +200,8 @@ No state library, router, CSS framework, parser library, or storage wrapper. Pil
 - Parser, serializer, measurement, pagination, layout, edits, cleanup, and exports have focused unit tests for both document types.
 - The long-resume and long-letter tests assert every bullet or paragraph appears exactly once across pages.
 - Export tests assert `%PDF`, page count, real text presence, ZIP magic bytes, text inclusion, and resume/letter single-vs-two-column structure.
+- ATS Simple tests assert single-column geometry, author-order headings, content preservation when switching templates, table-free DOCX with an ordered `<w:t>` text extraction, page breaks, accents, page sizes, and PDF/DOCX typography parity.
+- Application Kit order tests assert document sequence and page break placement in both PDF and DOCX, per-document page sizes under mixed geometry, preserved accents, and the unchanged default order.
 - AI instruction tests assert every parser alias appears in the matching template, that all three templates require exactly one plain-text code block, that the kit delimiters are documented in order, and that the bundled examples parse.
 - Application Kit tests cover raw and fenced input, missing/duplicate/reversed/empty sections, missing names, malformed fences, cross-document warnings, atomic replacement, tab switching, independent formatting, and the combined exporters.
 - Component tests cover landing navigation, preparation validation, editing, section toggling, formatting visibility, toast feedback, examples, coexisting session documents, matching-letter reuse, replacement without confirmation, legacy cleanup, no document persistence, theme persistence, public-page rendering, metadata, footer links, and history navigation.
@@ -205,7 +210,7 @@ No state library, router, CSS framework, parser library, or storage wrapper. Pil
 ## Extension points
 
 - **Page size.** Add a preset in `metrics.ts`; both layouts consume the resolved metrics.
-- **Templates.** Introduce a template profile that supplies metrics, column ratios, and section defaults; do not fork the pipeline.
+- **Templates.** Resume layouts already select geometry through `template.layout` and a branch in `layoutResume`. Add a further layout by reusing `buildSectionBlocks` and the shared item formatting, setting `Layout.variant`, and teaching the DOCX exporter which container to emit; do not fork the pipeline.
 - **Fonts.** Replace the embedded width tables with a font embedded in both the browser and the PDF, keeping measurement and rendering identical.
 - **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, in-memory state, and preparation validation.
 

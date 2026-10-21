@@ -162,6 +162,8 @@ interface SectionEditorProps {
   section: ResumeSection;
   index: number;
   total: number;
+  /** False for single-column templates, where the main/side choice has no effect. */
+  showColumn?: boolean;
   onUpdate: (patch: Partial<ResumeSection>) => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
@@ -177,6 +179,7 @@ export function SectionEditor({
   section,
   index,
   total,
+  showColumn = true,
   onUpdate,
   onRemove,
   onMove,
@@ -205,17 +208,19 @@ export function SectionEditor({
           onChange={(event) => onUpdate({ title: event.target.value })}
         />
         <div className="section-controls">
-          <select
-            className="select button-small"
-            aria-label={`Column for ${section.title}`}
-            value={section.column}
-            onChange={(event) =>
-              onUpdate({ column: event.target.value === 'side' ? 'side' : 'main' })
-            }
-          >
-            <option value="main">Main</option>
-            <option value="side">Side</option>
-          </select>
+          {showColumn ? (
+            <select
+              className="select button-small"
+              aria-label={`Column for ${section.title}`}
+              value={section.column}
+              onChange={(event) =>
+                onUpdate({ column: event.target.value === 'side' ? 'side' : 'main' })
+              }
+            >
+              <option value="main">Main</option>
+              <option value="side">Side</option>
+            </select>
+          ) : null}
           <button
             type="button"
             className="button button-icon"

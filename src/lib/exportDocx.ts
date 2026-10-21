@@ -20,6 +20,7 @@ import type { PlacedBlock } from './paginate';
 import { COLORS } from './tokens';
 import type { CoverLetter } from '../types/coverLetter';
 import type { Resume } from '../types/resume';
+import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from '../types/applicationKit';
 
 const PT_TO_TWIP = 20;
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
@@ -452,9 +453,21 @@ function resumeChildren(resume: Resume, layout: Layout): (Paragraph | Table)[] {
     ),
   ];
 
+  // ATS Simple is deliberately linear: one paragraph flow, no table cells,
+  // so Word and downstream text extractors see conventional reading order.
+  const useTable = layout.variant === 'twoColumn';
+
   layout.pages.forEach((page, index) => {
     if (index > 0) children.push(pageBreakParagraph());
-    children.push(pageTable(page, metrics));
+    if (useTable) {
+      children.push(pageTable(page, metrics));
+      return;
+    }
+    const paragraphs = page.blocks.map((block, blockIndex) =>
+      paragraphFor(block, metrics, blockIndex === 0),
+    );
+    if (paragraphs.length === 0) paragraphs.push(emptyParagraph());
+    children.push(...paragraphs);
   });
 
   return children;
@@ -512,34 +525,48 @@ export function createCoverLetterDocxDocument(letter: CoverLetter, layout: Layou
   );
 }
 
+interface KitPart {
+  content: (Paragraph | Table)[];
+  metrics: ResolvedMetrics;
+}
+
 export function createApplicationKitDocxDocument(
   resume: Resume,
   resumeLayout: Layout,
   letter: CoverLetter,
   letterLayout: Layout,
+  order: ApplicationKitOrder = DEFAULT_APPLICATION_KIT_ORDER,
 ): Document {
-  const letterContent = coverLetterChildren(letter, letterLayout);
-  const resumeContent = resumeChildren(resume, resumeLayout);
-  const useSingleSection = samePageGeometry(letterLayout.metrics, resumeLayout.metrics);
+  const letterPart: KitPart = {
+    content: coverLetterChildren(letter, letterLayout),
+    metrics: letterLayout.metrics,
+  };
+  const resumePart: KitPart = {
+    content: resumeChildren(resume, resumeLayout),
+    metrics: resumeLayout.metrics,
+  };
+  const parts = order === 'resumeFirst' ? [resumePart, letterPart] : [letterPart, resumePart];
+  const [firstPart, secondPart] = parts;
+  const useSingleSection = samePageGeometry(firstPart.metrics, secondPart.metrics);
 
   const sections: ISectionOptions[] = useSingleSection
     ? [
         {
-          properties: pageProperties(letterLayout.metrics),
-          children: [...letterContent, pageBreakParagraph(), ...resumeContent],
+          properties: pageProperties(firstPart.metrics),
+          children: [...firstPart.content, pageBreakParagraph(), ...secondPart.content],
         },
       ]
     : [
         {
-          properties: pageProperties(letterLayout.metrics),
-          children: letterContent,
+          properties: pageProperties(firstPart.metrics),
+          children: firstPart.content,
         },
         {
           properties: {
             type: SectionType.NEXT_PAGE,
-            ...pageProperties(resumeLayout.metrics),
+            ...pageProperties(secondPart.metrics),
           },
-          children: resumeContent,
+          children: secondPart.content,
         },
       ];
 
@@ -550,7 +577,7 @@ export function createApplicationKitDocxDocument(
     styles: {
       default: {
         document: {
-          run: { font: 'Helvetica', size: Math.round(letterLayout.metrics.bodyPt * 2) },
+          run: { font: 'Helvetica', size: Math.round(firstPart.metrics.bodyPt * 2) },
         },
       },
     },
@@ -573,8 +600,15 @@ export async function exportApplicationKitDocx(
   resumeLayout: Layout,
   letter: CoverLetter,
   letterLayout: Layout,
+  order: ApplicationKitOrder = DEFAULT_APPLICATION_KIT_ORDER,
 ): Promise<Blob> {
-  const document = createApplicationKitDocxDocument(resume, resumeLayout, letter, letterLayout);
+  const document = createApplicationKitDocxDocument(
+    resume,
+    resumeLayout,
+    letter,
+    letterLayout,
+    order,
+  );
   return Packer.toBlob(document);
 }
 

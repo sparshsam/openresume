@@ -15,6 +15,8 @@ export type SectionKind =
 
 export type ColumnId = 'main' | 'side';
 
+export type ResumeLayoutId = 'twoColumn' | 'atsSimple';
+
 export type PageSize = 'letter' | 'a4' | 'legal';
 export type MarginPreset = 'narrow' | 'normal' | 'wide';
 export type FontSizePreset = 'small' | 'standard' | 'large';
@@ -83,12 +85,14 @@ export interface ResumeSection {
 export interface ResumeTemplate {
   pageSize: PageSize;
   accent: string;
+  layout: ResumeLayoutId;
   format: FormatSettings;
 }
 
 export const DEFAULT_TEMPLATE: ResumeTemplate = {
   pageSize: 'letter',
   accent: DEFAULT_DOCUMENT_ACCENT,
+  layout: 'twoColumn',
   format: DEFAULT_FORMAT,
 };
 

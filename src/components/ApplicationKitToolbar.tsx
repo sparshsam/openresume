@@ -1,10 +1,13 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { Icon } from './Icon';
 import type { DocumentKind } from '../types/document';
+import type { ApplicationKitOrder } from '../types/applicationKit';
 
 interface ApplicationKitToolbarProps {
   activeKind: DocumentKind;
+  order: ApplicationKitOrder;
   onSelect: (kind: DocumentKind) => void;
+  onOrder: (order: ApplicationKitOrder) => void;
   onExportCombinedPdf: () => void;
   onExportCombinedDocx: () => void;
   onExportSeparate: (kind: DocumentKind, format: 'pdf' | 'docx') => void;
@@ -17,7 +20,9 @@ const TABS: { kind: DocumentKind; label: string }[] = [
 
 export function ApplicationKitToolbar({
   activeKind,
+  order,
   onSelect,
+  onOrder,
   onExportCombinedPdf,
   onExportCombinedDocx,
   onExportSeparate,
@@ -73,6 +78,21 @@ export function ApplicationKitToolbar({
             {tab.label}
           </button>
         ))}
+      </div>
+
+      <div className="kit-order">
+        <label className="formatting-label" htmlFor="kit-document-order">
+          Document order
+        </label>
+        <select
+          id="kit-document-order"
+          className="select"
+          value={order}
+          onChange={(event) => onOrder(event.target.value as ApplicationKitOrder)}
+        >
+          <option value="coverLetterFirst">Cover Letter → Resume</option>
+          <option value="resumeFirst">Resume → Cover Letter</option>
+        </select>
       </div>
 
       <div className="kit-export-actions">

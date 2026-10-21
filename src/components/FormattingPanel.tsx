@@ -7,6 +7,7 @@ import type {
   FormatSettings,
   MarginPreset,
   PageSize,
+  ResumeLayoutId,
   ResumeTemplate,
   SpacingPreset,
 } from '../types/resume';
@@ -88,10 +89,16 @@ const DENSITY_OPTIONS: SelectOption<DensityPreset>[] = [
   { value: 'spacious', label: 'Spacious' },
 ];
 
+const LAYOUT_OPTIONS: SelectOption<ResumeLayoutId>[] = [
+  { value: 'twoColumn', label: 'Professional Two-Column' },
+  { value: 'atsSimple', label: 'ATS Simple (single column)' },
+];
+
 interface FormattingPanelProps {
   kind: DocumentKind;
   template: ResumeTemplate;
   onPageSize: (pageSize: PageSize) => void;
+  onLayout: (layout: ResumeLayoutId) => void;
   onFormat: (patch: Partial<FormatSettings>) => void;
   onAccent: (accent: string) => void;
   onReset: () => void;
@@ -101,12 +108,14 @@ export function FormattingPanel({
   kind,
   template,
   onPageSize,
+  onLayout,
   onFormat,
   onAccent,
   onReset,
 }: FormattingPanelProps) {
   const { format } = template;
   const selectedAccent = documentAccentName(template.accent) ?? 'Custom';
+  const atsSimple = kind === 'resume' && template.layout === 'atsSimple';
 
   return (
     <section className="formatting-panel" id="formatting-panel" aria-label="Document formatting">
@@ -140,6 +149,15 @@ export function FormattingPanel({
       </div>
 
       <div className="formatting-grid">
+        {kind === 'resume' ? (
+          <SelectField
+            id="format-layout"
+            label="Resume layout"
+            value={template.layout}
+            options={LAYOUT_OPTIONS}
+            onChange={onLayout}
+          />
+        ) : null}
         <SelectField
           id="format-page-size"
           label="Page size"
@@ -192,13 +210,15 @@ export function FormattingPanel({
               options={SPACING_OPTIONS}
               onChange={(bulletSpacing) => onFormat({ bulletSpacing })}
             />
-            <SelectField
-              id="format-column-spacing"
-              label="Column spacing"
-              value={format.columnSpacing}
-              options={COLUMN_OPTIONS}
-              onChange={(columnSpacing) => onFormat({ columnSpacing })}
-            />
+            {template.layout === 'twoColumn' ? (
+              <SelectField
+                id="format-column-spacing"
+                label="Column spacing"
+                value={format.columnSpacing}
+                options={COLUMN_OPTIONS}
+                onChange={(columnSpacing) => onFormat({ columnSpacing })}
+              />
+            ) : null}
           </>
         )}
         <SelectField
@@ -214,6 +234,12 @@ export function FormattingPanel({
           Changes apply to the preview, PDF, and DOCX. Density adjusts vertical rhythm on top of
           your individual spacing choices.
         </p>
+        {atsSimple ? (
+          <p className="formatting-note">
+            ATS Simple reads in one linear column with standard section headings and no tables. No
+            layout can guarantee compatibility with every applicant tracking system.
+          </p>
+        ) : null}
         <button type="button" className="button button-small" onClick={onReset}>
           Reset to defaults
         </button>

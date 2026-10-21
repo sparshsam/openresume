@@ -11,15 +11,17 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.10.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.11.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.10). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.11). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
 OpenResume exists because document updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a precise resume or cover letter.
 
-Resumes use a fixed two-column layout. Cover letters use a calm single-column business-letter layout. Both support live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
+Resumes offer two layouts: **Professional Two-Column** (the default) and **ATS Simple**, a single-column template with linear reading order and no tables or positioned columns. Cover letters use a calm single-column business-letter layout. Everything supports live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
+
+ATS Simple reduces common parsing obstacles; no layout can guarantee compatibility with a specific applicant tracking system.
 
 Everything runs in the browser. There is no backend, authentication, analytics, cloud storage, or integrated AI. Resume, cover letter, and Application Kit content live in memory for the current session only; exports are generated locally. The app never makes a network request at runtime.
 
@@ -52,7 +54,8 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Application Kit workflow** that builds both documents atomically, warns about cross-document inconsistencies, and preserves the previous documents if validation fails.
 - **Tabbed kit workspace** with accessible Resume and Cover Letter tabs, independent editing and formatting, and no duplicated document data.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
-- **Resume workspace** preserving the fixed two-column template, section ordering, editing, and pagination.
+- **Resume workspace** with two layouts — **Professional Two-Column** (default) and **ATS Simple** (single column) — preserving section ordering, editing, formatting, and pagination. Switching layouts keeps every word and both documents in a kit stay independent.
+- **Configurable Application Kit order** — **Cover Letter → Resume** (default) or **Resume → Cover Letter** — applied to both combined exports.
 - **Cover letter workspace** with applicant details, date, recipient, position, salutation, body paragraphs, closing, and signature.
 - **Create matching cover letter** from a resume, reusing applicant identity and contact details without changing the resume.
 - **AI instruction templates** for both document types, generated from the parsers' supported headings and covered by drift tests.
@@ -64,7 +67,7 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Reliable pagination** that keeps headings and signatures with content and avoids blank pages.
 - **Selectable-text PDF** generated with real text, not screenshots.
 - **Editable DOCX** with readable, naturally flowing paragraphs.
-- **Combined exports** for the kit: cover letter first, resume on a new page, with Word sections when the two documents use different page sizes or margins.
+- **Combined exports** for the kit in either document order, with an explicit page break and Word sections when the two documents use different page sizes or margins.
 - **Separate kit downloads** for each document as PDF or Word.
 - **Light, dark, and system themes** with a persistent, flash-free header toggle.
 - **Accessible editors** with labeled controls, keyboard focus, and reduced-motion support.
@@ -245,17 +248,18 @@ An Application Kit uses the same rules inside two delimited sections. The delimi
 
 The default is **US Letter (8.5 × 11 in)**. The **Formatting** panel also offers A4 (210 × 297 mm) and US Legal (8.5 × 14 in), plus:
 
-| Control           | Options                                                       | Shown for    |
-| ----------------- | ------------------------------------------------------------- | ------------ |
-| Page margins      | Narrow, Normal, Wide                                          | Both         |
-| Font size         | Small, Standard, Large                                        | Both         |
-| Line spacing      | Compact, Standard, Relaxed                                    | Both         |
-| Section spacing   | Compact, Standard, Relaxed                                    | Both         |
-| Paragraph spacing | Compact, Standard, Relaxed                                    | Cover letter |
-| Bullet spacing    | Compact, Standard, Relaxed                                    | Resume       |
-| Column spacing    | Narrow, Standard, Wide                                        | Resume       |
-| Content density   | Compact, Balanced, Spacious                                   | Both         |
-| Accent Colour     | Green, Blue, Navy, Teal, Purple, Red, Orange, Brown, Charcoal | Both         |
+| Control           | Options                                                       | Shown for              |
+| ----------------- | ------------------------------------------------------------- | ---------------------- |
+| Resume layout     | Professional Two-Column, ATS Simple                           | Resume                 |
+| Page margins      | Narrow, Normal, Wide                                          | Both                   |
+| Font size         | Small, Standard, Large                                        | Both                   |
+| Line spacing      | Compact, Standard, Relaxed                                    | Both                   |
+| Section spacing   | Compact, Standard, Relaxed                                    | Both                   |
+| Paragraph spacing | Compact, Standard, Relaxed                                    | Cover letter           |
+| Bullet spacing    | Compact, Standard, Relaxed                                    | Resume                 |
+| Column spacing    | Narrow, Standard, Wide                                        | Two-column resume only |
+| Content density   | Compact, Balanced, Spacious                                   | Both                   |
+| Accent Colour     | Green, Blue, Navy, Teal, Purple, Red, Orange, Brown, Charcoal | Both                   |
 
 Choose from a selection of professional accent colours for your resume or cover letter. The accent applies to document headings, the name, and the header rule in the live preview, PDF, and DOCX. Each document keeps its own accent for the session; **Reset to defaults** restores Green.
 
@@ -263,7 +267,7 @@ Formatting applies to the preview, PDF, and DOCX, and stays with each document f
 
 ## Limitations
 
-- One fixed two-column resume template and one fixed single-column letter template; page sizes and spacing are configurable.
+- Two resume layouts (Professional Two-Column and ATS Simple) and one fixed single-column letter template; page sizes and spacing are configurable. ATS Simple is not a guarantee of compatibility with any particular applicant tracking system.
 - Helvetica-family metrics only; custom font embedding is not supported.
 - DOCX flows text naturally inside each logical page. Editing in Word can re-flow individual pages; pagination is structurally consistent with the PDF rather than pixel-identical.
 - No import from PDF or existing DOCX; input is structured text only.

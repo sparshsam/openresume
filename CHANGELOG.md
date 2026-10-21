@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] — 2026-10-21
+
+### Added
+
+- **Application Kit document order.** The kit toolbar now offers **Cover Letter → Resume** (default) and **Resume → Cover Letter**. The choice applies to both the combined PDF and the combined Word document, preserving each document's page sizes, page breaks, formatting, accent, and selectable/editable text. The setting is session-only and is never stored.
+- **ATS Simple resume layout.** A second resume template with a single full-width column, linear section reading order, standard section headings, and no tables or positioned columns. The combined Word export emits it as a plain paragraph flow with no table cells. Accent colours, page sizes, formatting presets, resume editing, and the Application Kit all work unchanged.
+- **Resume layout control** in the formatting panel. **Column spacing** is hidden while ATS Simple is active because a single-column template has no column gap.
+
+### Changed
+
+- Secondary text (contact lines, dates, locations) is now set at 8.8 pt with more generous leading, and the muted document colour is darker for stronger contrast on white.
+- Section spacing and experience-entry spacing are slightly more generous at every preset, giving sections and roles clearer separation while keeping the sample resume on one page in the professional two-column layout.
+- Version bumped to 0.1.11.
+
+### Compatibility
+
+- Existing templates without a `layout` field normalize to **Professional Two-Column**, so the default output is unchanged in structure.
+- 50 new regression tests cover layout normalization, single-column geometry, reading order, content preservation across templates, PDF and DOCX text extraction, page breaks, document ordering, page sizes, accents, typography, and cross-format consistency.
+- ATS Simple reduces common parsing obstacles; it does not guarantee compatibility with any specific applicant tracking system.
+
 ## [0.1.10] — 2026-10-21
 
 ### Fixed

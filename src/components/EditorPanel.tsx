@@ -179,6 +179,7 @@ export function EditorPanel({
           section={section}
           index={index}
           total={resume.sections.length}
+          showColumn={resume.template.layout !== 'atsSimple'}
           onUpdate={(patch) => onUpdateSection(section.id, patch)}
           onRemove={() => onRemoveSection(section.id)}
           onMove={(direction) => onMoveSection(section.id, direction)}

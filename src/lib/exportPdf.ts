@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { HeaderLayout, Layout, PageLayout } from './layout';
 import { applicationKitFilename, documentFilename } from './filename';
 import type { DocumentMeta } from './documentMeta';
+import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from '../types/applicationKit';
 
 const BASELINE_RATIO = 0.78;
 
@@ -58,8 +59,11 @@ export function createCombinedPdfDocument(
   name: string,
   coverLetterLayout: Layout,
   resumeLayout: Layout,
+  order: ApplicationKitOrder = DEFAULT_APPLICATION_KIT_ORDER,
 ): jsPDF {
-  const firstLayout = coverLetterLayout.pages.length > 0 ? coverLetterLayout : resumeLayout;
+  const orderedLayouts =
+    order === 'resumeFirst' ? [resumeLayout, coverLetterLayout] : [coverLetterLayout, resumeLayout];
+  const firstLayout = orderedLayouts.find((layout) => layout.pages.length > 0) ?? orderedLayouts[0];
   const doc = new jsPDF({
     unit: 'pt',
     format: [firstLayout.pageWidthPt, firstLayout.pageHeightPt],
@@ -67,7 +71,7 @@ export function createCombinedPdfDocument(
   });
   doc.setProperties({
     title: `${name || 'Application'} — Application Kit`,
-    subject: 'Cover Letter and Resume',
+    subject: order === 'resumeFirst' ? 'Resume and Cover Letter' : 'Cover Letter and Resume',
     creator: 'OpenResume',
     author: name || 'OpenResume',
   });
@@ -84,8 +88,7 @@ export function createCombinedPdfDocument(
     });
   };
 
-  append(coverLetterLayout);
-  append(resumeLayout);
+  for (const layout of orderedLayouts) append(layout);
 
   return doc;
 }
@@ -99,7 +102,8 @@ export function exportCombinedPdf(
   name: string,
   coverLetterLayout: Layout,
   resumeLayout: Layout,
+  order: ApplicationKitOrder = DEFAULT_APPLICATION_KIT_ORDER,
 ): void {
-  const doc = createCombinedPdfDocument(name, coverLetterLayout, resumeLayout);
+  const doc = createCombinedPdfDocument(name, coverLetterLayout, resumeLayout, order);
   doc.save(applicationKitFilename(name, 'pdf'));
 }

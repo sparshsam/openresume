@@ -1,10 +1,20 @@
 import { measureLineWidth, wrapText, type FontSpec } from './measure';
 import { resolveMetrics, type ResolvedMetrics } from './metrics';
+import { normalizeTemplate } from './normalize';
 import { paginateColumn, type BlockKind, type FlowBlock, type PlacedBlock } from './paginate';
 import { LIST_KINDS } from './parse';
 import { COLORS } from './tokens';
 import type { DocumentKind } from '../types/document';
-import type { ColumnId, Contact, Resume, ResumeItem, ResumeSection } from '../types/resume';
+import type {
+  ColumnId,
+  Contact,
+  Resume,
+  ResumeItem,
+  ResumeLayoutId,
+  ResumeSection,
+} from '../types/resume';
+
+export type LayoutVariant = ResumeLayoutId | 'letter';
 
 export interface HeaderLine {
   text: string;
@@ -31,6 +41,8 @@ export interface PageLayout {
 
 export interface Layout {
   kind: DocumentKind;
+  /** Which template produced this layout. Exporters use it to choose table or linear output. */
+  variant: LayoutVariant;
   pages: PageLayout[];
   pageWidthPt: number;
   pageHeightPt: number;
@@ -374,18 +386,17 @@ function hasContent(section: ResumeSection): boolean {
   );
 }
 
-function buildColumnBlocks(
-  resume: Resume,
-  column: ColumnId,
+function buildSectionBlocks(
+  sections: ResumeSection[],
+  widthPt: number,
   metrics: ResolvedMetrics,
   accent: string,
 ): FlowBlock[] {
-  const widthPt = column === 'main' ? metrics.mainWidthPt : metrics.sideWidthPt;
   const blocks: FlowBlock[] = [];
   let first = true;
 
-  for (const section of resume.sections) {
-    if (!section.enabled || section.column !== column || !hasContent(section)) continue;
+  for (const section of sections) {
+    if (!section.enabled || !hasContent(section)) continue;
 
     blocks.push(headingBlock(section, first, metrics, accent));
     first = false;
@@ -421,6 +432,21 @@ function buildColumnBlocks(
   return blocks;
 }
 
+function buildColumnBlocks(
+  resume: Resume,
+  column: ColumnId,
+  metrics: ResolvedMetrics,
+  accent: string,
+): FlowBlock[] {
+  const widthPt = column === 'main' ? metrics.mainWidthPt : metrics.sideWidthPt;
+  return buildSectionBlocks(
+    resume.sections.filter((section) => section.column === column),
+    widthPt,
+    metrics,
+    accent,
+  );
+}
+
 export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlock {
   return {
     ...block,
@@ -434,9 +460,73 @@ export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: numbe
   };
 }
 
+/**
+ * Places one linear block flow down the full content width. Used by the ATS
+ * Simple resume template; each block keeps the shared item formatting.
+ */
+export function assembleSingleColumnPages(
+  blocks: FlowBlock[],
+  header: HeaderLayout,
+  headerHeightPt: number,
+  metrics: ResolvedMetrics,
+): PageLayout[] {
+  const firstCapacityPt =
+    metrics.pageHeightPt - metrics.marginTopPt - headerHeightPt - metrics.marginBottomPt;
+  const restCapacityPt = metrics.pageHeightPt - metrics.marginTopPt - metrics.marginBottomPt;
+
+  const columnPages = paginateColumn(
+    blocks,
+    firstCapacityPt,
+    restCapacityPt,
+    metrics.contentWidthPt,
+  );
+
+  const pages: PageLayout[] = Array.from(
+    { length: Math.max(1, columnPages.length) },
+    (_, index) => {
+      const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);
+      return {
+        index,
+        widthPt: metrics.pageWidthPt,
+        heightPt: metrics.pageHeightPt,
+        blocks: (columnPages[index] ?? []).map((block) =>
+          translatePlacedBlock(block, metrics.marginXPt, top),
+        ),
+        header: index === 0 ? header : undefined,
+      };
+    },
+  );
+
+  const contentPages = pages.filter((page) => page.blocks.length > 0 || page.header);
+  const finalPages = contentPages.length > 0 ? contentPages : pages.slice(0, 1);
+  finalPages.forEach((page, index) => {
+    page.index = index;
+  });
+  return finalPages;
+}
+
+function resumeLayout(
+  variant: ResumeLayoutId,
+  pages: PageLayout[],
+  metrics: ResolvedMetrics,
+  accent: string,
+): Layout {
+  return {
+    kind: 'resume',
+    variant,
+    pages,
+    pageWidthPt: metrics.pageWidthPt,
+    pageHeightPt: metrics.pageHeightPt,
+    pageSizeLabel: metrics.pageSizeLabel,
+    metrics,
+    accent,
+  };
+}
+
 export function layoutResume(resume: Resume): Layout {
-  const metrics = resolveMetrics(resume.template);
-  const accent = resume.template.accent || COLORS.accent;
+  const template = normalizeTemplate(resume.template);
+  const metrics = resolveMetrics(template);
+  const accent = template.accent || COLORS.accent;
   const { header, heightPt: headerHeightPt } = buildDocumentHeader(
     {
       name: resume.header.name,
@@ -446,6 +536,18 @@ export function layoutResume(resume: Resume): Layout {
     metrics,
     accent,
   );
+
+  if (template.layout === 'atsSimple') {
+    // One linear reading order across every section, regardless of the
+    // two-column `column` assignment stored on each section.
+    const blocks = buildSectionBlocks(resume.sections, metrics.contentWidthPt, metrics, accent);
+    return resumeLayout(
+      'atsSimple',
+      assembleSingleColumnPages(blocks, header, headerHeightPt, metrics),
+      metrics,
+      accent,
+    );
+  }
 
   const firstCapacityPt =
     metrics.pageHeightPt - metrics.marginTopPt - headerHeightPt - metrics.marginBottomPt;
@@ -493,13 +595,5 @@ export function layoutResume(resume: Resume): Layout {
     page.index = index;
   });
 
-  return {
-    kind: 'resume',
-    pages: finalPages,
-    pageWidthPt: metrics.pageWidthPt,
-    pageHeightPt: metrics.pageHeightPt,
-    pageSizeLabel: metrics.pageSizeLabel,
-    metrics,
-    accent,
-  };
+  return resumeLayout('twoColumn', finalPages, metrics, accent);
 }
