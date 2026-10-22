@@ -1,14 +1,19 @@
 import type { Theme } from './theme';
 
 /**
- * The generated light and dark artwork is intentionally cross-assigned:
- * light interfaces use the dark-background asset, and dark interfaces use the
- * light-background asset. Keep the source files and generator names unchanged.
+ * The header mark and favicons use the light artwork in both interface themes.
+ * The near-black variant proved hard to read against the light interface, so
+ * the visible light mark is now shown consistently regardless of theme.
+ *
+ * The dark variants remain generated and shipped for app icons and social
+ * cards; the in-app header and favicon mapping deliberately does not use them.
+ *
+ * The `Theme` parameter is retained so callers keep one explicit contract.
  */
-export function headerMarkForTheme(theme: Theme): string {
-  return theme === 'dark' ? '/icon-192.png' : '/icon-192-dark.png';
+export function headerMarkForTheme(_theme: Theme): string {
+  return '/icon-192.png';
 }
 
-export function faviconForTheme(size: 16 | 32, theme: Theme): string {
-  return theme === 'dark' ? `/favicon-${size}.png` : `/favicon-${size}-dark.png`;
+export function faviconForTheme(size: 16 | 32, _theme: Theme): string {
+  return `/favicon-${size}.png`;
 }

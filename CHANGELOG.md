@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] — 2026-10-21
+
+### Fixed
+
+- The header brand mark and favicons now use the light artwork in both interface themes. The near-black `*-dark.png` variants were hard to read against the light interface.
+- The initial favicon links in every HTML shell and the pre-hydration theme script now point at the light artwork, so the correct icons show before React mounts as well as after a theme switch.
+
+### Changed
+
+- The dark icon variants remain generated and shipped for application icons and social cards, but the in-app header and favicons no longer switch with the theme.
+- `theme-color` still follows the interface theme.
+- Version bumped to 0.1.12.
+
 ## [0.1.11] — 2026-10-21
 
 ### Added

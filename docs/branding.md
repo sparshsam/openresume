@@ -95,14 +95,16 @@ fallback also uses the light master.
 
 - `index.html` declares the ICO, 16/32 PNGs, Apple touch icons, Microsoft tile,
   Open Graph image, and Twitter card.
-- The generated light and dark artwork is **cross-assigned by interface theme**:
-  the light interface uses the dark-background assets, and the dark interface
-  uses the light-background assets. The file names continue to describe the
-  artwork, not the interface where it appears.
-- The dark-background 16/32 PNGs are the initial favicon values for the light
-  default. The inline pre-hydration theme script and `ThemeProvider` swap the
-  links: light → `favicon-*-dark.png`, dark → `favicon-*.png`.
-- `Header` uses `icon-192-dark.png` in light mode and `icon-192.png` in dark mode.
+- The interface uses the **light artwork in both themes**: `icon-192.png` for
+  the header mark and `favicon-16.png` / `favicon-32.png` for the favicons.
+  The near-black `*-dark.png` variants proved hard to read against the light
+  interface, so the header and favicons no longer switch with the theme.
+- The 16/32 light PNGs are the initial favicon values in every HTML shell. The
+  inline pre-hydration script and `ThemeProvider` keep the same paths; they no
+  longer substitute a theme-specific variant.
+- The dark variants remain generated and shipped for application icons and
+  social cards, where they are shown against their own background. They are
+  not referenced by the in-app header or favicons.
 - The legacy ICO and Apple touch icons use the light artwork; they are not
   theme-aware.
 - `theme-color` follows the interface theme (`#f4f5f2` light, `#0f1210` dark).

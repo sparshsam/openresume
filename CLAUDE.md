@@ -21,9 +21,9 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.11 (Application Kit document order, ATS Simple resume layout, and typography/spacing refinements), released and deployed.
-- **Release:** PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; annotated tag `v0.1.11` points at that merge commit; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.11.
-- **Production deployment:** `dpl_29q2ivddjic29SPvgLaMzaAqawzF` (READY) built from `fe9cf12`; the served bundle was verified byte-identical (SHA-256) to a clean local build.
+- **Version:** v0.1.12 (one visible brand mark and favicon across themes), released and deployed.
+- **Release:** annotated tag `v0.1.12`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.12.
+- **Prior release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`, with PR [#6](https://github.com/sparshsam/openresume/pull/6) adding the v0.1.11 orientation notes as `ec10766f4b3c1bd8054d63940b61a0daba3055a2`.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.11 run passed with 329 tests across 26 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
@@ -70,7 +70,7 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 - `public/robots.txt` / `public/sitemap.xml` — canonical-only discovery files.
 - `src/components/PrepareScreen.tsx` — shared preparation for resume, cover letter, and Application Kit, with validation, AI copy, and examples.
 - `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
-- `src/lib/themeAssets.ts` — intentionally reversed light/dark logo assignment for the header and favicons.
+- `src/lib/themeAssets.ts` — one visible brand mark and favicon for both interface themes (the light artwork).
 - `src/lib/tokens.ts` — document accent palette and fixed neutral document colors.
 - `src/components/FormattingPanel.tsx` — document formatting, including the accessible accent swatch group.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
@@ -123,7 +123,7 @@ Full design: `ARCHITECTURE.md`.
 15. **Public navigation never reloads the builder.** Use `InternalLink`/`navigate` for `/about`, `/privacy`, and `/terms`; session documents must survive the round trip. Direct loads rely on the static shells and Vercel `cleanUrls`.
 16. **Every page shares the shell and metadata.** Header, footer, theme controls, canonical URL, and page-specific title/description must remain consistent across the builder and information pages.
 17. **One document accent model.** `template.accent` feeds `Layout`; preview, PDF, and DOCX must read the same value. Never introduce an independent export palette.
-18. **Logo cross-assignment is intentional.** Light interface → dark-background asset; dark interface → light-background asset. Use `themeAssets.ts`; do not rename or alter the generated masters.
+18. **One visible brand mark.** The header and favicons use the light artwork (`icon-192.png`, `favicon-*.png`) in both interface themes; the near-black `*-dark.png` variants are not used in the interface. Route every lookup through `themeAssets.ts`, and do not rename or alter the generated masters.
 19. **One enclosing fence is a container, not content.** Both parsers strip exactly one complete enclosing `text` or unlabelled fence before reading markers. Never strip prose-wrapped, partial, or ambiguous fences, and never alter the interior.
 20. **The Application Kit is orchestration, not a third document.** It reuses the same `resume` and `coverLetter` models, parsers, editors, layouts, formatting, and exporters. Never duplicate document content or parser rules.
 21. **Kit builds are atomic.** Parse and validate both sections before replacing either model. A failed kit build must leave both previous documents untouched. Cross-document name or contact differences are warnings only; never rewrite them.

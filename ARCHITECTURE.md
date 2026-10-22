@@ -57,7 +57,7 @@ flowchart LR
 | `src/components/Header.tsx`                | Brand, context actions, status, theme slot            | Own document state                |
 | `src/components/ThemeProvider.tsx`         | Resolve and persist light/dark theme                  | Affect document colors            |
 | `src/lib/theme.ts`                         | Theme context, key, and system detection              | Render UI                         |
-| `src/lib/themeAssets.ts`                   | Reversed light/dark header and favicon mapping        | Alter generated artwork           |
+| `src/lib/themeAssets.ts`                   | Single visible header and favicon mapping             | Alter generated artwork           |
 | `src/lib/tokens.ts`                        | Document accent palette and fixed neutral colors      | Read UI theme tokens              |
 | `src/components/Footer.tsx`                | Kovina attribution, links, and version                | Invent branding                   |
 | `src/lib/appMeta.ts`                       | Build-time application version                        | Read the network                  |

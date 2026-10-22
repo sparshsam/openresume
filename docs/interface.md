@@ -138,7 +138,7 @@ No letter body is generated. The user writes it. The resume is never modified, a
 
 ## Themes and footer
 
-Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The favicon, `theme-color`, and header brand mark follow the selected theme. The generated artwork is cross-assigned: the light interface shows the dark-background asset and the dark interface shows the light-background asset. The resume and cover letter documents keep fixed neutral colors plus their own accent in both themes. All four page types share the same header and footer.
+Light/dark/system behavior is unchanged: `data-theme`, system preference on first load, live system updates while unset, and an inline pre-hydration script to prevent a flash. The `theme-color` follows the selected theme, while the favicon and header brand mark stay on the light artwork in both themes; the near-black variants are not used in the interface because they read poorly on the light page. The resume and cover letter documents keep fixed neutral colors plus their own accent in both themes. All four page types share the same header and footer.
 
 ## Keyboard and accessibility
 

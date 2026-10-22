@@ -5,7 +5,8 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; annotated tag `v0.1.11` on that merge commit; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.11. Deployed at https://resume.kovina.org (Vercel `dpl_29q2ivddjic29SPvgLaMzaAqawzF`, READY). The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Release:** v0.1.12 — annotated tag `v0.1.12`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.12. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Prior release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; orientation docs landed in PR [#6](https://github.com/sparshsam/openresume/pull/6) as `ec10766`.
 - **Verification baseline:** 329 tests across 26 files; lint, format check, typecheck, and build green; coverage 95.15% statements / 97.08% lines against 80% thresholds.
 - **Resume layouts:** `template.layout` selects **Professional Two-Column** (default) or **ATS Simple**. ATS Simple is one full-width column in author order with no tables; the DOCX exporter emits a linear paragraph flow for it. Switching layouts preserves content.
 - **Application Kit order:** the kit toolbar offers cover-letter-first (default) or resume-first for combined PDF and DOCX. The order is session-only UI state, never part of a document template.
@@ -48,7 +49,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 - Resume layout is selected by `template.layout` and implemented in `layoutResume`; both layouts reuse `buildSectionBlocks` and the shared item formatting. ATS Simple emits one full-width column in author order, ignores `section.column`, and must not produce tables or positioned columns in DOCX. It must never promise guaranteed ATS compatibility.
 - Load Example selects by `PrepareKind`. The Application Kit inserts the canonical combined sample from `applicationKitSample.ts`, never the standalone cover letter example.
 - Application icons are generated from the two authoritative masters; never hand-edit generated assets or fabricate SVGs.
-- Logo artwork is cross-assigned by interface theme through `src/lib/themeAssets.ts`: light UI uses dark-background assets, dark UI uses light-background assets.
+- The header and favicons use the light artwork in both interface themes through `src/lib/themeAssets.ts`; the near-black `*-dark.png` variants stay out of the interface. Only `theme-color` follows the theme.
 - Document accents come only from `template.accent` and must flow through `Layout` to preview, PDF, and DOCX.
 - PDF text is selectable; DOCX text is editable and contains every content string.
 
@@ -85,7 +86,7 @@ Produce consistent, professional resumes and cover letters from structured text 
 | Brand masters and icons     | `assets/branding/source-assets/`, `scripts/generate-icons.py`, `docs/branding.md`                                    |
 | Theme-aware favicon/brand   | `index.html`, `src/components/ThemeProvider.tsx`, `src/components/Header.tsx`                                        |
 | Public pages and routing    | `src/components/InfoPages.tsx`, `src/lib/publicPages.ts`, `about.html`, `privacy.html`, `terms.html`                 |
-| Logo theme assignment       | `src/lib/themeAssets.ts`, `src/components/Header.tsx`, `src/components/ThemeProvider.tsx`                            |
+| Brand mark and favicons     | `src/lib/themeAssets.ts`, `src/components/Header.tsx`, `src/components/ThemeProvider.tsx`, `*.html`                  |
 | Document accent colour      | `src/lib/tokens.ts`, `src/components/FormattingPanel.tsx`, `src/lib/layout.ts`, `src/lib/exportDocx.ts`              |
 | Footer navigation           | `src/components/Footer.tsx`, `src/components/InternalLink.tsx`                                                       |
 | SEO discovery files         | `public/robots.txt`, `public/sitemap.xml`, `vercel.json`                                                             |

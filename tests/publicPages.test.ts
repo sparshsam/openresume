@@ -65,12 +65,12 @@ describe('public page routing and metadata', () => {
     ]);
   });
 
-  it('preloads the reversed favicon assignment for the light default', () => {
+  it('preloads the same favicons for both themes', () => {
     for (const file of ['index.html', 'about.html', 'privacy.html', 'terms.html']) {
       const html = read(file);
-      expect(html).toContain('href="/favicon-32-dark.png"');
-      expect(html).toContain('href="/favicon-16-dark.png"');
-      expect(html).toContain("theme === 'dark' ? '' : '-dark'");
+      expect(html).toContain('href="/favicon-32.png"');
+      expect(html).toContain('href="/favicon-16.png"');
+      expect(html).not.toContain('-dark.png');
     }
   });
 
