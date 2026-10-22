@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" href="/favicon-32-dark.png" sizes="32x32" data-favicon="32" />
-    <link rel="icon" type="image/png" href="/favicon-16-dark.png" sizes="16x16" data-favicon="16" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" data-favicon="32" />
+    <link rel="icon" type="image/png" href="/favicon-16.png" sizes="16x16" data-favicon="16" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
@@ -54,10 +54,7 @@
           var favicons = document.querySelectorAll('link[data-favicon]');
           for (var index = 0; index < favicons.length; index += 1) {
             var size = favicons[index].getAttribute('data-favicon');
-            favicons[index].setAttribute(
-              'href',
-              '/favicon-' + size + (theme === 'dark' ? '' : '-dark') + '.png',
-            );
+            favicons[index].setAttribute('href', '/favicon-' + size + '.png');
           }
         } catch (error) {
           /* The app falls back to light if storage or matchMedia is unavailable. */

@@ -19,16 +19,20 @@ describe('document accent palette', () => {
   });
 });
 
-describe('reversed logo assignment', () => {
-  it('uses dark-background artwork in the light interface', () => {
-    expect(headerMarkForTheme('light')).toBe('/icon-192-dark.png');
-    expect(faviconForTheme(16, 'light')).toBe('/favicon-16-dark.png');
-    expect(faviconForTheme(32, 'light')).toBe('/favicon-32-dark.png');
+describe('single brand mark across themes', () => {
+  it('uses the light artwork in both interfaces', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(headerMarkForTheme(theme)).toBe('/icon-192.png');
+      expect(faviconForTheme(16, theme)).toBe('/favicon-16.png');
+      expect(faviconForTheme(32, theme)).toBe('/favicon-32.png');
+    }
   });
 
-  it('uses light-background artwork in the dark interface', () => {
-    expect(headerMarkForTheme('dark')).toBe('/icon-192.png');
-    expect(faviconForTheme(16, 'dark')).toBe('/favicon-16.png');
-    expect(faviconForTheme(32, 'dark')).toBe('/favicon-32.png');
+  it('never references the near-black variants in the interface', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(headerMarkForTheme(theme)).not.toContain('-dark');
+      expect(faviconForTheme(16, theme)).not.toContain('-dark');
+      expect(faviconForTheme(32, theme)).not.toContain('-dark');
+    }
   });
 });

@@ -1200,7 +1200,7 @@ describe('header, theme, and footer', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
   });
 
-  it('switches the favicon, theme colour, and header mark with the theme', async () => {
+  it('keeps one brand mark and favicon while the theme changes the chrome', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     const favicon = document.createElement('link');
     favicon.rel = 'icon';
@@ -1215,9 +1215,9 @@ describe('header, theme, and footer', () => {
     const { container } = renderApp();
     const mark = container.querySelector('.brand-mark') as HTMLImageElement;
 
-    expect(favicon.href).toContain('/favicon-32-dark.png');
+    expect(favicon.href).toContain('/favicon-32.png');
     expect(themeColor.content).toBe('#f4f5f2');
-    expect(mark.getAttribute('src')).toBe('/icon-192-dark.png');
+    expect(mark.getAttribute('src')).toBe('/icon-192.png');
 
     await user.click(screen.getByRole('button', { name: /switch to dark mode/i }));
 
