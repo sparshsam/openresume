@@ -22,7 +22,8 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
 - **Version:** v0.1.11 (Application Kit document order, ATS Simple resume layout, and typography/spacing refinements), released and deployed.
-- **Release:** annotated tag `v0.1.11` on the v0.1.11 merge commit; GitHub pre-release published.
+- **Release:** PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; annotated tag `v0.1.11` points at that merge commit; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.11.
+- **Production deployment:** `dpl_29q2ivddjic29SPvgLaMzaAqawzF` (READY) built from `fe9cf12`; the served bundle was verified byte-identical (SHA-256) to a clean local build.
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.11 run passed with 329 tests across 26 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
@@ -33,6 +34,16 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 
 **Known notes:** `/releases/latest` returns 404 while the only release is a pre-release; this is expected until a stable release exists. The repository wiki is enabled but empty. Merging a PR to `main` triggers a Vercel production deployment; PRs get preview deployments, which are SSO-protected while production is public. Direct pushes to `main` are rejected by the ruleset.
 
+## Session gotchas
+
+- **`npm run check` does not run `format:check`.** CI does. Run both before claiming completion, or Prettier failures land on the PR.
+- **`PageView` duplicates three leading ratios** for the header: `1.17` name, `1.24` headline, `1.38` contact lines. They must stay in step with `nameLinePt`, `headlineLinePt`, and `smallLinePt` in `metrics.ts`. Lines are absolutely positioned from layout coordinates, so a drift is a subtle baseline shift rather than an obvious break.
+- **Every `Layout` producer must set `variant`** (`twoColumn`, `atsSimple`, or `letter`). The DOCX exporter chooses table vs. linear output from it; a missing or wrong value silently changes the Word structure.
+- **All new template fields go through `normalizeTemplate`.** That function is the backward-compatibility gate; an unnormalized field will break on legacy or externally supplied templates.
+- **PDF containment tests need short fixture lines.** jsPDF writes one text operator per wrapped line in uncompressed output, so a long bullet never appears contiguously. Use short fixtures for `toContain` assertions and separate ordering tests for long content.
+- **Page-budget baseline:** the bundled sample resume is 1 page in Professional Two-Column and 2 pages in ATS Simple at default settings. Spacing changes that move these are product decisions, not just test updates.
+- **ATS Simple stores column assignments.** It ignores `section.column` but never rewrites it, so switching back to two-column restores the original layout. The per-section Main/Side selector is hidden through `showColumn` in `SectionEditor`.
+
 ## Commands
 
 ```bash
@@ -41,7 +52,8 @@ npm run build        # typecheck + production build → dist/
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
 npm test             # Vitest
-npm run check        # everything above, in release order
+npm run check        # lint + typecheck + test + build
+npm run format:check # Prettier check (CI runs this too; `check` does not)
 ```
 
 ## Architecture map
@@ -123,7 +135,7 @@ Full design: `ARCHITECTURE.md`.
 
 ## Working agreement
 
-- Make focused changes and run `npm run check` before claiming completion.
+- Make focused changes and run `npm run check` plus `npm run format:check` before claiming completion.
 - Add tests with behavior changes; both parsers, the combined kit parser, pagination, standalone and combined exports, preparation validation, AI instruction drift, coexisting session documents, kit atomicity and tab independence, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.

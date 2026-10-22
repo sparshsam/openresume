@@ -5,13 +5,14 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-10-21)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.11 is annotated-tagged on its merge commit, published as a GitHub pre-release, and deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; annotated tag `v0.1.11` on that merge commit; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.11. Deployed at https://resume.kovina.org (Vercel `dpl_29q2ivddjic29SPvgLaMzaAqawzF`, READY). The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Verification baseline:** 329 tests across 26 files; lint, format check, typecheck, and build green; coverage 95.15% statements / 97.08% lines against 80% thresholds.
 - **Resume layouts:** `template.layout` selects **Professional Two-Column** (default) or **ATS Simple**. ATS Simple is one full-width column in author order with no tables; the DOCX exporter emits a linear paragraph flow for it. Switching layouts preserves content.
 - **Application Kit order:** the kit toolbar offers cover-letter-first (default) or resume-first for combined PDF and DOCX. The order is session-only UI state, never part of a document template.
 - **AI workflow:** all three instruction templates require exactly one plain-text code block; the standalone parsers accept one complete enclosing `text` or unlabelled fence, and the Application Kit parser additionally requires the two document delimiters in resume-then-letter order.
 - **Application Kit:** a third landing card and atomically validated combined workflow that reuses the same resume and cover letter models, editors, formatting, and exporters; the kit workspace adds accessible tabs and combined or separate downloads.
 - **README:** includes the full Kovina Collection footer.
-- **Repository:** all work is committed and the working tree is clean.
+- **Repository:** `main` is at the v0.1.11 merge commit `fe9cf12` on origin; inspect `git status` and recent commits before starting work.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
 - **Branch protection:** active ruleset `main-protection` (`25359494`) requires a PR, conversation resolution, and the `check` CI status with up-to-date branches; blocks direct pushes, force-pushes, and deletion; 0 required approvals; no bypass actors.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.
@@ -101,8 +102,11 @@ Produce consistent, professional resumes and cover letters from structured text 
 ## Verification before completion
 
 ```bash
-npm run check
+npm run check        # lint + typecheck + test + build
+npm run format:check # CI also runs this; `check` does not
 ```
+
+Use `npm run format` to fix Prettier failures. `npm run test:coverage` enforces the thresholds in `vite.config.ts`.
 
 Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 
@@ -129,6 +133,17 @@ Then, for export-affecting changes, manually export a PDF and DOCX and confirm:
 - Accent changes reach the preview, PDF, and DOCX; resume and cover letter accents stay independent.
 - Switching resume layouts preserves every word and reflows the preview; ATS Simple hides column spacing and emits no `<w:tbl>` in DOCX.
 - Changing the kit document order reverses both combined exports while preserving page breaks and per-document page sizes.
+
+## Session gotchas
+
+- `npm run check` omits `format:check`; CI does not. Run both.
+- `PageView` hard-codes header leading ratios `1.17` (name), `1.24` (headline), `1.38` (contact). Keep them equal to `nameLinePt`, `headlineLinePt`, and `smallLinePt` in `metrics.ts`.
+- Every `Layout` producer must set `variant` (`twoColumn` | `atsSimple` | `letter`); the DOCX exporter picks table vs. linear output from it.
+- New template fields belong in `normalizeTemplate`; it is the backward-compatibility gate.
+- In uncompressed jsPDF output, wrapped lines are separate text runs. Assert long strings after rejoining or use short fixtures; assert ordering separately.
+- Page budget baseline at default settings: bundled sample resume = 1 page two-column, 2 pages ATS Simple.
+- ATS Simple ignores but preserves `section.column`; the Main/Side selector is hidden via `SectionEditor`'s `showColumn`.
+- The kit order is `App` state, so it resets on reload by design. Do not move it into a template or storage.
 
 ## Change discipline
 
