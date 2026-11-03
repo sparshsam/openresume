@@ -1,19 +1,34 @@
 import {
   DEFAULT_FORMAT,
+  DEFAULT_PAGINATION,
   DEFAULT_TEMPLATE,
   type ColumnSpacingPreset,
+  type CoverLetterStyleId,
   type DensityPreset,
   type FontSizePreset,
   type FormatSettings,
   type MarginPreset,
   type PageSize,
+  type PaginationSettings,
   type ResumeLayoutId,
   type ResumeTemplate,
   type SpacingPreset,
 } from '../types/resume';
 
 const PAGE_SIZES = new Set<PageSize>(['letter', 'a4', 'legal']);
-const LAYOUTS = new Set<ResumeLayoutId>(['twoColumn', 'atsSimple']);
+const LAYOUTS = new Set<ResumeLayoutId>([
+  'twoColumn',
+  'atsSimple',
+  'executive',
+  'modernMinimal',
+  'classic',
+  'creative',
+  'compact',
+  'academic',
+  'contemporary',
+  'bold',
+]);
+const LETTER_STYLES = new Set<CoverLetterStyleId>(['classic', 'modern', 'executive', 'minimal']);
 const MARGINS = new Set<MarginPreset>(['narrow', 'normal', 'wide']);
 const FONT_SIZES = new Set<FontSizePreset>(['small', 'standard', 'large']);
 const SPACING = new Set<SpacingPreset>(['compact', 'standard', 'relaxed']);
@@ -39,6 +54,17 @@ export function normalizeFormat(value: unknown): FormatSettings {
   };
 }
 
+export function normalizePagination(value: unknown): PaginationSettings {
+  const source =
+    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  return {
+    keepEntriesTogether:
+      typeof source.keepEntriesTogether === 'boolean'
+        ? source.keepEntriesTogether
+        : DEFAULT_PAGINATION.keepEntriesTogether,
+  };
+}
+
 export function normalizeTemplate(value: unknown): ResumeTemplate {
   const source =
     typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -49,6 +75,8 @@ export function normalizeTemplate(value: unknown): ResumeTemplate {
         ? source.accent
         : DEFAULT_TEMPLATE.accent,
     layout: pick(source.layout, LAYOUTS, DEFAULT_TEMPLATE.layout),
+    letterStyle: pick(source.letterStyle, LETTER_STYLES, DEFAULT_TEMPLATE.letterStyle),
+    pagination: normalizePagination(source.pagination),
     format: normalizeFormat(source.format),
   };
 }

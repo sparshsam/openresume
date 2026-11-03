@@ -14,7 +14,8 @@ import {
   WidthType,
 } from 'docx';
 import type { ISectionOptions } from 'docx';
-import type { DocumentIdentity, Layout, PageLayout } from './layout';
+import type { DocumentIdentity, HeaderLayout, Layout, PageLayout } from './layout';
+import type { FontSpec } from './measure';
 import type { ResolvedMetrics } from './metrics';
 import type { PlacedBlock } from './paginate';
 import { COLORS } from './tokens';
@@ -49,6 +50,10 @@ interface BlockStyle {
 
 function hexColor(value: string): string {
   return value.replace('#', '').toUpperCase();
+}
+
+function docxFont(font: FontSpec | undefined): string {
+  return font?.family === 'times' ? 'Times New Roman' : 'Helvetica';
 }
 
 function styleFor(block: PlacedBlock, metrics: ResolvedMetrics): BlockStyle {
@@ -241,7 +246,7 @@ function styleFor(block: PlacedBlock, metrics: ResolvedMetrics): BlockStyle {
 
 function blockText(block: PlacedBlock): string {
   const joined = block.lines.map((line) => line.text).join(' ');
-  return block.kind === 'bullet' ? joined.replace(/^•\s+/, '') : joined;
+  return block.kind === 'bullet' ? joined.replace(/^[•–▪]\s+/, '') : joined;
 }
 
 function paragraphFor(
@@ -250,6 +255,7 @@ function paragraphFor(
   firstInCell: boolean,
 ): Paragraph {
   const style = styleFor(block, metrics);
+  const sourceFont = block.lines[0]?.font;
   return new Paragraph({
     children: [
       new TextRun({
@@ -257,7 +263,10 @@ function paragraphFor(
         bold: style.bold,
         size: style.sizeHalfPt,
         color: hexColor(style.color),
-        font: 'Helvetica',
+        font: docxFont(sourceFont),
+        characterSpacing: sourceFont?.letterSpacingPt
+          ? Math.round(sourceFont.letterSpacingPt * PT_TO_TWIP)
+          : undefined,
       }),
     ],
     spacing: {
@@ -271,6 +280,16 @@ function paragraphFor(
     bullet: style.bullet ? { level: 0 } : undefined,
     indent: style.bullet ? { left: 360, hanging: 180 } : undefined,
     alignment: AlignmentType.LEFT,
+    border: block.rule
+      ? {
+          bottom: {
+            style: BorderStyle.SINGLE,
+            size: Math.max(1, Math.round(block.rule.thicknessPt * 8)),
+            color: hexColor(block.rule.color),
+            space: 1,
+          },
+        }
+      : undefined,
   });
 }
 
@@ -328,7 +347,32 @@ function headerParagraphs(
   identity: DocumentIdentity,
   metrics: ResolvedMetrics,
   accent: string,
+  layout: Layout,
+  header: HeaderLayout | undefined,
 ): Paragraph[] {
+  const family = docxFont(header?.name.font);
+  const alignment = layout.headerAlign === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
+  const nameSpacing = header?.name.font.letterSpacingPt ?? 0;
+  const nameColor = header?.name.color ?? accent;
+  const contact = [
+    identity.contact.email,
+    identity.contact.phone,
+    identity.contact.location,
+    ...identity.contact.links.map((link) => link.label),
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join('  ·  ');
+  const rule = header?.rule;
+  const ruleBorder = rule
+    ? {
+        bottom: {
+          style: BorderStyle.SINGLE,
+          size: Math.max(1, Math.round(rule.widthPt * 8)),
+          color: hexColor(rule.color),
+          space: 4,
+        },
+      }
+    : undefined;
   const paragraphs: Paragraph[] = [
     new Paragraph({
       children: [
@@ -336,12 +380,15 @@ function headerParagraphs(
           text: identity.name,
           bold: true,
           size: Math.round(metrics.namePt * 2),
-          color: hexColor(accent),
-          font: 'Helvetica',
+          color: hexColor(nameColor),
+          font: family,
+          characterSpacing: nameSpacing ? Math.round(nameSpacing * PT_TO_TWIP) : undefined,
         }),
       ],
       spacing: { after: 60, line: 240, lineRule: LineRuleType.AUTO },
       keepNext: true,
+      alignment,
+      border: ruleBorder && !identity.headline && !contact ? ruleBorder : undefined,
     }),
   ];
 
@@ -352,24 +399,17 @@ function headerParagraphs(
           new TextRun({
             text: identity.headline,
             size: Math.round(metrics.headlinePt * 2),
-            color: hexColor(COLORS.text),
-            font: 'Helvetica',
+            color: hexColor(header?.headline?.color ?? COLORS.text),
+            font: family,
           }),
         ],
         spacing: { after: 40, line: 240, lineRule: LineRuleType.AUTO },
         keepNext: true,
+        alignment,
+        border: ruleBorder && !contact ? ruleBorder : undefined,
       }),
     );
   }
-
-  const contact = [
-    identity.contact.email,
-    identity.contact.phone,
-    identity.contact.location,
-    ...identity.contact.links.map((link) => link.label),
-  ]
-    .filter((part): part is string => Boolean(part))
-    .join('  ·  ');
 
   if (contact) {
     paragraphs.push(
@@ -379,10 +419,12 @@ function headerParagraphs(
             text: contact,
             size: Math.round(metrics.smallPt * 2),
             color: hexColor(COLORS.muted),
-            font: 'Helvetica',
+            font: family,
           }),
         ],
         spacing: { after: 180, line: 240, lineRule: LineRuleType.AUTO },
+        alignment,
+        border: ruleBorder,
       }),
     );
   }
@@ -418,6 +460,7 @@ function baseDocument(
   children: (Paragraph | Table)[],
   metrics: ResolvedMetrics,
   title: string,
+  fontFamily: 'helvetica' | 'times' = 'helvetica',
 ): Document {
   return new Document({
     creator: 'OpenResume',
@@ -426,7 +469,10 @@ function baseDocument(
     styles: {
       default: {
         document: {
-          run: { font: 'Helvetica', size: Math.round(metrics.bodyPt * 2) },
+          run: {
+            font: fontFamily === 'times' ? 'Times New Roman' : 'Helvetica',
+            size: Math.round(metrics.bodyPt * 2),
+          },
         },
       },
     },
@@ -450,12 +496,14 @@ function resumeChildren(resume: Resume, layout: Layout): (Paragraph | Table)[] {
       },
       metrics,
       layout.accent,
+      layout,
+      layout.pages[0]?.header,
     ),
   ];
 
-  // ATS Simple is deliberately linear: one paragraph flow, no table cells,
-  // so Word and downstream text extractors see conventional reading order.
-  const useTable = layout.variant === 'twoColumn';
+  // Single-column designs are deliberately linear: one paragraph flow, no
+  // table cells, so Word and text extractors see conventional reading order.
+  const useTable = layout.columns === 2;
 
   layout.pages.forEach((page, index) => {
     if (index > 0) children.push(pageBreakParagraph());
@@ -484,6 +532,8 @@ function coverLetterChildren(letter: CoverLetter, layout: Layout): (Paragraph | 
       },
       metrics,
       layout.accent,
+      layout,
+      layout.pages[0]?.header,
     ),
   ];
 
@@ -514,6 +564,7 @@ export function createDocxDocument(resume: Resume, layout: Layout): Document {
     resumeChildren(resume, layout),
     layout.metrics,
     `${resume.header.name || 'Resume'} — Resume`,
+    layout.fontFamily,
   );
 }
 
@@ -522,6 +573,7 @@ export function createCoverLetterDocxDocument(letter: CoverLetter, layout: Layou
     coverLetterChildren(letter, layout),
     layout.metrics,
     `${letter.applicant.name || 'Cover Letter'} — Cover Letter`,
+    layout.fontFamily,
   );
 }
 
@@ -577,7 +629,10 @@ export function createApplicationKitDocxDocument(
     styles: {
       default: {
         document: {
-          run: { font: 'Helvetica', size: Math.round(firstPart.metrics.bodyPt * 2) },
+          run: {
+            font: resumeLayout.fontFamily === 'times' ? 'Times New Roman' : 'Helvetica',
+            size: Math.round(firstPart.metrics.bodyPt * 2),
+          },
         },
       },
     },

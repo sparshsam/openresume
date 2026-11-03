@@ -36,11 +36,25 @@ export interface FlowBlock {
   spaceAfterPt: number;
   splittable: boolean;
   keepWithNext?: boolean;
+  /** Start this block on a fresh page when it is not already at the top. */
+  forcePageBreak?: boolean;
+  /** Height of the keep-together unit that starts at this block, when enabled. */
+  groupHeightPt?: number;
+  /** A rule drawn under the block's text, aligned with the column width. */
+  headingRule?: { color: string; widthPt: number };
 }
 
 export interface PlacedLine extends FlowLine {
   xPt: number;
   yPt: number;
+}
+
+export interface PlacedRule {
+  xPt: number;
+  yPt: number;
+  widthPt: number;
+  thicknessPt: number;
+  color: string;
 }
 
 export interface PlacedBlock {
@@ -53,6 +67,11 @@ export interface PlacedBlock {
   heightPt: number;
   lineHeightPt: number;
   lines: PlacedLine[];
+  rule?: PlacedRule;
+}
+
+export interface PaginateOptions {
+  keepEntriesTogether?: boolean;
 }
 
 export function blockHeight(block: FlowBlock): number {
@@ -64,6 +83,7 @@ export function paginateColumn(
   firstCapacityPt: number,
   restCapacityPt: number,
   columnWidthPt: number,
+  options: PaginateOptions = {},
 ): PlacedBlock[][] {
   const pages: PlacedBlock[][] = [];
   let current: PlacedBlock[] = [];
@@ -79,6 +99,7 @@ export function paginateColumn(
 
   const place = (block: FlowBlock, spaceBeforePt: number, spaceAfterPt: number) => {
     const yPt = usedPt + spaceBeforePt;
+    const textBottomPt = yPt + block.lines.length * block.lineHeightPt;
     const placed: PlacedBlock = {
       sectionId: block.sectionId,
       itemId: block.itemId,
@@ -93,6 +114,15 @@ export function paginateColumn(
         xPt: line.xOffsetPt,
         yPt: yPt + index * block.lineHeightPt,
       })),
+      rule: block.headingRule
+        ? {
+            xPt: 0,
+            yPt: textBottomPt + 1.5,
+            widthPt: columnWidthPt,
+            thicknessPt: block.headingRule.widthPt,
+            color: block.headingRule.color,
+          }
+        : undefined,
     };
     current.push(placed);
     usedPt += placed.heightPt;
@@ -101,6 +131,23 @@ export function paginateColumn(
   for (let index = 0; index < blocks.length; index += 1) {
     let block = blocks[index];
     let firstChunk = true;
+
+    if (block.forcePageBreak && usedPt > 0) {
+      startPage();
+    }
+
+    // A heading always stays with its first entry; whole entries stay together
+    // when the document enables it. Both only apply when the unit fits a page.
+    if (
+      block.groupHeightPt &&
+      usedPt > 0 &&
+      (block.kind === 'heading' || options.keepEntriesTogether)
+    ) {
+      const availablePt = capacityPt - usedPt;
+      if (block.groupHeightPt <= capacityPt && block.groupHeightPt > availablePt) {
+        startPage();
+      }
+    }
 
     for (;;) {
       const spaceBeforePt = firstChunk ? block.spaceBeforePt : 0;

@@ -6,6 +6,7 @@ import type { ApplicationKitOrder } from '../types/applicationKit';
 interface ApplicationKitToolbarProps {
   activeKind: DocumentKind;
   order: ApplicationKitOrder;
+  pageCounts: Record<DocumentKind, number>;
   onSelect: (kind: DocumentKind) => void;
   onOrder: (order: ApplicationKitOrder) => void;
   onExportCombinedPdf: () => void;
@@ -21,6 +22,7 @@ const TABS: { kind: DocumentKind; label: string }[] = [
 export function ApplicationKitToolbar({
   activeKind,
   order,
+  pageCounts,
   onSelect,
   onOrder,
   onExportCombinedPdf,
@@ -56,6 +58,10 @@ export function ApplicationKitToolbar({
       <div className="kit-identity">
         <span className="kit-eyebrow">Application Kit</span>
         <span className="kit-hint">Two coordinated documents</span>
+        <span className="kit-page-counts" aria-live="polite">
+          Resume: {pageCounts.resume} {pageCounts.resume === 1 ? 'page' : 'pages'} | Cover Letter:{' '}
+          {pageCounts.coverLetter} {pageCounts.coverLetter === 1 ? 'page' : 'pages'}
+        </span>
       </div>
 
       <div className="kit-tabs" role="tablist" aria-label="Application Kit documents">

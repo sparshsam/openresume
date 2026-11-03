@@ -5,15 +5,18 @@ This file complements `CLAUDE.md`. Read both before changing code.
 ## Current state (2026-11-02)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.13 — annotated tag `v0.1.13`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.13. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
-- **Prior release:** v0.1.12 — PR [#7](https://github.com/sparshsam/openresume/pull/7) merged as `728bdd0d50bfac58a757158acfc54e917cfae226` (one visible brand mark and favicon across themes).
-- **Verification baseline:** 349 tests across 27 files; lint, format check, typecheck, and build green.
-- **Resume layouts:** `template.layout` selects **Professional Two-Column** (default) or **ATS Simple**. ATS Simple is one full-width column in author order with no tables; the DOCX exporter emits a linear paragraph flow for it. Switching layouts preserves content.
+- **Release:** v0.2.0 — annotated tag `v0.2.0`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
+- **Verification baseline:** 444 tests across 33 files; lint, format check, typecheck, and build green.
+- **Résumé designs:** `template.layout` selects one of ten designs (Professional Two-Column default, ATS Simple, Executive, Modern Minimal, Classic, Creative, Compact, Academic, Contemporary, Bold) from `src/lib/designs.ts`. The design supplies columns, font family, header/heading treatments, and scales; content, pagination, preview, and both exporters are shared. ATS Simple is one full-width column in author order with no tables. Switching designs preserves every content value and stored `column` assignment without re-parsing.
+- **Cover-letter styles:** `template.letterStyle` selects Classic (default), Modern, Executive, or Minimal. The resume design suggests a coordinated style but never applies it automatically.
+- **Pagination and counts:** `template.pagination.keepEntriesTogether` and `section.startOnNewPage` drive the shared `paginateColumn`; heading blocks always keep their first entry. Page counts are derived from `Layout.pages.length` in the workspace header and, independently, in the kit toolbar.
+- **Design gallery:** `DesignGallery.tsx` is a native radio gallery of locally rendered SVG thumbnails; application-context recommendations only highlight designs.
 - **Application Kit order:** the kit toolbar offers cover-letter-first (default) or resume-first for combined PDF and DOCX. The order is session-only UI state, never part of a document template.
 - **AI workflow:** all three instruction templates require exactly one plain-text code block; the standalone parsers accept one complete enclosing `text` or unlabelled fence, and the Application Kit parser additionally requires the two document delimiters in resume-then-letter order. All three templates share `AI_FIELD_DEFINITIONS`, which separates professional headline, job title, employer name, and geographic location and requires an unverified location to be omitted rather than replaced with a job title.
 - **Application Kit:** a third landing card and atomically validated combined workflow that reuses the same resume and cover letter models, editors, formatting, and exporters; the kit workspace adds accessible tabs and combined or separate downloads.
 - **README:** includes the full Kovina Collection footer.
-- **Repository:** `main` is at the v0.1.12 merge commit `728bdd0` on origin; inspect `git status` and recent commits before starting work.
+- **Repository:** `main` is at the v0.1.13 merge commit `71ef633` on origin; inspect `git status` and recent commits before starting work.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
 - **Branch protection:** active ruleset `main-protection` (`25359494`) requires a PR, conversation resolution, and the `check` CI status with up-to-date branches; blocks direct pushes, force-pushes, and deletion; 0 required approvals; no bypass actors.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.
@@ -46,7 +49,10 @@ Produce consistent, professional resumes and cover letters from structured text 
 - Kit builds are atomic: both sections are parsed and validated before either model is replaced, and a failed build leaves both previous documents untouched.
 - Cross-document name or contact differences produce warnings only; applicant details are never rewritten.
 - Combined exports follow the selected `ApplicationKitOrder`, with selectable/editable text and each document's own page dimensions. Combined DOCX uses an explicit page break when geometry matches and `nextPage` Word sections when page sizes or margins differ. The default remains cover letter then resume.
-- Resume layout is selected by `template.layout` and implemented in `layoutResume`; both layouts reuse `buildSectionBlocks` and the shared item formatting. ATS Simple emits one full-width column in author order, ignores `section.column`, and must not produce tables or positioned columns in DOCX. It must never promise guaranteed ATS compatibility.
+- Résumé designs are registry entries in `designs.ts`; every design reuses `buildSectionBlocks`, shared item formatting, metrics, pagination, and exporters. A design may change columns and styling but never the document model. ATS Simple emits one full-width column in author order, ignores `section.column` without rewriting it, and must not produce tables or positioned columns in DOCX. It must never promise guaranteed ATS compatibility.
+- Design and letter-style switching, section reordering, pagination settings, and page counts are presentation or session state: they never re-parse text, replace content, or auto-apply recommendations.
+- Heading blocks stay with their first entry; whole entries move when they fit; forced section breaks never create blank pages; oversized entries still flow without loss. Preview, PDF, and DOCX consume the same pages.
+- Page counts are read from `Layout.pages.length`, never stored separately.
 - Load Example selects by `PrepareKind`. The Application Kit inserts the canonical combined sample from `applicationKitSample.ts`, never the standalone cover letter example.
 - Application icons are generated from the two authoritative masters; never hand-edit generated assets or fabricate SVGs.
 - The header and favicons use the light artwork in both interface themes through `src/lib/themeAssets.ts`; the near-black `*-dark.png` variants stay out of the interface. Only `theme-color` follows the theme.

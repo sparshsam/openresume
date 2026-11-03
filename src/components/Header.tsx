@@ -8,6 +8,7 @@ interface HeaderProps {
   view: 'landing' | 'prepare' | 'workspace';
   kind: DocumentKind | null;
   kitMode: boolean;
+  pageCount?: number;
   formattingOpen: boolean;
   onHome: () => void;
   onNew: () => void;
@@ -20,6 +21,7 @@ export function Header({
   view,
   kind,
   kitMode,
+  pageCount,
   formattingOpen,
   onHome,
   onNew,
@@ -51,6 +53,11 @@ export function Header({
         {isWorkspace ? (
           <>
             <span className="document-label">{kindLabel}</span>
+            {pageCount !== undefined ? (
+              <span className="document-pages" aria-live="polite">
+                {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+              </span>
+            ) : null}
 
             <nav className="header-actions" aria-label="Document actions">
               <button

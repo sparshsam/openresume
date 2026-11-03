@@ -73,8 +73,11 @@ flowchart LR
 | `src/lib/coverLetterScaffold.ts`           | Reuse resume identity in a letter scaffold            | Generate letter body content      |
 | `src/lib/serialize.ts`                     | `Resume` → canonical input text (round-trip)          | Lose information                  |
 | `src/lib/normalize.ts`                     | Upgrade legacy templates and reject invalid presets   | Invent unsupported values         |
-| `src/lib/metrics.ts`                       | Presets → page geometry, typography, and spacing      | Read the DOM                      |
-| `src/lib/measure.ts`                       | Helvetica AFM metrics and greedy word wrap            | Depend on the DOM                 |
+| `src/lib/designs.ts`                       | Résumé design and letter style registry               | Render or parse                   |
+| `src/components/DesignGallery.tsx`         | Accessible design and letter-style selection          | Own document state                |
+| `src/components/DesignThumbnail.tsx`       | Locally rendered SVG design previews                  | Fetch images                      |
+| `src/lib/metrics.ts`                       | Presets and design scales → geometry and typography   | Read the DOM                      |
+| `src/lib/measure.ts`                       | Helvetica/Times AFM metrics and greedy word wrap      | Depend on the DOM                 |
 | `src/lib/paginate.ts`                      | Flow blocks → pages at line boundaries                | Drop or duplicate lines           |
 | `src/lib/layout.ts`                        | Resume flow blocks, header, page assembly             | Render or export                  |
 | `src/lib/content.ts`                       | Content strings for resume and letter parity checks   | Render or export                  |
@@ -90,9 +93,9 @@ flowchart LR
 
 - `header` — name and headline.
 - `contact` — email, phone, location, and labeled links.
-- `sections[]` — ordered sections with `kind`, `column` (`main`/`side`), `enabled`, and `items[]`.
+- `sections[]` — ordered sections with `kind`, `column` (`main`/`side`), `enabled`, `startOnNewPage`, and `items[]`.
 - `items[]` — title, subtitle, date range, location, body, and bullets.
-- `template` — page size, accent, layout (`twoColumn` or `atsSimple`), and format settings (margins, font size, line/section/bullet/column spacing, density).
+- `template` — page size, accent, résumé design id, cover-letter style id, pagination settings, and format settings (margins, font size, line/section/bullet/column spacing, density).
 
 Section IDs and parser-created item IDs are deterministic, so repeated parses of the same text produce deep-equal models.
 
@@ -108,22 +111,22 @@ Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have se
 ## Layout and pagination
 
 - Page sizes: US Letter 612 × 792 pt (default), A4 595.28 × 841.89 pt, US Legal 612 × 1008 pt.
-- `resolveMetrics()` turns the template into margins, content width, column widths, font sizes, line heights, and spacing, applying the density multiplier on top of individual spacing choices.
-- Two independent columns share the content width (about 63% main, a configurable gap, the remainder side). The gap is reduced before the side column can fall below 100 pt. This geometry applies to the `twoColumn` resume template.
-- The `atsSimple` resume template uses one full-width column. Every enabled section is emitted in author order regardless of its stored `column`, through the same section/item block builders as the two-column template, then paginated with `paginateColumn` against `contentWidthPt`. `Layout.variant` records which template produced the layout so the DOCX exporter can choose tables or a linear flow.
-- The header height is computed from the selected font metrics and the wrapped contact line; both columns start below it on page 1 and at the top margin thereafter.
-- Text width is computed from embedded Helvetica AFM widths, which match the PDF's built-in font metrics. Wrapping is deterministic and independent of browser font rendering.
-- Every flow block carries a semantic `kind` (`heading`, `title`, `subtitle`, `meta`, `body`, `bullet`, `listItem`, `skillLabel`, `skillValue`, plus `letterDate`, `recipient`, `subject`, `salutation`, `letterBody`, `closing`, `signature`) used by the DOCX exporter.
-- `paginateColumn` places atomic blocks whole, splits paragraphs and bullet runs at line boundaries, and honours `keepWithNext` for headings, titles, subtitles, and metadata. A heading keeps with the first two lines of the next block.
+- **Designs are presentation, not documents.** `src/lib/designs.ts` is a registry of ten résumé designs and four cover-letter styles. A résumé design supplies its column count, font family, header alignment/name scale/rule, section-heading treatment, bullet glyph, and typographic and spacing scales. `resolveMetrics()` composes those scales with the user's formatting presets, so the design never changes the model.
+- Two independent columns share the content width (about 63% main, a configurable gap, the remainder side). The gap is reduced before the side column can fall below 100 pt. This geometry applies to every two-column design.
+- Single-column designs use the full content width. Every enabled section is emitted in author order regardless of its stored `column`, through the same section/item block builders as the two-column designs, then paginated with `paginateColumn` against `contentWidthPt`. `Layout.variant` records the design id and `Layout.columns` records `1` or `2`, so the DOCX exporter chooses tables or a linear flow without inspecting the design name.
+- The header height is computed from the selected font metrics and the wrapped contact line; both columns start below it on page 1 and at the top margin thereafter. Centered designs measure each line and center it within the content width.
+- Text width is computed from embedded Helvetica and Times AFM widths, which match the PDF's built-in standard fonts. Wrapping is deterministic and independent of browser font rendering; letter spacing is included in the measurement.
+- Every flow block carries a semantic `kind` (`heading`, `title`, `subtitle`, `meta`, `body`, `bullet`, `listItem`, `skillLabel`, `skillValue`, plus `letterDate`, `recipient`, `subject`, `salutation`, `letterBody`, `closing`, `signature`) used by the DOCX exporter. Heading blocks may also carry a rule (colour, thickness) that the preview and PDF draw and the DOCX exporter renders as a paragraph bottom border.
+- `paginateColumn` places atomic blocks whole, splits paragraphs and bullet runs at line boundaries, and honours `keepWithNext` for headings, titles, subtitles, and metadata. Heading blocks carry the height of the heading plus their first entry and always move together when that unit fits a page. When `keepEntriesTogether` is enabled, a whole entry moves to the next page instead of splitting when it fits there. `forcePageBreak` starts a section on a new page only when the page already has content, and an entry taller than a page still splits without content loss.
 - Page count is `max(mainPages, sidePages)`. Fully blank and trailing blank pages are removed.
-- Cover letters use one full-width column. The letterhead is shared with the resume; blocks are date, recipient lines, subject, salutation, body paragraphs, closing, and signature. Closing keeps with signature, and salutation keeps with the first body paragraph. Empty optional blocks are skipped.
-- The document accent comes from `template.accent` (one of the nine palette values). It colors the header name, header rule, and resume section headings. `Layout.accent` carries the value to both exporters; the preview and PDF also read the accent directly from the absolute line/rule colors.
+- Cover letters use one full-width column and a selected letter style. The letterhead is shared with the résumé; blocks are date, recipient lines, subject, salutation, body paragraphs, closing, and signature. Closing keeps with signature, and salutation keeps with the first body paragraph. Empty optional blocks are skipped.
+- The document accent comes from `template.accent`. Designs assign it to the header name, header rule, section headings, heading rules, or letter subject; some designs deliberately use text or muted ink instead. `Layout.accent` carries the value to both exporters; the preview and PDF also read the accent directly from the absolute line/rule/border colours.
 
 ## Exports
 
-**PDF.** jsPDF in `pt` units using the layout's page dimensions, Helvetica normal/bold, no compression, real text runs at the computed baselines. Page count always equals `Layout.pages.length`.
+**PDF.** jsPDF in `pt` units using the layout's page dimensions, Helvetica or Times normal/bold at the computed baselines, no compression, real text runs. Header rules and section-heading rules are drawn as vector lines at the same coordinates the preview uses. Page count always equals `Layout.pages.length`.
 
-**DOCX.** For two-column resumes, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For ATS Simple resumes and for cover letters, it builds one full-width paragraph flow per logical page with no table cells.
+**DOCX.** For two-column designs, the `docx` package builds one no-border, three-column table per logical page (main, gap, side). For single-column designs and for cover letters, it builds one full-width paragraph flow per logical page with no table cells. Line fonts map to Helvetica or Times New Roman; header alignment, header rules, and heading rules become paragraph alignment and bottom borders; letter spacing maps to Word character spacing. Word reflows within a logical page, so pagination is structurally consistent with the PDF rather than pixel-identical.
 
 **Application Kit order.** Combined PDF and DOCX exports accept an `ApplicationKitOrder` (`coverLetterFirst` by default, or `resumeFirst`) and assemble the two documents in that order. The PDF appends each layout's pages in sequence with per-page dimensions; the DOCX either inserts an explicit page break inside one section when geometry matches or emits two `nextPage` sections in the chosen order. The setting lives in `App` state and is not part of either document template. Each flow block becomes one paragraph, so wrapped lines are rejoined and Word handles wrapping naturally. Bullets use Word numbering (resume only); headings, titles, metadata, letter closing/signature, and salutation use `keepNext`/`keepLines`; spacing derives from the same metrics. Page size, margins, and table widths follow the selected settings. Heading colors come from the layout lines, and the header name uses `Layout.accent`, so PDF and DOCX share one semantic accent. Text remains editable, though Word may re-flow within a page after edits.
 
@@ -209,11 +212,11 @@ No state library, router, CSS framework, parser library, or storage wrapper. Pil
 
 ## Extension points
 
-- **Page size.** Add a preset in `metrics.ts`; both layouts consume the resolved metrics.
-- **Templates.** Resume layouts already select geometry through `template.layout` and a branch in `layoutResume`. Add a further layout by reusing `buildSectionBlocks` and the shared item formatting, setting `Layout.variant`, and teaching the DOCX exporter which container to emit; do not fork the pipeline.
-- **Fonts.** Replace the embedded width tables with a font embedded in both the browser and the PDF, keeping measurement and rendering identical.
+- **Page size.** Add a preset in `metrics.ts`; every design consumes the resolved metrics.
+- **Designs.** Add an entry to `RESUME_DESIGNS` in `src/lib/designs.ts` (or `COVER_LETTER_STYLES`) with its column count, font family, header/heading treatments, and scales. Add the id to `ResumeLayoutId`/`CoverLetterStyleId` and the normalization sets. The gallery, metrics, layout, preview, and both exporters pick it up without a new branch; only the new id's traits belong in the registry.
+- **Fonts.** Extend `FontSpec.family` and the width tables in `measure.ts` together with the PDF, DOCX, and preview mappings; measurement and rendering must stay identical.
 - **Document types.** Add a third model by following the cover letter pattern: parser, layout, editor, exports, in-memory state, and preparation validation.
 
-## Non-goals for v0.1.6
+## Non-goals
 
-Multi-user accounts, cloud sync, AI content generation, PDF/DOCX import, and multi-template galleries.
+Multi-user accounts, cloud sync, AI content generation, PDF/DOCX import, custom font uploads, and arbitrary user-defined templates.

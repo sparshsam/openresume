@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] — 2026-11-02
+
+### Added
+
+- **Ten résumé designs.** Professional Two-Column (default) and ATS Simple are joined by Executive, Modern Minimal, Classic, Creative, Compact, Academic, Contemporary, and Bold. Each design composes the same shared block, measurement, pagination, and export primitives with its own column count, font family, header treatment, section-heading treatment, and spacing scale. Switching designs preserves every section, entry, field, bullet, and formatting value, and never touches the source text or the document model.
+- **Browse Designs gallery.** An accessible radio gallery replaces the résumé layout dropdown. Each design card shows a locally rendered SVG thumbnail of the same fictional sample, its name, a short description, and a selected state. Native radio semantics provide keyboard selection, and the grid stacks to one column on narrow screens.
+- **Four cover-letter styles.** Classic Letter (default), Modern Letter, Executive Letter, and Minimal Letter are selectable independently. When a résumé design is chosen, the cover-letter panel suggests a coordinated style without applying it.
+- **Application-context recommendations.** An optional context selector highlights suggested résumé designs for government/legal, corporate/management, technology/business, creative/marketing, and experienced-professional applications. Recommendations are informational, never automatic, and make no claims about hiring outcomes.
+- **Pagination controls.** Section headings are always kept with their first entry, whole entries move to the next page when they fit there, and any section can be set to start on a new page. Automatic pagination remains the default; an entry taller than a page still flows across pages without clipping.
+- **Drag-and-drop section ordering.** A drag handle on every section card complements the existing up/down buttons. Keyboard users keep the buttons as the accessible ordering path, and stored column assignments are never changed by reordering.
+- **Live page counts.** The workspace header shows the active document's page count, and the Application Kit toolbar shows both counts independently (for example, `Resume: 2 pages | Cover Letter: 1 page`). Counts update with content, formatting, pagination settings, and design changes.
+
+### Changed
+
+- Résumé layout and visual styling are now separate from content and measurement: a design registry supplies column count, font family, header and heading treatments, and spacing scales, and `resolveMetrics` composes those with the existing formatting presets. PDF and DOCX exports read the same `Layout` plus design traits; no exporter was duplicated.
+- Times (PDF standard font) and Times New Roman (Word) join Helvetica for serif designs. Both are deterministic, viewer-available fonts; no external font files or image requests are introduced.
+- DOCX output now carries header rules, section-heading rules, letter spacing, and aligned headers from the active design.
+
+### Compatibility
+
+- Input formats and AI instructions are unchanged.
+- Existing templates without the new fields normalize to Professional Two-Column, Classic Letter, and keep-entries-together pagination.
+- ATS Simple keeps its single-column author-order reading flow, table-free DOCX output, and no-compatibility-guarantee note.
+- 95 new tests (444 total across 33 files) cover design switching, content preservation, gallery selection, section ordering, pagination, page counts, cover-letter styles, and PDF/DOCX output.
+
 ## [0.1.13] — 2026-11-02
 
 ### Fixed

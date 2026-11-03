@@ -56,6 +56,19 @@ export function moveSection(resume: Resume, sectionId: string, direction: -1 | 1
   return { ...resume, sections };
 }
 
+/** Places the dragged section immediately before the drop target. */
+export function reorderSection(resume: Resume, sourceId: string, targetId: string): Resume {
+  if (sourceId === targetId) return resume;
+  const sourceIndex = resume.sections.findIndex((section) => section.id === sourceId);
+  if (sourceIndex < 0) return resume;
+  const sections = [...resume.sections];
+  const [moved] = sections.splice(sourceIndex, 1);
+  const targetIndex = sections.findIndex((section) => section.id === targetId);
+  if (targetIndex < 0) return resume;
+  sections.splice(targetIndex, 0, moved);
+  return { ...resume, sections };
+}
+
 export function addSection(resume: Resume, kind: SectionKind = 'custom'): Resume {
   const defaults = SECTION_DEFAULTS[kind];
   const section: ResumeSection = {
@@ -64,6 +77,7 @@ export function addSection(resume: Resume, kind: SectionKind = 'custom'): Resume
     title: defaults.title,
     column: defaults.column,
     enabled: true,
+    startOnNewPage: false,
     items: [],
   };
   return { ...resume, sections: [...resume.sections, section] };

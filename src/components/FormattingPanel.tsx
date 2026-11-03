@@ -1,16 +1,20 @@
 import { DOCUMENT_ACCENTS, documentAccentName } from '../lib/tokens';
+import { resolveResumeDesign } from '../lib/designs';
 import type { DocumentKind } from '../types/document';
 import type {
   ColumnSpacingPreset,
+  CoverLetterStyleId,
   DensityPreset,
   FontSizePreset,
   FormatSettings,
   MarginPreset,
   PageSize,
+  PaginationSettings,
   ResumeLayoutId,
   ResumeTemplate,
   SpacingPreset,
 } from '../types/resume';
+import { DesignGallery } from './DesignGallery';
 
 interface SelectOption<T extends string> {
   value: T;
@@ -89,19 +93,18 @@ const DENSITY_OPTIONS: SelectOption<DensityPreset>[] = [
   { value: 'spacious', label: 'Spacious' },
 ];
 
-const LAYOUT_OPTIONS: SelectOption<ResumeLayoutId>[] = [
-  { value: 'twoColumn', label: 'Professional Two-Column' },
-  { value: 'atsSimple', label: 'ATS Simple (single column)' },
-];
-
 interface FormattingPanelProps {
   kind: DocumentKind;
   template: ResumeTemplate;
   onPageSize: (pageSize: PageSize) => void;
   onLayout: (layout: ResumeLayoutId) => void;
+  onLetterStyle: (style: CoverLetterStyleId) => void;
   onFormat: (patch: Partial<FormatSettings>) => void;
+  onPagination: (patch: Partial<PaginationSettings>) => void;
   onAccent: (accent: string) => void;
   onReset: () => void;
+  suggestedLetterStyle?: CoverLetterStyleId;
+  suggestionSourceName?: string;
 }
 
 export function FormattingPanel({
@@ -109,13 +112,18 @@ export function FormattingPanel({
   template,
   onPageSize,
   onLayout,
+  onLetterStyle,
   onFormat,
+  onPagination,
   onAccent,
   onReset,
+  suggestedLetterStyle,
+  suggestionSourceName,
 }: FormattingPanelProps) {
   const { format } = template;
   const selectedAccent = documentAccentName(template.accent) ?? 'Custom';
   const atsSimple = kind === 'resume' && template.layout === 'atsSimple';
+  const twoColumns = kind === 'resume' && resolveResumeDesign(template.layout).columns === 2;
 
   return (
     <section className="formatting-panel" id="formatting-panel" aria-label="Document formatting">
@@ -148,16 +156,16 @@ export function FormattingPanel({
         </div>
       </div>
 
+      <DesignGallery
+        kind={kind}
+        template={template}
+        onLayout={onLayout}
+        onLetterStyle={onLetterStyle}
+        suggestedLetterStyle={suggestedLetterStyle}
+        suggestionSourceName={suggestionSourceName}
+      />
+
       <div className="formatting-grid">
-        {kind === 'resume' ? (
-          <SelectField
-            id="format-layout"
-            label="Resume layout"
-            value={template.layout}
-            options={LAYOUT_OPTIONS}
-            onChange={onLayout}
-          />
-        ) : null}
         <SelectField
           id="format-page-size"
           label="Page size"
@@ -210,7 +218,7 @@ export function FormattingPanel({
               options={SPACING_OPTIONS}
               onChange={(bulletSpacing) => onFormat({ bulletSpacing })}
             />
-            {template.layout === 'twoColumn' ? (
+            {twoColumns ? (
               <SelectField
                 id="format-column-spacing"
                 label="Column spacing"
@@ -229,6 +237,24 @@ export function FormattingPanel({
           onChange={(density) => onFormat({ density })}
         />
       </div>
+      {kind === 'resume' ? (
+        <div className="formatting-pagination">
+          <label className="section-toggle">
+            <input
+              type="checkbox"
+              checked={template.pagination.keepEntriesTogether}
+              onChange={(event) => onPagination({ keepEntriesTogether: event.target.checked })}
+            />
+            Keep entries together
+          </label>
+          <p className="formatting-note">
+            Section headings stay with their first entry. Use “New page” on a section to start it on
+            a fresh page. Automatic pagination remains the default, and an entry taller than a page
+            still flows across pages.
+          </p>
+        </div>
+      ) : null}
+
       <div className="formatting-actions">
         <p className="formatting-note">
           Changes apply to the preview, PDF, and DOCX. Density adjusts vertical rhythm on top of

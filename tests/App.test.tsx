@@ -381,7 +381,9 @@ describe('resume workflow', () => {
     expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
     expect(screen.queryByLabelText('Paragraph spacing')).not.toBeInTheDocument();
     expect(screen.getByText('Accent Colour')).toBeInTheDocument();
-    expect(screen.getAllByRole('radio')).toHaveLength(DOCUMENT_ACCENTS.length);
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Accent Colour' })).getAllByRole('radio'),
+    ).toHaveLength(DOCUMENT_ACCENTS.length);
     expect(screen.getByRole('radio', { name: 'Green' })).toBeChecked();
   });
 
@@ -1058,41 +1060,41 @@ describe('public information pages', () => {
   });
 });
 
-describe('resume layout selection', () => {
-  it('offers the professional two-column template by default', async () => {
+describe('resume design gallery', () => {
+  it('offers all ten designs and selects Professional Two-Column by default', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
 
-    const layout = screen.getByLabelText('Resume layout') as HTMLSelectElement;
-    expect(layout.value).toBe('twoColumn');
-    expect(
-      within(layout).getByRole('option', { name: 'Professional Two-Column' }),
-    ).toBeInTheDocument();
-    expect(
-      within(layout).getByRole('option', { name: 'ATS Simple (single column)' }),
-    ).toBeInTheDocument();
+    const gallery = screen.getByRole('radiogroup', { name: 'Browse Designs' });
+    expect(within(gallery).getAllByRole('radio')).toHaveLength(10);
+    expect(document.querySelectorAll('.design-thumb')).toHaveLength(10);
+    expect(within(gallery).getByRole('radio', { name: /Professional Two-Column/ })).toBeChecked();
     expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
     expect(screen.queryByText(/No layout can guarantee compatibility/)).not.toBeInTheDocument();
   });
 
-  it('does not offer a resume layout control for cover letters', async () => {
+  it('does not offer resume designs for cover letters', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleCoverLetter(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
 
-    expect(screen.queryByLabelText('Resume layout')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Browse Designs' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Letter style' })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Letter style' })).getAllByRole('radio'),
+    ).toHaveLength(4);
   });
 
-  it('switches to ATS Simple without losing content and reflows the preview', async () => {
+  it('switches designs by selection without losing content and reflows the preview', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
     const pagesBefore = document.querySelectorAll('.page').length;
 
-    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+    await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
-    expect(screen.getByLabelText('Resume layout')).toHaveValue('atsSimple');
+    expect(screen.getByRole('radio', { name: /ATS Simple\./ })).toBeChecked();
     expect(screen.queryByLabelText('Column spacing')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^Column for /)).not.toBeInTheDocument();
     expect(screen.getByText(/No layout can guarantee compatibility/)).toBeInTheDocument();
@@ -1105,7 +1107,7 @@ describe('resume layout selection', () => {
     const pagesAfter = document.querySelectorAll('.page').length;
     expect(pagesAfter).toBeGreaterThan(pagesBefore);
 
-    await user.selectOptions(screen.getByLabelText('Resume layout'), 'twoColumn');
+    await user.click(screen.getByRole('radio', { name: /Professional Two-Column\./ }));
     expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
     expect(screen.getAllByLabelText(/^Column for /).length).toBeGreaterThan(0);
     expect(document.querySelectorAll('.page').length).toBe(pagesBefore);
@@ -1114,32 +1116,49 @@ describe('resume layout selection', () => {
     ).toBeInTheDocument();
   });
 
-  it('keeps the layout independent per document and out of storage', async () => {
+  it('keeps the design independent per document and out of storage', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     renderApp();
     await buildApplicationKit(user);
 
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
-    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+    await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
-    expect(screen.queryByLabelText('Resume layout')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Browse Designs' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Resume' }));
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
-    expect(screen.getByLabelText('Resume layout')).toHaveValue('atsSimple');
+    expect(screen.getByRole('radio', { name: /ATS Simple\./ })).toBeChecked();
     expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
   });
 
-  it('resets the layout to the default with the other formatting', async () => {
+  it('resets the design to the default with the other formatting', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
-    await user.selectOptions(screen.getByLabelText('Resume layout'), 'atsSimple');
+    await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
-    expect(screen.getByLabelText('Resume layout')).toHaveValue('twoColumn');
+    expect(screen.getByRole('radio', { name: /Professional Two-Column\./ })).toBeChecked();
+  });
+
+  it('shows transparent recommendations for an application context without switching design', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    await buildSampleResume(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    await user.selectOptions(screen.getByLabelText('Application context (optional)'), 'government');
+
+    expect(screen.getByText(/Classic, ATS Simple/)).toBeInTheDocument();
+    expect(screen.getByText(/do not predict hiring outcomes/)).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Professional Two-Column\./ })).toBeChecked();
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Browse Designs' })).getAllByText('Suggested', {
+        selector: '.design-badge',
+      }),
+    ).toHaveLength(2);
   });
 });
 

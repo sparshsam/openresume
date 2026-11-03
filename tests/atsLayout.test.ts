@@ -161,7 +161,7 @@ describe('ATS Simple layout', () => {
       const layout = layoutResume(resume);
       expect(layout.accent).toBe(accent.value);
       expect(layout.pages[0].header?.name.color).toBe(accent.value);
-      expect(layout.pages[0].header?.rule.color).toBe(accent.value);
+      expect(layout.pages[0].header?.rule?.color).toBe(accent.value);
       for (const heading of allBlocks(resume).filter((block) => block.kind === 'heading')) {
         expect(heading.lines[0].color).toBe(accent.value);
       }

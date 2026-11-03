@@ -21,10 +21,10 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 ## Current state (2026-11-02)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.13 (workspace opens at the top; AI instructions keep job titles out of locations), released and deployed.
-- **Release:** annotated tag `v0.1.13`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.13.
-- **Prior release:** v0.1.12 — PR [#7](https://github.com/sparshsam/openresume/pull/7) merged as `728bdd0d50bfac58a757158acfc54e917cfae226` (one visible brand mark and favicon across themes).
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.13 run passed with 349 tests across 27 files.
+- **Version:** v0.2.0 (ten résumé designs, design gallery, four letter styles, pagination controls, drag ordering, live page counts, recommendations), released and deployed.
+- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0.
+- **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.2.0 run passed with 444 tests across 33 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -63,7 +63,10 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 - `src/components/LandingPage.tsx` — three-card document selection (Resume, Cover Letter, Application Kit) with Build, Copy AI Instructions, and session Open actions.
 - `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs, document-order control, and combined/separate export actions.
 - `src/types/applicationKit.ts` — `ApplicationKitOrder` and its cover-letter-first default.
-- `src/lib/layout.ts` — shared header, section/item block builders, and both resume templates (`twoColumn`, `atsSimple`). `Layout.variant` tells the DOCX exporter whether to emit tables or a linear flow.
+- `src/lib/designs.ts` — registry of the ten résumé designs and four cover-letter styles, application-context recommendations, and letter-style suggestions.
+- `src/components/DesignGallery.tsx` / `DesignThumbnail.tsx` — accessible design and letter-style galleries with local SVG thumbnails.
+- `src/lib/layout.ts` — shared header, section/item block builders, design-driven columns, and page assembly. `Layout.variant` records the design id, `Layout.columns` tells the DOCX exporter whether to emit tables or a linear flow.
+- `src/lib/paginate.ts` — line-boundary pagination with heading/entry keep-together units and forced section page breaks.
 - `src/components/ToastRegion.tsx` — dismissible success and error notifications.
 - `src/components/InfoPages.tsx` — About, Privacy, and Terms content.
 - `src/components/InternalLink.tsx` / `src/lib/publicPages.ts` — history-based public-page navigation and metadata.
@@ -131,13 +134,16 @@ Full design: `ARCHITECTURE.md`.
 22. **Combined exports preserve document integrity.** Combined PDF follows the selected `ApplicationKitOrder` (default cover letter then resume), with each document on its own pages and selectable text. Combined DOCX follows the same order as one editable document: explicit page break when geometry matches, `nextPage` Word sections when page sizes or margins differ. Never concatenate ZIP files.
 23. **Kit tabs are accessible and independent.** Resume and Cover Letter tabs use `tablist`/`tab`/`tabpanel`, arrow/Home/End navigation, and roving `tabIndex`. Switching tabs preserves edits and each document's own formatting and accent.
 24. **One canonical kit sample.** `applicationKitSample.ts` supplies both the AI template's example and Load Example. Never add a second combined sample; select examples by `PrepareKind`, never by assuming every non-resume kind is a cover letter.
-25. **Resume layout is one template choice.** `template.layout` (`twoColumn` default, `atsSimple`) is resolved in `layoutResume`; both layouts share `buildSectionBlocks`, item formatting, metrics, accents, and exporters. ATS Simple is a single full-width column in author order and must emit no tables or positioned columns in DOCX. Never fork the pipeline or duplicate item rules for it, and never claim guaranteed ATS compatibility.
-26. **Combined order is session configuration.** `ApplicationKitOrder` lives in `App` state, not in either template. Combined PDF and DOCX must both honour it, preserve per-document page sizes, page breaks, accents, and text, and default to cover letter first. Separate downloads are unaffected.
+25. **Designs are presentation, not documents.** Ten résumé designs and four letter styles live in `src/lib/designs.ts`. A design supplies columns, font family, header/heading treatments, and scales; `layoutResume` and `layoutCoverLetter` apply the same block builders, pagination, metrics, accents, and exporters for every design. Switching designs must preserve every content value, never rewrite sections or columns, and never re-parse text. ATS Simple keeps a single full-width column, author order, and table-free DOCX. Never fork the pipeline per design, and never claim guaranteed ATS compatibility or hiring outcomes.
+26. **Pagination is shared and automatic.** Heading blocks keep their first entry together; `template.pagination.keepEntriesTogether` (default on) moves whole entries when they fit a page; `section.startOnNewPage` forces a page break only when the page already has content. Oversized entries flow across pages without loss, and blank pages are never emitted. The preview, PDF, and DOCX all consume the same `Layout.pages`.
+27. **Page counts are derived, never stored.** The workspace and kit read `layout.pages.length`; do not cache counts separately or compute them in components.
+28. **Design switching and suggestions are user actions.** Application-context recommendations and letter-style suggestions are informational only. Never auto-switch a design or style, and never claim a recommendation predicts hiring outcomes.
+29. **Combined order is session configuration.** `ApplicationKitOrder` lives in `App` state, not in either template. Combined PDF and DOCX must both honour it, preserve per-document page sizes, page breaks, accents, and text, and default to cover letter first. Separate downloads are unaffected.
 
 ## Working agreement
 
 - Make focused changes and run `npm run check` plus `npm run format:check` before claiming completion.
-- Add tests with behavior changes; both parsers, the combined kit parser, pagination, standalone and combined exports, preparation validation, AI instruction drift, coexisting session documents, kit atomicity and tab independence, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
+- Add tests with behavior changes; both parsers, the combined kit parser, design switching and content preservation, gallery selection, section reordering, pagination controls, page counts, cover-letter styles, standalone and combined exports, preparation validation, AI instruction drift, coexisting session documents, kit atomicity and tab independence, public-page routing/session preservation, matching-letter reuse, legacy cleanup, theme persistence, and generated asset integrity are the critical surfaces.
 - Manually check light and dark themes at 375px and desktop before calling UI work complete.
 - Update `CHANGELOG.md` for user-visible changes and `VERSIONING.md` for version policy changes.
 - Do not modify or audit other Kovina repositories from this project.
