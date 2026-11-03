@@ -1,4 +1,6 @@
+import { resolveCoverLetterStyle, resolveResumeDesign } from './designs';
 import { normalizeTemplate } from './normalize';
+import type { DocumentKind } from '../types/document';
 import type {
   ColumnSpacingPreset,
   DensityPreset,
@@ -109,7 +111,10 @@ export interface ResolvedMetrics {
   wordLineTwips: number;
 }
 
-export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
+export function resolveMetrics(
+  template: ResumeTemplate,
+  kind: DocumentKind = 'resume',
+): ResolvedMetrics {
   const normalized = normalizeTemplate(template);
   const page = PAGE_SIZES[normalized.pageSize];
   const margin = MARGINS[normalized.format.margins];
@@ -117,6 +122,18 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
   const lineFactor = LINE_FACTORS[normalized.format.lineSpacing];
   const density = DENSITY_FACTORS[normalized.format.density];
   const section = SECTION_SPACING[normalized.format.sectionSpacing];
+
+  const isCoverLetter = kind === 'coverLetter';
+  const design = isCoverLetter
+    ? resolveCoverLetterStyle(normalized.letterStyle)
+    : resolveResumeDesign(normalized.layout);
+  const bodyDesign = design.body;
+  const headingDesign = isCoverLetter ? undefined : resolveResumeDesign(normalized.layout).heading;
+  const metaScale = 'metaScale' in bodyDesign ? bodyDesign.metaScale : 1;
+  const bodySpacing =
+    'itemBeforeScale' in bodyDesign
+      ? bodyDesign
+      : { itemBeforeScale: 1, paragraphAfterScale: 1, bulletAfterScale: 1 };
 
   const contentWidthPt = page.widthPt - margin.xPt * 2;
   const mainWidthPt = contentWidthPt * MAIN_COLUMN_RATIO;
@@ -128,11 +145,11 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
     sideWidthPt = contentWidthPt - mainWidthPt - gapPt;
   }
 
-  const namePt = 23 * fontScale;
-  const headlinePt = 10.5 * fontScale;
-  const bodyPt = 9.2 * fontScale;
-  const smallPt = 8.8 * fontScale;
-  const headingPt = 10 * fontScale;
+  const namePt = 23 * fontScale * design.header.nameScale;
+  const headlinePt = 10.5 * fontScale * design.header.headlineScale;
+  const bodyPt = 9.2 * fontScale * bodyDesign.scale;
+  const smallPt = 8.8 * fontScale * metaScale;
+  const headingPt = 10 * fontScale * (headingDesign?.scale ?? 1);
 
   return {
     pageWidthPt: page.widthPt,
@@ -150,17 +167,18 @@ export function resolveMetrics(template: ResumeTemplate): ResolvedMetrics {
     headlinePt,
     headlineLinePt: headlinePt * 1.24,
     bodyPt,
-    bodyLinePt: bodyPt * lineFactor,
+    bodyLinePt: bodyPt * lineFactor * bodyDesign.lineScale,
     smallPt,
     smallLinePt: smallPt * 1.38,
     headingPt,
     headingLinePt: headingPt * 1.3,
-    sectionBeforePt: section.beforePt * density,
-    sectionAfterPt: section.afterPt * density,
-    itemBeforePt: 9 * density,
-    paragraphAfterPt: 3.5 * density,
+    sectionBeforePt: section.beforePt * density * (headingDesign?.beforeScale ?? 1),
+    sectionAfterPt: section.afterPt * density * (headingDesign?.afterScale ?? 1),
+    itemBeforePt: 9 * density * bodySpacing.itemBeforeScale,
+    paragraphAfterPt: 3.5 * density * bodySpacing.paragraphAfterScale,
     paragraphSpacingPt: PARAGRAPH_SPACING[normalized.format.paragraphSpacing] * density,
-    bulletAfterPt: BULLET_SPACING[normalized.format.bulletSpacing] * density,
+    bulletAfterPt:
+      BULLET_SPACING[normalized.format.bulletSpacing] * density * bodySpacing.bulletAfterScale,
     densityFactor: density,
     wordLineTwips: WORD_LINE_TWIPS[normalized.format.lineSpacing],
   };

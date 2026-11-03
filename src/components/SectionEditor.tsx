@@ -1,3 +1,4 @@
+import { useState, type DragEvent } from 'react';
 import { LIST_KINDS } from '../lib/parse';
 import type { ResumeItem, ResumeSection } from '../types/resume';
 import { TextField } from './TextField';
@@ -167,6 +168,7 @@ interface SectionEditorProps {
   onUpdate: (patch: Partial<ResumeSection>) => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
+  onReorder?: (sourceId: string, targetId: string) => void;
   onAddItem: () => void;
   onUpdateItem: (itemId: string, patch: Partial<ResumeItem>) => void;
   onRemoveItem: (itemId: string) => void;
@@ -183,6 +185,7 @@ export function SectionEditor({
   onUpdate,
   onRemove,
   onMove,
+  onReorder,
   onAddItem,
   onUpdateItem,
   onRemoveItem,
@@ -190,8 +193,36 @@ export function SectionEditor({
   onUpdateBullet,
   onRemoveBullet,
 }: SectionEditorProps) {
+  const [dragging, setDragging] = useState(false);
+  const [dropTarget, setDropTarget] = useState(false);
+
+  const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
+    event.dataTransfer.setData('text/plain', section.id);
+    event.dataTransfer.effectAllowed = 'move';
+    setDragging(true);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setDropTarget(false);
+    const sourceId = event.dataTransfer.getData('text/plain');
+    if (sourceId && onReorder) onReorder(sourceId, section.id);
+  };
+
   return (
-    <section className="section-card" id={`section-${section.id}`} aria-label={section.title}>
+    <section
+      className={`section-card${dragging ? ' is-dragging' : ''}${dropTarget ? ' is-drop-target' : ''}`}
+      id={`section-${section.id}`}
+      aria-label={section.title}
+      onDragOver={(event) => {
+        if (!onReorder) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setDropTarget(true);
+      }}
+      onDragLeave={() => setDropTarget(false)}
+      onDrop={handleDrop}
+    >
       <div className="section-header">
         <label className="section-toggle">
           <input
@@ -208,6 +239,28 @@ export function SectionEditor({
           onChange={(event) => onUpdate({ title: event.target.value })}
         />
         <div className="section-controls">
+          {onReorder ? (
+            <button
+              type="button"
+              className="button button-icon section-drag-handle"
+              draggable
+              tabIndex={-1}
+              aria-label={`Drag to reorder ${section.title}`}
+              title="Drag to reorder, or use the arrow buttons"
+              onDragStart={handleDragStart}
+              onDragEnd={() => setDragging(false)}
+            >
+              ⠿
+            </button>
+          ) : null}
+          <label className="section-toggle section-break-toggle">
+            <input
+              type="checkbox"
+              checked={section.startOnNewPage}
+              onChange={(event) => onUpdate({ startOnNewPage: event.target.checked })}
+            />
+            New page
+          </label>
           {showColumn ? (
             <select
               className="select button-small"

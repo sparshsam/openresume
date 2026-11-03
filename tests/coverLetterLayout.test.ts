@@ -52,7 +52,7 @@ describe('layoutCoverLetter', () => {
 
     expect(layout.accent).toBe('#991B1B');
     expect(layout.pages[0].header?.name.color).toBe('#991B1B');
-    expect(layout.pages[0].header?.rule.color).toBe('#991B1B');
+    expect(layout.pages[0].header?.rule?.color).toBe('#991B1B');
   });
 
   it('renders header and letter blocks in reading order', () => {

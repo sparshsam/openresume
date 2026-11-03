@@ -28,6 +28,7 @@ import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
 import { applicationKitFilename, documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
 import { applyPageMeta, infoPageFromPath, navigate, type InfoPageKey } from './lib/publicPages';
+import { resumeDesignName, suggestedLetterStyle } from './lib/designs';
 import { clearLegacyDrafts } from './lib/storage';
 import { resetViewScroll } from './lib/viewScroll';
 import {
@@ -35,6 +36,7 @@ import {
   addItem,
   addSection,
   moveSection,
+  reorderSection,
   removeBullet,
   removeItem,
   removeSection,
@@ -51,8 +53,10 @@ import type { CoverLetter } from './types/coverLetter';
 import type { DocumentKind, PrepareKind, WorkspaceMode } from './types/document';
 import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from './types/applicationKit';
 import type {
+  CoverLetterStyleId,
   FormatSettings,
   PageSize,
+  PaginationSettings,
   Resume,
   ResumeItem,
   ResumeLayoutId,
@@ -322,6 +326,32 @@ export default function App() {
     setResume((current) => (current ? updateTemplate(current, { layout }) : current));
   };
 
+  const handleLetterStyle = (letterStyle: CoverLetterStyleId) => {
+    setCoverLetter((current) =>
+      current ? updateLetterTemplate(current, { letterStyle }) : current,
+    );
+  };
+
+  const handlePagination = (patch: Partial<PaginationSettings>) => {
+    if (activeKind === 'resume') {
+      setResume((current) =>
+        current
+          ? updateTemplate(current, {
+              pagination: { ...current.template.pagination, ...patch },
+            })
+          : current,
+      );
+    } else {
+      setCoverLetter((current) =>
+        current
+          ? updateLetterTemplate(current, {
+              pagination: { ...current.template.pagination, ...patch },
+            })
+          : current,
+      );
+    }
+  };
+
   const handleFormat = (patch: Partial<FormatSettings>) => {
     if (activeKind === 'resume') {
       setResume((current) => (current ? updateFormat(current, patch) : current));
@@ -447,6 +477,8 @@ export default function App() {
       setResume((current) => (current ? removeSection(current, sectionId) : current)),
     onMoveSection: (sectionId: string, direction: -1 | 1) =>
       setResume((current) => (current ? moveSection(current, sectionId, direction) : current)),
+    onReorderSections: (sourceId: string, targetId: string) =>
+      setResume((current) => (current ? reorderSection(current, sourceId, targetId) : current)),
     onAddItem: (sectionId: string) =>
       setResume((current) => (current ? addItem(current, sectionId) : current)),
     onUpdateItem: (sectionId: string, itemId: string, patch: Partial<ResumeItem>) =>
@@ -478,6 +510,14 @@ export default function App() {
   const showingInfo = infoPage !== null;
   const headerView: View = showingInfo ? 'landing' : renderView;
 
+  const letterSuggestion =
+    resume && activeKind === 'coverLetter'
+      ? {
+          suggestedLetterStyle: suggestedLetterStyle(resume.template.layout),
+          suggestionSourceName: resumeDesignName(resume.template.layout),
+        }
+      : undefined;
+
   const skipTarget = showingInfo
     ? '#main'
     : renderView === 'landing'
@@ -496,6 +536,9 @@ export default function App() {
         view={headerView}
         kind={headerView === 'workspace' ? activeKind : null}
         kitMode={headerView === 'workspace' && workspaceMode === 'kit'}
+        pageCount={
+          headerView === 'workspace' && workspaceMode !== 'kit' ? layout?.pages.length : undefined
+        }
         formattingOpen={formattingOpen}
         onHome={goHome}
         onNew={handleNew}
@@ -552,9 +595,12 @@ export default function App() {
               template={activeTemplate}
               onPageSize={handlePageSize}
               onLayout={handleLayout}
+              onLetterStyle={handleLetterStyle}
               onFormat={handleFormat}
+              onPagination={handlePagination}
               onAccent={handleAccent}
               onReset={handleResetFormatting}
+              {...letterSuggestion}
             />
           ) : null}
 
@@ -562,6 +608,10 @@ export default function App() {
             <ApplicationKitToolbar
               activeKind={activeKind}
               order={kitOrder}
+              pageCounts={{
+                resume: resumeLayout?.pages.length ?? 0,
+                coverLetter: coverLetterLayout?.pages.length ?? 0,
+              }}
               onOrder={setKitOrder}
               onSelect={(kind) => {
                 setActiveKind(kind);

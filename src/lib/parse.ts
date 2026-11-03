@@ -146,6 +146,7 @@ export function parseResume(input: string): ParseResult {
       title: kind === 'custom' ? title.trim() || 'CUSTOM' : RESUME_SECTION_TITLES[kind],
       column: DEFAULT_COLUMN[kind],
       enabled: true,
+      startOnNewPage: false,
       items: [],
     };
     sectionIndex += 1;

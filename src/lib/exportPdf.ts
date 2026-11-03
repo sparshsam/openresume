@@ -1,10 +1,43 @@
 import { jsPDF } from 'jspdf';
 import type { HeaderLayout, Layout, PageLayout } from './layout';
+import type { FontSpec } from './measure';
 import { applicationKitFilename, documentFilename } from './filename';
 import type { DocumentMeta } from './documentMeta';
 import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from '../types/applicationKit';
 
 const BASELINE_RATIO = 0.78;
+
+function pdfFont(font: FontSpec): { family: 'helvetica' | 'times'; style: string } {
+  const family = font.family === 'times' ? 'times' : 'helvetica';
+  const style = font.bold
+    ? font.italic
+      ? 'bolditalic'
+      : 'bold'
+    : font.italic
+      ? 'italic'
+      : 'normal';
+  return { family, style };
+}
+
+function drawLine(
+  doc: jsPDF,
+  text: string,
+  xPt: number,
+  yPt: number,
+  font: FontSpec,
+  color: string,
+): void {
+  const { family, style } = pdfFont(font);
+  doc.setFont(family, style);
+  doc.setFontSize(font.sizePt);
+  doc.setTextColor(color);
+  doc.text(
+    text,
+    xPt,
+    yPt + font.sizePt * BASELINE_RATIO,
+    font.letterSpacingPt ? { charSpace: font.letterSpacingPt } : undefined,
+  );
+}
 
 function drawHeader(doc: jsPDF, header: HeaderLayout): void {
   const lines = [
@@ -13,25 +46,26 @@ function drawHeader(doc: jsPDF, header: HeaderLayout): void {
     ...header.contactLines,
   ];
   for (const line of lines) {
-    doc.setFont('helvetica', line.font.bold ? 'bold' : 'normal');
-    doc.setFontSize(line.font.sizePt);
-    doc.setTextColor(line.color);
-    doc.text(line.text, line.xPt, line.yPt + line.font.sizePt * BASELINE_RATIO);
+    drawLine(doc, line.text, line.xPt, line.yPt, line.font, line.color);
   }
-  doc.setDrawColor(header.rule.color);
-  doc.setLineWidth(header.rule.widthPt);
-  doc.line(header.rule.x1Pt, header.rule.y1Pt, header.rule.x2Pt, header.rule.y2Pt);
+  if (header.rule) {
+    doc.setDrawColor(header.rule.color);
+    doc.setLineWidth(header.rule.widthPt);
+    doc.line(header.rule.x1Pt, header.rule.y1Pt, header.rule.x2Pt, header.rule.y2Pt);
+  }
 }
 
 function drawPage(doc: jsPDF, page: PageLayout): void {
   if (page.header) drawHeader(doc, page.header);
 
   for (const block of page.blocks) {
+    if (block.rule) {
+      doc.setDrawColor(block.rule.color);
+      doc.setLineWidth(block.rule.thicknessPt);
+      doc.line(block.rule.xPt, block.rule.yPt, block.rule.xPt + block.rule.widthPt, block.rule.yPt);
+    }
     for (const line of block.lines) {
-      doc.setFont('helvetica', line.font.bold ? 'bold' : 'normal');
-      doc.setFontSize(line.font.sizePt);
-      doc.setTextColor(line.color);
-      doc.text(line.text, line.xPt, line.yPt + line.font.sizePt * BASELINE_RATIO);
+      drawLine(doc, line.text, line.xPt, line.yPt, line.font, line.color);
     }
   }
 }

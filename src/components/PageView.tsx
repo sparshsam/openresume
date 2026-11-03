@@ -8,6 +8,9 @@ interface PageViewProps {
   onFocusTarget?: (sectionId: string, itemId?: string) => void;
 }
 
+const SERIF_STACK = "'Times New Roman', Times, 'Liberation Serif', serif";
+const SANS_STACK = "Helvetica, Arial, 'Liberation Sans', sans-serif";
+
 function textStyle(
   xPt: number,
   yPt: number,
@@ -21,6 +24,8 @@ function textStyle(
     fontSize: `${font.sizePt}pt`,
     fontWeight: font.bold ? 700 : 400,
     fontStyle: font.italic ? 'italic' : 'normal',
+    fontFamily: font.family === 'times' ? SERIF_STACK : SANS_STACK,
+    letterSpacing: `${font.letterSpacingPt ?? 0}pt`,
     color,
     lineHeight: `${lineHeightPt}pt`,
   };
@@ -70,31 +75,47 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
               {line.text}
             </span>
           ))}
-          <span
-            className="page-rule"
-            style={{
-              left: `${page.header.rule.x1Pt}pt`,
-              top: `${page.header.rule.y1Pt}pt`,
-              width: `${page.header.rule.x2Pt - page.header.rule.x1Pt}pt`,
-              height: `${page.header.rule.widthPt}pt`,
-              background: page.header.rule.color,
-            }}
-          />
+          {page.header.rule ? (
+            <span
+              className="page-rule"
+              style={{
+                left: `${page.header.rule.x1Pt}pt`,
+                top: `${page.header.rule.y1Pt}pt`,
+                width: `${page.header.rule.x2Pt - page.header.rule.x1Pt}pt`,
+                height: `${page.header.rule.widthPt}pt`,
+                background: page.header.rule.color,
+              }}
+            />
+          ) : null}
         </>
       ) : null}
 
-      {page.blocks.map((block, blockIndex) =>
-        block.lines.map((line, lineIndex) => (
-          <span
-            key={`${block.sectionId}-${block.itemId ?? 'section'}-${blockIndex}-${lineIndex}`}
-            className="page-line"
-            style={placedStyle(line, block.lineHeightPt)}
-            onClick={() => onFocusTarget?.(block.sectionId, block.itemId)}
-          >
-            {line.text}
-          </span>
-        )),
-      )}
+      {page.blocks.map((block, blockIndex) => (
+        <span key={`block-${block.sectionId}-${block.itemId ?? 'section'}-${blockIndex}`}>
+          {block.rule ? (
+            <span
+              className="page-rule"
+              style={{
+                left: `${block.rule.xPt}pt`,
+                top: `${block.rule.yPt}pt`,
+                width: `${block.rule.widthPt}pt`,
+                height: `${block.rule.thicknessPt}pt`,
+                background: block.rule.color,
+              }}
+            />
+          ) : null}
+          {block.lines.map((line, lineIndex) => (
+            <span
+              key={`${block.sectionId}-${block.itemId ?? 'section'}-${blockIndex}-${lineIndex}`}
+              className="page-line"
+              style={placedStyle(line, block.lineHeightPt)}
+              onClick={() => onFocusTarget?.(block.sectionId, block.itemId)}
+            >
+              {line.text}
+            </span>
+          ))}
+        </span>
+      ))}
 
       <span className="page-label">Page {page.index + 1}</span>
     </div>

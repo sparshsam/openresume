@@ -58,18 +58,25 @@ Landing and preparation screens show only the brand and theme controls. All acti
 
 ## Formatting
 
-The workspace formatting panel contains page size, margins, font size, spacing, density, and **Accent Colour**. Resumes also show **Resume layout** (Professional Two-Column or ATS Simple); **Column spacing** appears only for the two-column layout, and ATS Simple adds a short note explaining its single-column, table-free output and that no layout guarantees compatibility with every applicant tracking system.
+The workspace formatting panel contains **Browse Designs** (resumes) or **Letter style** (cover letters), page size, margins, font size, spacing, density, pagination controls, and **Accent Colour**.
 
+- **Browse Designs** is a native radio group of ten cards. Each card shows a locally rendered SVG thumbnail of the same fictional sample, the design name, and a one-line description; the selected card has a visible accent border and check. Arrow keys move and select within the group, and the grid becomes one column on narrow screens.
+- An optional **Application context** selector highlights suggested designs with a “Suggested” badge and explains that recommendations are informational and do not predict hiring outcomes. It never switches the design.
+- **Column spacing** appears only when the active design uses two columns; the per-section Main/Side selector follows the same rule.
+- **Keep entries together** and each section's **New page** checkbox control pagination. Section headings always stay with their first entry.
+- **Letter style** is a radio gallery of Classic, Modern, Executive, and Minimal Letter cards. When a resume exists, a one-click suggestion names the coordinated style but never applies it automatically.
 - Accent Colour is a native radio group of nine swatches: Green (default), Blue, Navy, Teal, Purple, Red, Orange, Brown, and Charcoal.
 - Each swatch has an accessible colour name, keyboard operation, a clear selected ring, and a focus indicator.
 - The selected colour name is shown in text.
-- The accent updates the live document header, rule, and resume section headings. The same value flows into PDF and DOCX.
+- The accent updates the live document header, rule, and resume section headings wherever the design assigns an accent role. The same value flows into PDF and DOCX.
 - Accent is per document and survives navigation for the session. It is not stored in the browser.
-- **Reset to defaults** restores Green and the standard formatting presets.
+- **Reset to defaults** restores Green, Professional Two-Column, Classic Letter, and the standard formatting presets.
 
 ## Resume workspace
 
-The existing resume editor remains: identity, contact links, sections, entries, bullets, section ordering, column assignment, and live preview. **Create matching cover letter** appears as a quiet action in the identity section.
+The existing resume editor remains: identity, contact links, sections, entries, bullets, section ordering, column assignment, and live preview. Sections can be reordered with the up/down buttons or by dragging the handle onto another section; the dragged section is placed before the drop target and stored column assignments are never changed. Keyboard users keep the buttons as the accessible path. **Create matching cover letter** appears as a quiet action in the identity section.
+
+The header shows the active document's page count next to its label, updating with content, formatting, pagination, and design changes.
 
 ## Cover letter workspace
 
@@ -83,7 +90,7 @@ Fields:
 - Multiple body paragraphs with add/remove controls.
 - Closing and signature.
 
-The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes page size, margins, font size, line spacing, section spacing, paragraph spacing, content density, and Accent Colour. Bullet and column spacing are hidden because they do not apply.
+The preview is a single-column letter with the same OpenResume letterhead, typography, and fixed document colors as the resume. Formatting is per document and includes letter style, page size, margins, font size, line spacing, section spacing, paragraph spacing, content density, and Accent Colour. Bullet and column spacing are hidden because they do not apply.
 
 When a resume exists, **Back to resume** returns to the resume workspace without changing either document.
 
@@ -91,7 +98,7 @@ When a resume exists, **Back to resume** returns to the resume workspace without
 
 The kit workspace reuses the existing resume editor, cover letter editor, preview, formatting panel, accent palette, and export engines. It adds one compact toolbar below the header:
 
-- **Application Kit** label and “Two coordinated documents” hint.
+- **Application Kit** label, “Two coordinated documents” hint, and independent live page counts such as `Resume: 2 pages | Cover Letter: 1 page`.
 - Accessible **Resume** and **Cover Letter** tabs: `role="tablist"`, `aria-selected`, `aria-controls`, roving `tabIndex`, arrow-key/Home/End navigation, and focus moved to the newly selected tab.
 - **Document order** select: **Cover Letter → Resume** (default) or **Resume → Cover Letter**, applying to both combined exports.
 - **Combined PDF** and **Combined Word** export actions.

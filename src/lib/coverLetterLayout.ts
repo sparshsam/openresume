@@ -1,3 +1,4 @@
+import { resolveCoverLetterStyle } from './designs';
 import {
   buildDocumentHeader,
   textBlock,
@@ -6,17 +7,18 @@ import {
   type PageLayout,
 } from './layout';
 import { resolveMetrics, type ResolvedMetrics } from './metrics';
+import { normalizeTemplate } from './normalize';
 import { paginateColumn, type FlowBlock } from './paginate';
 import { COLORS } from './tokens';
 import type { CoverLetter } from '../types/coverLetter';
-import type { FontSpec } from './measure';
+import type { FontFamily, FontSpec } from './measure';
 
-function bodyFont(metrics: ResolvedMetrics): FontSpec {
-  return { sizePt: metrics.bodyPt };
+function bodyFont(metrics: ResolvedMetrics, family: FontFamily): FontSpec {
+  return { sizePt: metrics.bodyPt, family };
 }
 
-function boldFont(metrics: ResolvedMetrics): FontSpec {
-  return { sizePt: metrics.bodyPt, bold: true };
+function boldFont(metrics: ResolvedMetrics, family: FontFamily): FontSpec {
+  return { sizePt: metrics.bodyPt, bold: true, family };
 }
 
 function letterBlock(
@@ -27,6 +29,7 @@ function letterBlock(
     sectionId: string;
     itemId?: string;
     font: FontSpec;
+    color?: string;
     spaceBeforePt: number;
     spaceAfterPt: number;
     keepWithNext?: boolean;
@@ -38,7 +41,7 @@ function letterBlock(
     sectionId: options.sectionId,
     itemId: options.itemId,
     font: options.font,
-    color: COLORS.text,
+    color: options.color ?? COLORS.text,
     lineHeightPt: metrics.bodyLinePt,
     spaceBeforePt: options.spaceBeforePt,
     spaceAfterPt: options.spaceAfterPt,
@@ -48,8 +51,10 @@ function letterBlock(
 }
 
 export function layoutCoverLetter(letter: CoverLetter): Layout {
-  const metrics = resolveMetrics(letter.template);
-  const accent = letter.template.accent || COLORS.accent;
+  const template = normalizeTemplate(letter.template);
+  const style = resolveCoverLetterStyle(template.letterStyle);
+  const metrics = resolveMetrics(template, 'coverLetter');
+  const accent = template.accent || COLORS.accent;
   const { header, heightPt: headerHeightPt } = buildDocumentHeader(
     {
       name: letter.applicant.name,
@@ -58,11 +63,13 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
     },
     metrics,
     accent,
+    style.header,
+    style.fontFamily,
   );
 
   const blocks: FlowBlock[] = [];
-  const body = bodyFont(metrics);
-  const bold = boldFont(metrics);
+  const body = bodyFont(metrics, style.fontFamily);
+  const bold = boldFont(metrics, style.fontFamily);
 
   if (letter.date) {
     blocks.push(
@@ -95,15 +102,20 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
 
   if (letter.position) {
     blocks.push(
-      letterBlock(letter.position, metrics, {
-        kind: 'subject',
-        sectionId: 'letter-position',
-        font: bold,
-        spaceBeforePt: 0,
-        spaceAfterPt: 14,
-        keepWithNext: Boolean(letter.salutation || letter.body.length > 0),
-        splittable: false,
-      }),
+      letterBlock(
+        style.subject.uppercase ? letter.position.toUpperCase() : letter.position,
+        metrics,
+        {
+          kind: 'subject',
+          sectionId: 'letter-position',
+          font: bold,
+          color: style.subject.color === 'accent' ? accent : COLORS.text,
+          spaceBeforePt: 0,
+          spaceAfterPt: 14,
+          keepWithNext: Boolean(letter.salutation || letter.body.length > 0),
+          splittable: false,
+        },
+      ),
     );
   }
 
@@ -159,7 +171,7 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
       letterBlock(letter.signature, metrics, {
         kind: 'signature',
         sectionId: 'letter-signature',
-        font: bold,
+        font: style.signature.bold ? bold : body,
         spaceBeforePt: letter.closing ? 22 : 26,
         spaceAfterPt: 0,
         splittable: false,
@@ -176,6 +188,7 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
     firstCapacityPt,
     restCapacityPt,
     metrics.contentWidthPt,
+    { keepEntriesTogether: template.pagination.keepEntriesTogether },
   );
 
   const pages: PageLayout[] = Array.from(
@@ -203,6 +216,9 @@ export function layoutCoverLetter(letter: CoverLetter): Layout {
   return {
     kind: 'coverLetter',
     variant: 'letter',
+    columns: 1,
+    headerAlign: style.header.align,
+    fontFamily: style.fontFamily,
     pages: finalPages,
     pageWidthPt: metrics.pageWidthPt,
     pageHeightPt: metrics.pageHeightPt,

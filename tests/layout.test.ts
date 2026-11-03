@@ -88,7 +88,7 @@ describe('layoutResume', () => {
 
     expect(layout.accent).toBe('#1D4ED8');
     expect(layout.pages[0].header?.name.color).toBe('#1D4ED8');
-    expect(layout.pages[0].header?.rule.color).toBe('#1D4ED8');
+    expect(layout.pages[0].header?.rule?.color).toBe('#1D4ED8');
 
     const headings = layout.pages
       .flatMap((page) => page.blocks)

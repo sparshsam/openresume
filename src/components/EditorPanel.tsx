@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SectionEditor } from './SectionEditor';
+import { resolveResumeDesign } from '../lib/designs';
 import { linksToText, textToLinks } from '../lib/links';
 import type { Resume, ResumeItem, ResumeSection, SectionKind } from '../types/resume';
 
@@ -32,6 +33,7 @@ interface EditorPanelProps {
   onUpdateSection: (sectionId: string, patch: Partial<ResumeSection>) => void;
   onRemoveSection: (sectionId: string) => void;
   onMoveSection: (sectionId: string, direction: -1 | 1) => void;
+  onReorderSections: (sourceId: string, targetId: string) => void;
   onAddItem: (sectionId: string) => void;
   onUpdateItem: (sectionId: string, itemId: string, patch: Partial<ResumeItem>) => void;
   onRemoveItem: (sectionId: string, itemId: string) => void;
@@ -50,6 +52,7 @@ export function EditorPanel({
   onUpdateSection,
   onRemoveSection,
   onMoveSection,
+  onReorderSections,
   onAddItem,
   onUpdateItem,
   onRemoveItem,
@@ -179,10 +182,11 @@ export function EditorPanel({
           section={section}
           index={index}
           total={resume.sections.length}
-          showColumn={resume.template.layout !== 'atsSimple'}
+          showColumn={resolveResumeDesign(resume.template.layout).columns === 2}
           onUpdate={(patch) => onUpdateSection(section.id, patch)}
           onRemove={() => onRemoveSection(section.id)}
           onMove={(direction) => onMoveSection(section.id, direction)}
+          onReorder={onReorderSections}
           onAddItem={() => onAddItem(section.id)}
           onUpdateItem={(itemId, patch) => onUpdateItem(section.id, itemId, patch)}
           onRemoveItem={(itemId) => onRemoveItem(section.id, itemId)}

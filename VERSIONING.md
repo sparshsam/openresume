@@ -4,7 +4,7 @@ OpenResume follows [Semantic Versioning 2.0](https://semver.org/) with a pre-1.0
 
 ## Current line
 
-`0.1.x` — early development.
+`0.2.x` — multi-design documents and shared pagination controls.
 
 ## Rules
 
