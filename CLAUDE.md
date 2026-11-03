@@ -16,13 +16,13 @@ Required reading before every session:
 
 ## What this is
 
-A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (Professional Two-Column or ATS Simple for resumes, one column for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
+A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out with one of ten résumé designs or four single-column letter styles (US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
 ## Current state (2026-11-02)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
 - **Version:** v0.2.0 (ten résumé designs, design gallery, four letter styles, pagination controls, drag ordering, live page counts, recommendations), released and deployed.
-- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0.
+- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. PR [#9](https://github.com/sparshsam/openresume/pull/9) merged as `8636cc0d9b1698fc888fa71c6bc35f7c1ea0cd0a`; production deployment `dpl_EHo2SCkJWVU7P3FbfZUPSzgyh5MW` is READY on `resume.kovina.org`, serving bundle `main-CabQ44_i.js` (verified to contain `0.2.0` and the gallery/pagination strings).
 - **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.2.0 run passed with 444 tests across 33 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
@@ -38,8 +38,14 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 
 - **`npm run check` does not run `format:check`.** CI does. Run both before claiming completion, or Prettier failures land on the PR.
 - **`PageView` duplicates three leading ratios** for the header: `1.17` name, `1.24` headline, `1.38` contact lines. They must stay in step with `nameLinePt`, `headlineLinePt`, and `smallLinePt` in `metrics.ts`. Lines are absolutely positioned from layout coordinates, so a drift is a subtle baseline shift rather than an obvious break.
-- **Every `Layout` producer must set `variant`** (`twoColumn`, `atsSimple`, or `letter`). The DOCX exporter chooses table vs. linear output from it; a missing or wrong value silently changes the Word structure.
-- **All new template fields go through `normalizeTemplate`.** That function is the backward-compatibility gate; an unnormalized field will break on legacy or externally supplied templates.
+- **Every `Layout` producer must set `variant`, `columns`, `headerAlign`, and `fontFamily`.** `variant` is the design id (`twoColumn`…`bold`) or `letter`; the DOCX exporter chooses table vs. linear output from `columns`, not from `variant`. A missing or wrong value silently changes the Word structure.
+- **All new template fields go through `normalizeTemplate`.** That function is the backward-compatibility gate; an unnormalized field will break on legacy or externally supplied templates. New résumé design ids must also be added to the `LAYOUTS` set and `ResumeLayoutId`; new letter styles to `LETTER_STYLES` and `CoverLetterStyleId`.
+- **The two original designs are identity traits.** `twoColumn` and `atsSimple` must keep `nameScale: 1`, `heading.scale: 1`, `body.scale: 1`, Helvetica, and the original header/heading settings. Changing them shifts existing output and the page-budget baseline.
+- **Cover-letter metrics need the document kind.** `resolveMetrics(template, 'coverLetter')` uses `template.letterStyle`; letter templates copy the résumé template when created, so `template.layout` must never influence letter typography.
+- **Keep-together heights are computed in `buildSectionBlocks`.** Heading blocks always carry the height of heading + first entry; entry blocks carry their own height only when `keepEntriesTogether` is on. `paginateColumn` only honours them when the unit fits a page; do not move this logic into the paginator.
+- **Page counts are derived.** UI reads `layout.pages.length`; never cache or recompute page counts in components.
+- **Design thumbnails are local SVG.** Never add image fetches, external assets, or screenshot-based thumbnails to the gallery.
+- **`reorderSection` inserts before the drop target.** Drag-and-drop and the up/down buttons must produce the same ordering, and reordering must never rewrite `section.column`.
 - **PDF containment tests need short fixture lines.** jsPDF writes one text operator per wrapped line in uncompressed output, so a long bullet never appears contiguously. Use short fixtures for `toContain` assertions and separate ordering tests for long content.
 - **Page-budget baseline:** the bundled sample resume is 1 page in Professional Two-Column and 2 pages in ATS Simple at default settings. Spacing changes that move these are product decisions, not just test updates.
 - **ATS Simple stores column assignments.** It ignores `section.column` but never rewrites it, so switching back to two-column restores the original layout. The per-section Main/Side selector is hidden through `showColumn` in `SectionEditor`.
@@ -61,7 +67,7 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
 - `src/lib/viewScroll.ts` — resets the page and workspace scroll areas when a build opens the workspace.
 - `src/components/LandingPage.tsx` — three-card document selection (Resume, Cover Letter, Application Kit) with Build, Copy AI Instructions, and session Open actions.
-- `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs, document-order control, and combined/separate export actions.
+- `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs, document-order control, independent page counts, and combined/separate export actions.
 - `src/types/applicationKit.ts` — `ApplicationKitOrder` and its cover-letter-first default.
 - `src/lib/designs.ts` — registry of the ten résumé designs and four cover-letter styles, application-context recommendations, and letter-style suggestions.
 - `src/components/DesignGallery.tsx` / `DesignThumbnail.tsx` — accessible design and letter-style galleries with local SVG thumbnails.
@@ -73,10 +79,11 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 - `about.html`, `privacy.html`, `terms.html` — static public shells with page-specific SEO metadata.
 - `public/robots.txt` / `public/sitemap.xml` — canonical-only discovery files.
 - `src/components/PrepareScreen.tsx` — shared preparation for resume, cover letter, and Application Kit, with validation, AI copy, and examples.
-- `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, theme.
+- `src/components/Header.tsx` — brand/home, New, Format, PDF/Word, document label, live page count, theme.
 - `src/lib/themeAssets.ts` — one visible brand mark and favicon for both interface themes (the light artwork).
 - `src/lib/tokens.ts` — document accent palette and fixed neutral document colors.
-- `src/components/FormattingPanel.tsx` — document formatting, including the accessible accent swatch group.
+- `src/components/FormattingPanel.tsx` — design/letter-style galleries, pagination controls, document formatting, and the accessible accent swatch group.
+- `src/components/SectionEditor.tsx` / `src/lib/resumeEdits.ts` — section controls, `New page` toggle, drag handle, and the pure `moveSection`/`reorderSection` helpers.
 - `src/components/ThemeProvider.tsx` / `src/lib/theme.ts` — light/dark/system theme.
 - `src/components/Footer.tsx` / `src/lib/appMeta.ts` — Kovina attribution and version.
 - `assets/branding/source-assets/` — authoritative light/dark logo masters.
@@ -93,18 +100,14 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 - `src/lib/contact.ts` — shared contact-line classification.
 - `src/lib/serialize.ts` — `Resume` → text (round-trip).
 - `src/lib/normalize.ts` — legacy template upgrade and preset validation.
-- `src/lib/metrics.ts` — page sizes and formatting presets → geometry and typography (including the 8.8 pt secondary text and the section/entry spacing scale).
-- `src/lib/measure.ts` — Helvetica AFM widths and wrapping.
-- `src/lib/paginate.ts` — line-boundary pagination with keep-with-next.
-- `src/lib/layout.ts` — resume flow blocks, header, page assembly.
-- `src/lib/coverLetterLayout.ts` — single-column letter layout.
+- `src/lib/metrics.ts` — design scales and formatting presets → page geometry, typography, and spacing (including the 8.8 pt secondary text and the section/entry spacing scale).
+- `src/lib/measure.ts` — Helvetica/Times AFM widths, letter spacing, and wrapping.
+- `src/lib/coverLetterLayout.ts` — single-column letter layout driven by the selected letter style.
 - `src/lib/coverLetterEdits.ts` / `coverLetterScaffold.ts` — letter edits and resume-detail reuse.
 - `src/lib/aiInstructions.ts` — parser-generated AI instruction templates, including the delimited Application Kit template.
 - `src/lib/content.ts` — content strings for PDF/DOCX parity checks.
-- `src/lib/exportPdf.ts` / `exportDocx.ts` — render either document's `Layout`; both also expose a combined Application Kit exporter.
+- `src/lib/exportPdf.ts` / `exportDocx.ts` — render either document's `Layout` with Helvetica/Times, header/heading rules, and letter spacing; both also expose a combined Application Kit exporter.
 - `src/lib/storage.ts` — validated one-time cleanup of v0.1.x draft entries.
-- `src/components/FormattingPanel.tsx` — document-specific formatting controls.
-- `src/App.tsx` — state wiring only.
 
 Full design: `ARCHITECTURE.md`.
 
