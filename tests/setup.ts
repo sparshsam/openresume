@@ -16,6 +16,9 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 
 if (typeof window !== 'undefined') {
   window.confirm = () => true;
+  // jsdom has no layout engine and reports scrollTo() as unimplemented. The app
+  // resets the viewport when the workspace opens, so a no-op is accurate here.
+  window.scrollTo = () => {};
 
   if (!window.matchMedia) {
     window.matchMedia = ((query: string) => ({

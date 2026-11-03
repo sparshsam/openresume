@@ -43,6 +43,8 @@ The old collapsible example-format interaction has been removed. The AI instruct
 
 Building replaces the previous document of that type in the current session immediately. No confirmation dialog is shown.
 
+Every build opens the workspace at the top, regardless of how far the preparation screen was scrolled. The reset happens before the workspace paints, covers the page and the workspace's editor and preview scroll areas, and is not overridden by browser scroll restoration or by focus leaving the previous view.
+
 ## Header
 
 - **Brand** is labeled **OpenResume home** on the landing and preparation screens, and **Back to document selection** in a workspace; both return to the landing page.

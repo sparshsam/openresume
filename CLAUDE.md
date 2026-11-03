@@ -18,13 +18,13 @@ Required reading before every session:
 
 A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out (Professional Two-Column or ATS Simple for resumes, one column for cover letters; US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
-## Current state (2026-10-21)
+## Current state (2026-11-02)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.1.12 (one visible brand mark and favicon across themes), released and deployed.
-- **Release:** annotated tag `v0.1.12`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.12.
-- **Prior release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`, with PR [#6](https://github.com/sparshsam/openresume/pull/6) adding the v0.1.11 orientation notes as `ec10766f4b3c1bd8054d63940b61a0daba3055a2`.
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.11 run passed with 329 tests across 26 files.
+- **Version:** v0.1.13 (workspace opens at the top; AI instructions keep job titles out of locations), released and deployed.
+- **Release:** annotated tag `v0.1.13`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.1.13.
+- **Prior release:** v0.1.12 — PR [#7](https://github.com/sparshsam/openresume/pull/7) merged as `728bdd0d50bfac58a757158acfc54e917cfae226` (one visible brand mark and favicon across themes).
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.1.13 run passed with 349 tests across 27 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
@@ -59,6 +59,7 @@ npm run format:check # Prettier check (CI runs this too; `check` does not)
 ## Architecture map
 
 - `src/App.tsx` — landing/prepare/workspace state and both documents.
+- `src/lib/viewScroll.ts` — resets the page and workspace scroll areas when a build opens the workspace.
 - `src/components/LandingPage.tsx` — three-card document selection (Resume, Cover Letter, Application Kit) with Build, Copy AI Instructions, and session Open actions.
 - `src/components/ApplicationKitToolbar.tsx` — accessible kit tabs, document-order control, and combined/separate export actions.
 - `src/types/applicationKit.ts` — `ApplicationKitOrder` and its cover-letter-first default.

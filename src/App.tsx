@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApplicationKitToolbar } from './components/ApplicationKitToolbar';
 import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
@@ -29,6 +29,7 @@ import { applicationKitFilename, documentFilename } from './lib/filename';
 import { layoutResume } from './lib/layout';
 import { applyPageMeta, infoPageFromPath, navigate, type InfoPageKey } from './lib/publicPages';
 import { clearLegacyDrafts } from './lib/storage';
+import { resetViewScroll } from './lib/viewScroll';
 import {
   addBullet,
   addItem,
@@ -103,6 +104,8 @@ export default function App() {
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToastId = useRef(0);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+  const renderedView = useRef<View | null>(null);
 
   const activeTemplate = activeKind === 'resume' ? resume?.template : coverLetter?.template;
 
@@ -115,6 +118,16 @@ export default function App() {
 
   useEffect(() => {
     clearLegacyDrafts();
+  }, []);
+
+  useEffect(() => {
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      if (previous === 'auto' || previous === 'manual') {
+        window.history.scrollRestoration = previous;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -454,6 +467,14 @@ export default function App() {
 
   const hasActiveDocument = activeKind === 'resume' ? Boolean(resume) : Boolean(coverLetter);
   const renderView: View = view === 'workspace' && !hasActiveDocument ? 'landing' : view;
+
+  useLayoutEffect(() => {
+    const previous = renderedView.current;
+    renderedView.current = renderView;
+    if (renderView !== 'workspace' || previous === 'workspace') return;
+    resetViewScroll(workspaceRef.current);
+  }, [renderView]);
+
   const showingInfo = infoPage !== null;
   const headerView: View = showingInfo ? 'landing' : renderView;
 
@@ -556,6 +577,7 @@ export default function App() {
           <main
             className="workspace"
             id="main"
+            ref={workspaceRef}
             role={workspaceMode === 'kit' ? 'tabpanel' : undefined}
             aria-labelledby={workspaceMode === 'kit' ? `kit-tab-${activeKind}` : undefined}
             tabIndex={workspaceMode === 'kit' ? 0 : undefined}

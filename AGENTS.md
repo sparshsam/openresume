@@ -2,18 +2,18 @@
 
 This file complements `CLAUDE.md`. Read both before changing code.
 
-## Current state (2026-10-21)
+## Current state (2026-11-02)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Release:** v0.1.12 — annotated tag `v0.1.12`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.12. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
-- **Prior release:** v0.1.11 — PR [#5](https://github.com/sparshsam/openresume/pull/5) merged as `fe9cf12a3d30939e61f5e385a018611ec9b85266`; orientation docs landed in PR [#6](https://github.com/sparshsam/openresume/pull/6) as `ec10766`.
-- **Verification baseline:** 329 tests across 26 files; lint, format check, typecheck, and build green; coverage 95.15% statements / 97.08% lines against 80% thresholds.
+- **Release:** v0.1.13 — annotated tag `v0.1.13`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.1.13. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
+- **Prior release:** v0.1.12 — PR [#7](https://github.com/sparshsam/openresume/pull/7) merged as `728bdd0d50bfac58a757158acfc54e917cfae226` (one visible brand mark and favicon across themes).
+- **Verification baseline:** 349 tests across 27 files; lint, format check, typecheck, and build green.
 - **Resume layouts:** `template.layout` selects **Professional Two-Column** (default) or **ATS Simple**. ATS Simple is one full-width column in author order with no tables; the DOCX exporter emits a linear paragraph flow for it. Switching layouts preserves content.
 - **Application Kit order:** the kit toolbar offers cover-letter-first (default) or resume-first for combined PDF and DOCX. The order is session-only UI state, never part of a document template.
-- **AI workflow:** all three instruction templates require exactly one plain-text code block; the standalone parsers accept one complete enclosing `text` or unlabelled fence, and the Application Kit parser additionally requires the two document delimiters in resume-then-letter order.
+- **AI workflow:** all three instruction templates require exactly one plain-text code block; the standalone parsers accept one complete enclosing `text` or unlabelled fence, and the Application Kit parser additionally requires the two document delimiters in resume-then-letter order. All three templates share `AI_FIELD_DEFINITIONS`, which separates professional headline, job title, employer name, and geographic location and requires an unverified location to be omitted rather than replaced with a job title.
 - **Application Kit:** a third landing card and atomically validated combined workflow that reuses the same resume and cover letter models, editors, formatting, and exporters; the kit workspace adds accessible tabs and combined or separate downloads.
 - **README:** includes the full Kovina Collection footer.
-- **Repository:** `main` is at the v0.1.11 merge commit `fe9cf12` on origin; inspect `git status` and recent commits before starting work.
+- **Repository:** `main` is at the v0.1.12 merge commit `728bdd0` on origin; inspect `git status` and recent commits before starting work.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
 - **Branch protection:** active ruleset `main-protection` (`25359494`) requires a PR, conversation resolution, and the `check` CI status with up-to-date branches; blocks direct pushes, force-pushes, and deletion; 0 required approvals; no bypass actors.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.

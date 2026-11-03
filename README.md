@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.1.12.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.1.13.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.1.12). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.1.13). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
