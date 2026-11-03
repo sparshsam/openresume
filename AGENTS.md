@@ -8,6 +8,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 - **Release:** v0.2.0 — annotated tag `v0.2.0`; GitHub pre-release at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. Deployed at https://resume.kovina.org. The original Vercel address remains at https://openresume-sigma.vercel.app with `noindex`.
 - **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
 - **Verification baseline:** 444 tests across 33 files; lint, format check, typecheck, and build green.
+- **Production verification (2026-11-02):** deployment `dpl_EHo2SCkJWVU7P3FbfZUPSzgyh5MW` is READY on `resume.kovina.org`; the live bundle `main-CabQ44_i.js` matches the local v0.2.0 build and contains `0.2.0`, “Browse Designs”, and “Keep entries together”.
 - **Résumé designs:** `template.layout` selects one of ten designs (Professional Two-Column default, ATS Simple, Executive, Modern Minimal, Classic, Creative, Compact, Academic, Contemporary, Bold) from `src/lib/designs.ts`. The design supplies columns, font family, header/heading treatments, and scales; content, pagination, preview, and both exporters are shared. ATS Simple is one full-width column in author order with no tables. Switching designs preserves every content value and stored `column` assignment without re-parsing.
 - **Cover-letter styles:** `template.letterStyle` selects Classic (default), Modern, Executive, or Minimal. The resume design suggests a coordinated style but never applies it automatically.
 - **Pagination and counts:** `template.pagination.keepEntriesTogether` and `section.startOnNewPage` drive the shared `paginateColumn`; heading blocks always keep their first entry. Page counts are derived from `Layout.pages.length` in the workspace header and, independently, in the kit toolbar.
@@ -16,7 +17,7 @@ This file complements `CLAUDE.md`. Read both before changing code.
 - **AI workflow:** all three instruction templates require exactly one plain-text code block; the standalone parsers accept one complete enclosing `text` or unlabelled fence, and the Application Kit parser additionally requires the two document delimiters in resume-then-letter order. All three templates share `AI_FIELD_DEFINITIONS`, which separates professional headline, job title, employer name, and geographic location and requires an unverified location to be omitted rather than replaced with a job title.
 - **Application Kit:** a third landing card and atomically validated combined workflow that reuses the same resume and cover letter models, editors, formatting, and exporters; the kit workspace adds accessible tabs and combined or separate downloads.
 - **README:** includes the full Kovina Collection footer.
-- **Repository:** `main` is at the v0.1.13 merge commit `71ef633` on origin; inspect `git status` and recent commits before starting work.
+- **Repository:** `main` is at the v0.2.0 merge commit `8636cc0` on origin; inspect `git status` and recent commits before starting work.
 - **Deployment:** https://resume.kovina.org (custom production domain) and https://openresume-sigma.vercel.app (original Vercel address) — Vercel project `openresume`, linked to GitHub `main`; previews for PRs; no environment variables.
 - **Branch protection:** active ruleset `main-protection` (`25359494`) requires a PR, conversation resolution, and the `check` CI status with up-to-date branches; blocks direct pushes, force-pushes, and deletion; 0 required approvals; no bypass actors.
 - **Architecture:** no backend, authentication, analytics, or cloud storage.
@@ -61,50 +62,55 @@ Produce consistent, professional resumes and cover letters from structured text 
 
 ## Where to change what
 
-| Task                        | Touch                                                                                                                |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Resume parsing or aliases   | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                                                    |
-| Fenced paste normalization  | `src/lib/codeFence.ts`, `src/lib/parse.ts`, `src/lib/parseCoverLetter.ts`, `tests/codeFence.test.ts`                 |
-| Application Kit parsing     | `src/lib/parseApplicationKit.ts`, `src/lib/applicationKitFormat.ts`, `tests/parseApplicationKit.test.ts`             |
-| Application Kit sample      | `src/lib/applicationKitSample.ts`, `src/components/PrepareScreen.tsx`, `tests/App.test.tsx`                          |
-| Application Kit workspace   | `src/App.tsx`, `src/components/ApplicationKitToolbar.tsx`, `tests/App.test.tsx`                                      |
-| Combined exports            | `src/lib/exportPdf.ts`, `src/lib/exportDocx.ts`, `src/lib/filename.ts`, export tests                                 |
-| Application Kit order       | `src/types/applicationKit.ts`, `ApplicationKitToolbar.tsx`, `src/App.tsx`, `tests/applicationKitOrder.test.ts`       |
-| Resume layout templates     | `src/types/resume.ts`, `src/lib/normalize.ts`, `src/lib/layout.ts`, `FormattingPanel.tsx`, `tests/atsLayout.test.ts` |
-| Typography and spacing      | `src/lib/metrics.ts`, `src/lib/tokens.ts`, `tests/typography.test.ts`, `docs/formatting.md`                          |
-| Cover letter parsing        | `src/lib/parseCoverLetter.ts`, `docs/input-format.md`, `tests/parseCoverLetter.test.ts`                              |
-| AI instruction templates    | `src/lib/aiInstructions.ts`, `tests/aiInstructions.test.ts`, `docs/ai-instructions.md`                               |
-| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                                                    |
-| Page geometry, typography   | `src/lib/metrics.ts`, `src/styles/tokens.css`                                                                        |
-| Document colors             | `src/lib/tokens.ts`                                                                                                  |
-| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                                                                         |
-| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/paginate.test.ts`                                                                      |
-| Resume composition          | `src/lib/layout.ts`                                                                                                  |
-| Cover letter layout         | `src/lib/coverLetterLayout.ts`, `tests/coverLetterLayout.test.ts`                                                    |
-| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`, `tests/exportCoverLetter.test.ts`                                 |
-| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`, `tests/exportCoverLetter.test.ts`                               |
-| Legacy cleanup and schema   | `src/lib/storage.ts`, `tests/storage.test.ts`                                                                        |
-| Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md`                                     |
-| Preparation validation      | `src/components/PrepareScreen.tsx`, `src/App.tsx`, `tests/App.test.tsx`                                              |
-| Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                                                  |
-| Landing cards and copy      | `src/components/LandingPage.tsx`, `src/styles/globals.css`, `src/styles/tokens.css`                                  |
-| Feedback and toasts         | `src/components/ToastRegion.tsx`, `src/App.tsx`, `src/styles/globals.css`                                            |
-| Brand masters and icons     | `assets/branding/source-assets/`, `scripts/generate-icons.py`, `docs/branding.md`                                    |
-| Theme-aware favicon/brand   | `index.html`, `src/components/ThemeProvider.tsx`, `src/components/Header.tsx`                                        |
-| Public pages and routing    | `src/components/InfoPages.tsx`, `src/lib/publicPages.ts`, `about.html`, `privacy.html`, `terms.html`                 |
-| Brand mark and favicons     | `src/lib/themeAssets.ts`, `src/components/Header.tsx`, `src/components/ThemeProvider.tsx`, `*.html`                  |
-| Document accent colour      | `src/lib/tokens.ts`, `src/components/FormattingPanel.tsx`, `src/lib/layout.ts`, `src/lib/exportDocx.ts`              |
-| Footer navigation           | `src/components/Footer.tsx`, `src/components/InternalLink.tsx`                                                       |
-| SEO discovery files         | `public/robots.txt`, `public/sitemap.xml`, `vercel.json`                                                             |
-| Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                                                |
-| Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                                                |
-| Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`                                      |
-| Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`                                                  |
-| Icons                       | `src/components/Icon.tsx` — inline SVG only                                                                          |
-| Deployment configuration    | `vercel.json`, `docs/deployment.md`                                                                                  |
-| PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                                                                   |
-| Resume editor controls      | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                                                                |
-| Document navigation         | `src/components/Header.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`                                                  |
+| Task                        | Touch                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resume parsing or aliases   | `src/lib/parse.ts`, `docs/input-format.md`, `tests/parse.test.ts`                                                                                 |
+| Fenced paste normalization  | `src/lib/codeFence.ts`, `src/lib/parse.ts`, `src/lib/parseCoverLetter.ts`, `tests/codeFence.test.ts`                                              |
+| Application Kit parsing     | `src/lib/parseApplicationKit.ts`, `src/lib/applicationKitFormat.ts`, `tests/parseApplicationKit.test.ts`                                          |
+| Application Kit sample      | `src/lib/applicationKitSample.ts`, `src/components/PrepareScreen.tsx`, `tests/App.test.tsx`                                                       |
+| Application Kit workspace   | `src/App.tsx`, `src/components/ApplicationKitToolbar.tsx`, `tests/App.test.tsx`                                                                   |
+| Combined exports            | `src/lib/exportPdf.ts`, `src/lib/exportDocx.ts`, `src/lib/filename.ts`, export tests                                                              |
+| Application Kit order       | `src/types/applicationKit.ts`, `ApplicationKitToolbar.tsx`, `src/App.tsx`, `tests/applicationKitOrder.test.ts`                                    |
+| Résumé designs              | `src/lib/designs.ts`, `src/types/resume.ts`, `src/lib/normalize.ts`, `src/lib/layout.ts`, `tests/designs.test.ts`, `tests/templateSwitch.test.ts` |
+| Design gallery and previews | `src/components/DesignGallery.tsx`, `src/components/DesignThumbnail.tsx`, `tests/App.test.tsx`                                                    |
+| Letter styles               | `src/lib/designs.ts`, `src/lib/coverLetterLayout.ts`, `tests/coverLetterStyles.test.tsx`                                                          |
+| Pagination controls         | `src/lib/paginate.ts`, `src/lib/layout.ts`, `src/components/SectionEditor.tsx`, `tests/pagination.test.ts`                                        |
+| Page counts                 | `src/components/Header.tsx`, `src/components/ApplicationKitToolbar.tsx`, `src/App.tsx`, `tests/pageCounts.test.tsx`                               |
+| Section drag ordering       | `src/components/SectionEditor.tsx`, `src/lib/resumeEdits.ts`, `tests/sectionOrdering.test.tsx`                                                    |
+| Typography and spacing      | `src/lib/metrics.ts`, `src/lib/tokens.ts`, `tests/typography.test.ts`, `docs/formatting.md`                                                       |
+| Cover letter parsing        | `src/lib/parseCoverLetter.ts`, `docs/input-format.md`, `tests/parseCoverLetter.test.ts`                                                           |
+| AI instruction templates    | `src/lib/aiInstructions.ts`, `tests/aiInstructions.test.ts`, `docs/ai-instructions.md`                                                            |
+| Round-trip format           | `src/lib/serialize.ts`, `tests/serialize.test.ts`                                                                                                 |
+| Page geometry, typography   | `src/lib/metrics.ts`, `src/styles/tokens.css`                                                                                                     |
+| Document colors             | `src/lib/tokens.ts`                                                                                                                               |
+| Wrapping and metrics        | `src/lib/measure.ts`, `tests/layout.test.ts`                                                                                                      |
+| Page breaks, keep-with-next | `src/lib/paginate.ts`, `tests/pagination.test.ts`, `tests/layout.test.ts`                                                                         |
+| Resume composition          | `src/lib/layout.ts`                                                                                                                               |
+| Cover letter layout         | `src/lib/coverLetterLayout.ts`, `tests/coverLetterLayout.test.ts`                                                                                 |
+| PDF output                  | `src/lib/exportPdf.ts`, `tests/exportPdf.test.ts`, `tests/exportCoverLetter.test.ts`                                                              |
+| DOCX output                 | `src/lib/exportDocx.ts`, `tests/exportDocx.test.ts`, `tests/exportCoverLetter.test.ts`                                                            |
+| Legacy cleanup and schema   | `src/lib/storage.ts`, `tests/storage.test.ts`                                                                                                     |
+| Page sizes or formatting    | `src/lib/metrics.ts`, `src/components/FormattingPanel.tsx`, `docs/formatting.md`                                                                  |
+| Preparation validation      | `src/components/PrepareScreen.tsx`, `src/App.tsx`, `tests/App.test.tsx`                                                                           |
+| Landing/prepare/workspace   | `src/App.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`, `Header.tsx`                                                                               |
+| Landing cards and copy      | `src/components/LandingPage.tsx`, `src/styles/globals.css`, `src/styles/tokens.css`                                                               |
+| Feedback and toasts         | `src/components/ToastRegion.tsx`, `src/App.tsx`, `src/styles/globals.css`                                                                         |
+| Brand masters and icons     | `assets/branding/source-assets/`, `scripts/generate-icons.py`, `docs/branding.md`                                                                 |
+| Theme-aware favicon/brand   | `index.html`, `src/components/ThemeProvider.tsx`, `src/components/Header.tsx`                                                                     |
+| Public pages and routing    | `src/components/InfoPages.tsx`, `src/lib/publicPages.ts`, `about.html`, `privacy.html`, `terms.html`                                              |
+| Brand mark and favicons     | `src/lib/themeAssets.ts`, `src/components/Header.tsx`, `src/components/ThemeProvider.tsx`, `*.html`                                               |
+| Document accent colour      | `src/lib/tokens.ts`, `src/components/FormattingPanel.tsx`, `src/lib/layout.ts`, `src/lib/exportDocx.ts`                                           |
+| Footer navigation           | `src/components/Footer.tsx`, `src/components/InternalLink.tsx`                                                                                    |
+| SEO discovery files         | `public/robots.txt`, `public/sitemap.xml`, `vercel.json`                                                                                          |
+| Cover letter editor         | `src/components/CoverLetterEditor.tsx`, `src/lib/coverLetterEdits.ts`                                                                             |
+| Matching letter flow        | `src/lib/coverLetterScaffold.ts`, `src/App.tsx`, `tests/App.test.tsx`                                                                             |
+| Theme (light/dark/system)   | `src/lib/theme.ts`, `ThemeProvider.tsx`, `ThemeToggle.tsx`, `styles/tokens.css`                                                                   |
+| Footer and version          | `src/components/Footer.tsx`, `src/lib/appMeta.ts`, `vite.config.ts`                                                                               |
+| Icons                       | `src/components/Icon.tsx` — inline SVG only                                                                                                       |
+| Deployment configuration    | `vercel.json`, `docs/deployment.md`                                                                                                               |
+| PDF/DOCX content parity     | `src/lib/content.ts`, export tests                                                                                                                |
+| Resume editor controls      | `src/components/EditorPanel.tsx`, `SectionEditor.tsx`                                                                                             |
+| Document navigation         | `src/components/Header.tsx`, `LandingPage.tsx`, `PrepareScreen.tsx`                                                                               |
 
 ## Verification before completion
 
