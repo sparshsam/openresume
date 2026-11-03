@@ -22,7 +22,7 @@ A client-only React + TypeScript + Vite resume and cover letter builder. Structu
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
 - **Version:** v0.2.0 (ten résumé designs, design gallery, four letter styles, pagination controls, drag ordering, live page counts, recommendations), released and deployed.
-- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. PR [#9](https://github.com/sparshsam/openresume/pull/9) merged as `8636cc0d9b1698fc888fa71c6bc35f7c1ea0cd0a`; production deployment `dpl_EHo2SCkJWVU7P3FbfZUPSzgyh5MW` is READY on `resume.kovina.org`, serving bundle `main-CabQ44_i.js` (verified to contain `0.2.0` and the gallery/pagination strings).
+- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. PR [#9](https://github.com/sparshsam/openresume/pull/9) merged as `8636cc0d9b1698fc888fa71c6bc35f7c1ea0cd0a`. That application build was verified on `resume.kovina.org` as deployment `dpl_EHo2SCkJWVU7P3FbfZUPSzgyh5MW`, serving bundle `main-CabQ44_i.js` (contains `0.2.0` and the gallery/pagination strings). Documentation-only commits may follow and can create additional deployments of the same bundle.
 - **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
 - **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.2.0 run passed with 444 tests across 33 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
