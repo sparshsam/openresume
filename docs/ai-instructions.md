@@ -39,6 +39,19 @@ The combined parser validates both sections before any document is replaced. Mis
 
 **Load Example** on the Application Kit preparation screen inserts the same canonical combined sample that the AI template demonstrates. The template wraps it in one enclosing code fence; the preparation screen inserts the unfenced content, which the combined parser accepts. There is one shared sample in `src/lib/applicationKitSample.ts`, so the instructions and the example cannot drift.
 
+## Identity fields and locations
+
+All three templates include one shared definition block so the assistant cannot confuse the applicant's identity fields. The block distinguishes:
+
+- **Professional headline** — the applicant's short self-description on the contact line under their name. It is never an employer, job title, or location.
+- **Job title** — the role held at one employer, written only after the `—` in a `### Employer Name — Job Title` entry heading.
+- **Employer name** — the organization where the role was held, written only before the `—` in that heading.
+- **Geographic location** — a verified city and region/country (`Toronto, ON`), or an explicitly confirmed arrangement (`Remote`, `Hybrid`, `On-site`, or `Online`). It appears only in a location slot: the last part of the contact line, or the part after `|` in an entry metadata line.
+
+The same block states that a job title, employer, or headline must never fill a location slot; that an unverified location must be omitted entirely; and that the contact-line order is fixed (`Professional Headline | email | phone | location`). When an entry has no verified location, the metadata line carries only the date range (`2022 – Present`), which the parser reads as a date range with no location — no fabricated value is introduced.
+
+The block is the exported `AI_FIELD_DEFINITIONS` constant in [`src/lib/aiInstructions.ts`](../src/lib/aiInstructions.ts), and `tests/aiInstructions.test.ts` fails if any template stops including it.
+
 ## Workflow
 
 Each preparation screen, and every homepage card, offers **Copy AI Instructions**. The preparation screen shows the same six steps:

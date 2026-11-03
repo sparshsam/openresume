@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AI_FIELD_DEFINITIONS,
   APPLICATION_KIT_AI_EXAMPLE,
   APPLICATION_KIT_AI_INSTRUCTIONS,
   COVER_LETTER_AI_EXAMPLE,
@@ -126,5 +127,95 @@ describe('AI instructions', () => {
     expect(getAiInstructions('resume')).toBe(RESUME_AI_INSTRUCTIONS);
     expect(getAiInstructions('coverLetter')).toBe(COVER_LETTER_AI_INSTRUCTIONS);
     expect(getAiInstructions('applicationKit')).toBe(APPLICATION_KIT_AI_INSTRUCTIONS);
+  });
+});
+
+describe('identity field definitions', () => {
+  const templates: [string, string][] = [
+    ['resume', RESUME_AI_INSTRUCTIONS],
+    ['cover letter', COVER_LETTER_AI_INSTRUCTIONS],
+    ['application kit', APPLICATION_KIT_AI_INSTRUCTIONS],
+  ];
+
+  it('distinguishes professional headline, job title, employer, and location', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Professional headline:/);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Job title:/);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Employer name:/);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Geographic location:/);
+  });
+
+  it.each(templates)('applies the same field definitions to the %s template', (_name, text) => {
+    expect(text).toContain(AI_FIELD_DEFINITIONS);
+  });
+
+  it('forbids job titles and employers in location slots', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(
+      /Never (?:put|place|write) a job title, employer(?: name)?, or (?:professional )?headline in a location slot/i,
+    );
+  });
+
+  it('keeps geographic location slots limited to verified places or confirmed arrangements', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/verified geographic location/i);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Remote/);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/explicitly confirmed/i);
+  });
+
+  it('leaves an unverified location empty and shows the date-only form', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/omit the location/i);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/2022 – Present/);
+  });
+
+  it('pins the contact-line order so a headline can never land in the location slot', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/headline is always the first part/i);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/location is always the last part/i);
+  });
+});
+
+describe('instruction examples keep locations geographic', () => {
+  it('uses a headline that is distinct from the example job title', () => {
+    const resume = parseResume(RESUME_AI_EXAMPLE).resume;
+    expect(resume.header.headline).toBe('Product-minded software generalist');
+    expect(resume.contact.location).toBe('Toronto, ON');
+    expect(RESUME_AI_EXAMPLE).toContain('### Example Company — Senior Product Engineer');
+  });
+
+  it('never parses a job title or employer into a resume entry location', () => {
+    const resume = parseResume(RESUME_AI_EXAMPLE).resume;
+    for (const section of resume.sections) {
+      for (const item of section.items) {
+        if (!item.location) continue;
+        expect(item.location).not.toBe(item.title);
+        expect(item.location).not.toBe(item.subtitle);
+      }
+    }
+  });
+
+  it('demonstrates an omitted location with a date-only metadata line', () => {
+    const resume = parseResume(RESUME_AI_EXAMPLE).resume;
+    const education = resume.sections.find((section) => section.kind === 'education');
+    expect(education?.items[0]?.dateRange).toBe('2014 – 2018');
+    expect(education?.items[0]?.location).toBeUndefined();
+  });
+
+  it('keeps the cover letter headline and location in their own slots', () => {
+    const letter = parseCoverLetter(COVER_LETTER_AI_EXAMPLE).coverLetter;
+    expect(letter.applicant.headline).toBe('Product-minded software generalist');
+    expect(letter.applicant.contact.location).toBe('Toronto, ON');
+  });
+
+  it('keeps every kit example location geographic or a confirmed arrangement', () => {
+    const result = parseApplicationKit(APPLICATION_KIT_AI_EXAMPLE);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const locations = result.resume.sections.flatMap((section) =>
+      section.items.map((item) => item.location).filter((value): value is string => Boolean(value)),
+    );
+    expect(locations.length).toBeGreaterThan(0);
+    for (const location of locations) {
+      expect(location).toMatch(/^[A-Za-z .'-]+, [A-Z]{2}$|^Remote$|^Hybrid$|^On-site$|^Online$/);
+    }
+    expect(result.resume.contact.location).toBe('Toronto, ON');
+    expect(result.resume.header.headline).toBe('Product-minded software generalist');
   });
 });

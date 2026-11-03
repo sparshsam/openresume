@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.13] — 2026-11-02
+
+### Fixed
+
+- **The workspace opens at the top.** Building a resume, cover letter, or application kit now resets the page and the workspace's own scroll areas before the workspace paints. Previously the document retained the preparation screen's scroll offset, so the workspace could open part-way down. Browser scroll restoration is turned off while the app is mounted, and focus outside the workspace is released before the reset so it cannot scroll the new view.
+- **AI instructions no longer produce job titles as locations.** All three instruction templates now define the professional headline, job title, employer name, and geographic location explicitly, forbid a job title, employer, or headline in a location slot, and require an unverified location to be omitted rather than substituted or invented. The resume and cover letter examples use a headline that is distinct from the example job title, and the resume example shows a date-only metadata line for an entry without a location.
+
+### Changed
+
+- Version bumped to 0.1.13.
+
 ## [0.1.12] — 2026-10-21
 
 ### Fixed

@@ -27,9 +27,26 @@ const RESUME_LIST_SECTIONS = [...LIST_KINDS].map((kind) => kind.toUpperCase()).j
 
 const FENCE = '```';
 
+/**
+ * Shared by all three templates so the parser-facing definitions of the
+ * applicant's identity fields cannot drift between document kinds.
+ */
+export const AI_FIELD_DEFINITIONS = `FIELD DEFINITIONS
+These four fields are distinct and are never interchangeable.
+- Professional headline: a short self-description of the applicant (for example "Product-minded software generalist"). It appears only as the first part of the contact line under the applicant's name. It is not an employer name, job title, or location.
+- Job title: the exact role held at one employer (for example "Senior Product Engineer"). It appears only after "—" in an entry heading: "### Employer Name — Job Title".
+- Employer name: the organization where the role was held. It appears only before "—" in that entry heading.
+- Geographic location: a verified city and region or country (for example "Toronto, ON"), or an explicitly confirmed work arrangement such as "Remote", "Hybrid", "On-site", or "Online". It appears only in a location slot: the last part of the contact line, or the part after "|" in an entry metadata line.
+
+LOCATION RULES
+- Never put a job title, employer name, or professional headline in a location slot.
+- If no verified geographic location is available, omit the location entirely. Write only the date range on an entry metadata line, for example "2022 – Present". Do not add a "|" part.
+- Never infer or fabricate a location from an employer name, job title, or job description.
+- Contact line order is fixed: "Professional Headline | email | phone | location". The headline is always the first part when present; the location is always the last part when present. Omit a field instead of filling its slot with a different field.`;
+
 export const RESUME_AI_EXAMPLE = `${FENCE}text
 # Jordan Avery
-Product engineer | jordan.avery@example.com | +1 555 0142 | Toronto, ON
+Product-minded software generalist | jordan.avery@example.com | +1 555 0142 | Toronto, ON
 
 ## SUMMARY
 Product engineer focused on calm, reliable document tools.
@@ -42,7 +59,7 @@ Product engineer focused on calm, reliable document tools.
 
 ## EDUCATION
 ### Example University — B.Sc. Computer Science
-2014 – 2018 | Toronto, ON
+2014 – 2018
 
 ## SKILLS
 Languages: TypeScript, Python, SQL
@@ -50,7 +67,7 @@ ${FENCE}`;
 
 export const COVER_LETTER_AI_EXAMPLE = `${FENCE}text
 # Jordan Avery
-Product engineer | jordan.avery@example.com | +1 555 0142 | Toronto, ON
+Product-minded software generalist | jordan.avery@example.com | +1 555 0142 | Toronto, ON
 
 ## DATE
 October 18, 2026
@@ -123,6 +140,8 @@ Category: Skill, Skill, Skill
 
 Supported section titles and aliases:
 ${RESUME_SECTION_LIST}
+
+${AI_FIELD_DEFINITIONS}
 
 Optional sections: include only when supported by verified records. Use ## CERTIFICATIONS, ## PROJECTS, ## VOLUNTEER, ## LANGUAGES, ## AWARDS, or ## INTERESTS.
 
@@ -216,6 +235,8 @@ Full Name
 
 Section titles and aliases:
 ${COVER_LETTER_SECTION_LIST}
+
+${AI_FIELD_DEFINITIONS}
 
 RULES
 - Exactly one top-level # heading.
@@ -333,6 +354,8 @@ Full Name
 
 Supported cover letter section titles and aliases:
 ${COVER_LETTER_SECTION_LIST}
+
+${AI_FIELD_DEFINITIONS}
 
 FORMATTING RULES
 - Exactly one top-level # heading per document.
