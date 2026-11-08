@@ -11,15 +11,15 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.2.0.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.2.1.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.2.0). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.2.1). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
 OpenResume exists because document updates should not require an account, a subscription, or a web service that keeps a copy of your career history. You paste structured text — the kind ChatGPT or an AI assistant already produces — and OpenResume deterministically parses it into a precise resume or cover letter.
 
-Resumes offer ten designs: **Professional Two-Column** (the default), **ATS Simple**, **Executive**, **Modern Minimal**, **Classic**, **Creative**, **Compact**, **Academic**, **Contemporary**, and **Bold**. Browse them as a visual gallery, switch at any time, and keep every word of your content. Cover letters offer four coordinated styles: Classic, Modern, Executive, and Minimal. Everything supports live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
+Resumes offer ten genuinely distinct compositions: **Professional Two-Column** (the default), **ATS Simple**, **Executive**, **Modern Minimal**, **Classic**, **Creative**, **Compact**, **Academic**, **Contemporary**, and **Bold**. They differ in page arrangement, identity block, section-heading treatment, and entry layout — not only in type and colour. Browse them as compact thumbnails in the Format drawer, switch at any time, and keep every word of your content. Cover letters offer four coordinated styles: Classic, Modern, Executive, and Minimal. Everything supports live preview, formatting, reliable pagination, selectable-text PDF export, and editable DOCX export.
 
 ATS Simple keeps its linear reading order, table-free Word output, and single column. Other designs use richer typography and section treatments; no design can guarantee compatibility with a specific applicant tracking system.
 
@@ -54,7 +54,9 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Application Kit workflow** that builds both documents atomically, warns about cross-document inconsistencies, and preserves the previous documents if validation fails.
 - **Tabbed kit workspace** with accessible Resume and Cover Letter tabs, independent editing and formatting, and no duplicated document data.
 - **Deterministic parsing** — no model calls, no guessing, no content rewriting.
-- **Ten résumé designs**, browsable as an accessible gallery with locally rendered thumbnails. Switching designs preserves every section, entry, field, bullet, and formatting value, and both documents in a kit stay independent.
+- **Ten structurally distinct résumé designs**, browsable as compact proportional thumbnails in a docked Format drawer with **Designs** and **Formatting** tabs. Switching designs preserves every section, entry, field, bullet, and formatting value, and both documents in a kit stay independent.
+- **Defensive contact parsing** that classifies email, phone, and links by shape and refuses to accept a job title, employer, or headline as a location. Missing fields never shift later values, and rejected values surface as warnings.
+- **One explicit AI contact contract** shared by the résumé, cover-letter, and application-kit templates, with published examples for missing headlines, missing locations, missing phones, and multiple links.
 - **Four cover-letter styles** with an optional coordinated suggestion when a résumé design is chosen.
 - **Drag-and-drop and button-based section ordering**, always reflected in the editor, preview, PDF, and DOCX.
 - **Pagination controls** that keep headings with their first entry, keep entries together when they fit, and let any section start on a new page without creating blank pages.

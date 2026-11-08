@@ -146,3 +146,29 @@ describe('parseCoverLetter', () => {
     expect(coverLetter.body[0]).toBe('I build things — carefully, with Two  spaces.');
   });
 });
+
+describe('parseCoverLetter field placement', () => {
+  it('keeps a job title out of the location field when the headline is omitted', () => {
+    const { coverLetter } = parseCoverLetter(`# Jordan Avery
+jordan@example.com | +1 555 0142 | Senior Product Engineer | Toronto, ON
+
+## BODY
+I am applying for the role.
+`);
+
+    expect(coverLetter.applicant.headline).toBe('Senior Product Engineer');
+    expect(coverLetter.applicant.contact.location).toBe('Toronto, ON');
+  });
+
+  it('leaves an unverified location empty and warns', () => {
+    const { coverLetter, warnings } = parseCoverLetter(`# Jordan Avery
+jordan@example.com | +1 555 0142 | Senior Product Engineer
+
+## BODY
+I am applying for the role.
+`);
+
+    expect(coverLetter.applicant.contact.location).toBeUndefined();
+    expect(warnings.some((warning) => warning.includes('job title'))).toBe(true);
+  });
+});

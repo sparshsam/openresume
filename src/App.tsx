@@ -600,6 +600,7 @@ export default function App() {
               onPagination={handlePagination}
               onAccent={handleAccent}
               onReset={handleResetFormatting}
+              onClose={() => setFormattingOpen(false)}
               {...letterSuggestion}
             />
           ) : null}

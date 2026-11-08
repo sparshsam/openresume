@@ -3,6 +3,7 @@ import type { FontSpec } from './measure';
 export type BlockKind =
   | 'heading'
   | 'title'
+  | 'titleRow'
   | 'subtitle'
   | 'meta'
   | 'body'
@@ -24,6 +25,16 @@ export interface FlowLine {
   font: FontSpec;
   color: string;
   link?: string;
+  /** Vertical offset from the block's text top. Defaults to line index × line height. */
+  yOffsetPt?: number;
+}
+
+export interface FlowRect {
+  xOffsetPt: number;
+  yOffsetPt: number;
+  widthPt: number;
+  heightPt: number;
+  color: string;
 }
 
 export interface FlowBlock {
@@ -40,8 +51,20 @@ export interface FlowBlock {
   forcePageBreak?: boolean;
   /** Height of the keep-together unit that starts at this block, when enabled. */
   groupHeightPt?: number;
-  /** A rule drawn under the block's text, aligned with the column width. */
-  headingRule?: { color: string; widthPt: number };
+  /** Used instead of `lines.length × lineHeight` for multi-line single-row blocks. */
+  heightOverridePt?: number;
+  /** Left indent applied by DOCX; preview and PDF read the line offsets directly. */
+  indentLeftPt?: number;
+  /** Marks a title-and-metadata row so DOCX can lay it out with tab stops. */
+  rowLayout?: 'metaRight' | 'metaLeft';
+  /** Heading decoration consumed by DOCX paragraph borders and shading. */
+  decorKind?: string;
+  /** Horizontal alignment of the block's text. */
+  alignment?: 'left' | 'center';
+  /** Rectangles drawn relative to the block start. */
+  rules?: FlowRect[];
+  /** A filled rectangle drawn behind the block. */
+  band?: FlowRect;
 }
 
 export interface PlacedLine extends FlowLine {
@@ -49,13 +72,16 @@ export interface PlacedLine extends FlowLine {
   yPt: number;
 }
 
-export interface PlacedRule {
+export interface PlacedRect {
   xPt: number;
   yPt: number;
   widthPt: number;
-  thicknessPt: number;
+  heightPt: number;
   color: string;
 }
+
+export type PlacedRule = PlacedRect;
+export type PlacedBand = PlacedRect;
 
 export interface PlacedBlock {
   sectionId: string;
@@ -68,14 +94,34 @@ export interface PlacedBlock {
   lineHeightPt: number;
   lines: PlacedLine[];
   rule?: PlacedRule;
+  rules?: PlacedRule[];
+  band?: PlacedBand;
+  rowLayout?: 'metaRight' | 'metaLeft';
+  decorKind?: string;
+  alignment?: 'left' | 'center';
+  indentLeftPt?: number;
 }
 
 export interface PaginateOptions {
   keepEntriesTogether?: boolean;
 }
 
+function textHeight(block: FlowBlock): number {
+  return block.heightOverridePt ?? block.lines.length * block.lineHeightPt;
+}
+
+function placeRect(rect: FlowRect, xPt: number, yPt: number): PlacedRect {
+  return {
+    xPt: xPt + rect.xOffsetPt,
+    yPt: yPt + rect.yOffsetPt,
+    widthPt: rect.widthPt,
+    heightPt: rect.heightPt,
+    color: rect.color,
+  };
+}
+
 export function blockHeight(block: FlowBlock): number {
-  return block.spaceBeforePt + block.lines.length * block.lineHeightPt + block.spaceAfterPt;
+  return block.spaceBeforePt + textHeight(block) + block.spaceAfterPt;
 }
 
 export function paginateColumn(
@@ -99,7 +145,8 @@ export function paginateColumn(
 
   const place = (block: FlowBlock, spaceBeforePt: number, spaceAfterPt: number) => {
     const yPt = usedPt + spaceBeforePt;
-    const textBottomPt = yPt + block.lines.length * block.lineHeightPt;
+    const heightPt = textHeight(block);
+    const rules: PlacedRule[] = (block.rules ?? []).map((rect) => placeRect(rect, 0, yPt));
     const placed: PlacedBlock = {
       sectionId: block.sectionId,
       itemId: block.itemId,
@@ -107,22 +154,20 @@ export function paginateColumn(
       xPt: 0,
       yPt,
       widthPt: columnWidthPt,
-      heightPt: spaceBeforePt + block.lines.length * block.lineHeightPt + spaceAfterPt,
+      heightPt: spaceBeforePt + heightPt + spaceAfterPt,
       lineHeightPt: block.lineHeightPt,
       lines: block.lines.map((line, index) => ({
         ...line,
         xPt: line.xOffsetPt,
-        yPt: yPt + index * block.lineHeightPt,
+        yPt: yPt + (line.yOffsetPt ?? index * block.lineHeightPt),
       })),
-      rule: block.headingRule
-        ? {
-            xPt: 0,
-            yPt: textBottomPt + 1.5,
-            widthPt: columnWidthPt,
-            thicknessPt: block.headingRule.widthPt,
-            color: block.headingRule.color,
-          }
-        : undefined,
+      rule: rules[0],
+      rules: rules.length > 0 ? rules : undefined,
+      band: block.band ? placeRect(block.band, 0, yPt) : undefined,
+      rowLayout: block.rowLayout,
+      decorKind: block.decorKind,
+      alignment: block.alignment,
+      indentLeftPt: block.indentLeftPt,
     };
     current.push(placed);
     usedPt += placed.heightPt;
@@ -152,13 +197,13 @@ export function paginateColumn(
     for (;;) {
       const spaceBeforePt = firstChunk ? block.spaceBeforePt : 0;
       const spaceAfterPt = block.spaceAfterPt;
-      const neededPt = spaceBeforePt + block.lines.length * block.lineHeightPt + spaceAfterPt;
+      const neededPt = spaceBeforePt + textHeight(block) + spaceAfterPt;
       const availablePt = capacityPt - usedPt;
 
       const next = blocks[index + 1];
       const keepWithNextPt =
         block.keepWithNext && next
-          ? next.spaceBeforePt + Math.min(next.lines.length, 2) * next.lineHeightPt
+          ? next.spaceBeforePt + Math.min(textHeight(next), 2 * next.lineHeightPt)
           : 0;
 
       if (neededPt + keepWithNextPt <= availablePt) {
@@ -176,14 +221,29 @@ export function paginateColumn(
         Math.max(0, availablePt - spaceBeforePt) / block.lineHeightPt,
       );
 
-      if (block.splittable && linesThatFit >= 1 && linesThatFit < block.lines.length) {
+      if (
+        block.splittable &&
+        !block.heightOverridePt &&
+        linesThatFit >= 1 &&
+        linesThatFit < block.lines.length
+      ) {
         const chunk: FlowBlock = {
           ...block,
           lines: block.lines.slice(0, linesThatFit),
           spaceAfterPt: 0,
+          rules: block.rules,
+          band: block.band,
         };
         place(chunk, spaceBeforePt, 0);
-        block = { ...block, lines: block.lines.slice(linesThatFit), spaceBeforePt: 0 };
+        block = {
+          ...block,
+          lines: block.lines.slice(linesThatFit),
+          spaceBeforePt: 0,
+          rules: undefined,
+          band: undefined,
+          rowLayout: undefined,
+          indentLeftPt: block.indentLeftPt,
+        };
         firstChunk = false;
         startPage();
         continue;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AI_CONTACT_LINE_EXAMPLES,
   AI_FIELD_DEFINITIONS,
   APPLICATION_KIT_AI_EXAMPLE,
   APPLICATION_KIT_AI_INSTRUCTIONS,
@@ -10,6 +11,7 @@ import {
   getAiInstructions,
 } from '../src/lib/aiInstructions';
 import { APPLICATION_KIT_SAMPLE_TEXT } from '../src/lib/applicationKitSample';
+import { parseContactLine } from '../src/lib/contact';
 import { parseApplicationKit } from '../src/lib/parseApplicationKit';
 import { COVER_LETTER_SECTION_ALIASES, parseCoverLetter } from '../src/lib/parseCoverLetter';
 import { RESUME_SECTION_ALIASES, parseResume } from '../src/lib/parse';
@@ -217,5 +219,63 @@ describe('instruction examples keep locations geographic', () => {
     }
     expect(result.resume.contact.location).toBe('Toronto, ON');
     expect(result.resume.header.headline).toBe('Product-minded software generalist');
+  });
+});
+
+describe('AI contact-line contract', () => {
+  it('names every contact-field role explicitly', () => {
+    for (const role of [
+      'Professional headline',
+      'Target job title',
+      'Employment job title',
+      'Employer name',
+      'Geographic location',
+    ]) {
+      expect(AI_FIELD_DEFINITIONS).toContain(role);
+    }
+  });
+
+  it('requires absent fields to be omitted instead of shifting other values', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/OMIT THE PART ENTIRELY/i);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Never leave an empty "\\|" slot/i);
+    expect(AI_FIELD_DEFINITIONS).toMatch(/do not substitute a different value/i);
+  });
+
+  it('forbids titles, employers, and headlines in location slots', () => {
+    expect(AI_FIELD_DEFINITIONS).toMatch(/never place these in a location slot/i);
+    expect(AI_FIELD_DEFINITIONS).toContain('Senior Product Engineer');
+    expect(AI_FIELD_DEFINITIONS).toContain('Professional headline');
+    expect(AI_FIELD_DEFINITIONS).toMatch(/Never infer a location/i);
+  });
+
+  it('ships contact-line examples for missing headline, missing location, and multiple links', () => {
+    expect(AI_CONTACT_LINE_EXAMPLES.length).toBeGreaterThanOrEqual(4);
+    for (const line of AI_CONTACT_LINE_EXAMPLES) {
+      expect(AI_FIELD_DEFINITIONS).toContain(line);
+    }
+    const parsed = AI_CONTACT_LINE_EXAMPLES.map((line) => parseContactLine(line));
+    expect(parsed.some((entry) => entry.headline === undefined)).toBe(true);
+    expect(parsed.some((entry) => entry.contact.location === undefined)).toBe(true);
+    expect(parsed.some((entry) => entry.contact.links.length >= 2)).toBe(true);
+    for (const entry of parsed) {
+      expect(entry.contact.location).not.toBe('Senior Product Engineer');
+    }
+  });
+
+  it('places the same canonical contract in all three templates', () => {
+    for (const instructions of [
+      RESUME_AI_INSTRUCTIONS,
+      COVER_LETTER_AI_INSTRUCTIONS,
+      APPLICATION_KIT_AI_INSTRUCTIONS,
+    ]) {
+      expect(instructions).toContain('Professional Headline | email | phone | Location | Link');
+      expect(instructions).toContain(AI_FIELD_DEFINITIONS);
+    }
+  });
+
+  it('distinguishes the target job title from the employment job title in both prose templates', () => {
+    expect(RESUME_AI_INSTRUCTIONS).toMatch(/target job title never appears in the contact line/i);
+    expect(COVER_LETTER_AI_INSTRUCTIONS).toMatch(/POSITION contains the target job title/i);
+    expect(APPLICATION_KIT_AI_INSTRUCTIONS).toMatch(/POSITION contains the target job title/i);
   });
 });

@@ -100,7 +100,8 @@ describe('resume template switching', () => {
     expect(headingBlocks.length).toBeGreaterThan(0);
     for (const heading of headingBlocks) {
       expect(heading.lines[0].font.family).toBe(design.fontFamily);
-      expect(Boolean(heading.rule)).toBe(design.heading.rule !== 'none');
+      const decorated = Boolean(heading.band) || (heading.rules?.length ?? 0) > 0;
+      expect(decorated).toBe(design.heading.decor !== 'none');
     }
   });
 
@@ -118,7 +119,7 @@ describe('resume template switching', () => {
           design.header.ruleWidthPt,
           header?.name.font.sizePt.toFixed(2),
           design.heading.letterSpacingPt,
-          design.heading.rule,
+          design.heading.decor,
           design.heading.scale,
           design.body.scale,
           design.body.lineScale,
@@ -152,6 +153,14 @@ describe('resume template switching', () => {
     expect(resume.sections.map((section) => `${section.id}:${section.column}`)).toEqual(
       storedColumns,
     );
+
+    // Sidebar designs reinterpret the stored columns without rewriting them.
+    for (const layoutId of ['creative', 'compact', 'contemporary', 'academic'] as const) {
+      layoutResume(withLayout(resume, layoutId));
+      expect(resume.sections.map((section) => `${section.id}:${section.column}`)).toEqual(
+        storedColumns,
+      );
+    }
   });
 
   it('switching designs never changes the underlying document model', () => {

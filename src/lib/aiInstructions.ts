@@ -28,21 +28,67 @@ const RESUME_LIST_SECTIONS = [...LIST_KINDS].map((kind) => kind.toUpperCase()).j
 const FENCE = '```';
 
 /**
+ * Contact-line examples copied into every template. They are parsed by the
+ * real parser in the test suite, so an example can never drift from the
+ * behaviour it documents.
+ */
+export const AI_CONTACT_LINE_EXAMPLES = [
+  'Product-minded software generalist | jordan.avery@example.com | +1 555 0142 | Toronto, ON | linkedin.com/in/jordanavery',
+  'jordan.avery@example.com | +1 555 0142 | Toronto, ON',
+  'Product-minded software generalist | jordan.avery@example.com | +1 555 0142',
+  'jordan.avery@example.com | linkedin.com/in/jordanavery | github.com/jordanavery',
+  'Product-minded software generalist | jordan.avery@example.com | +1 555 0142 | Remote (Canada) | linkedin.com/in/jordanavery | github.com/jordanavery',
+];
+
+/**
  * Shared by all three templates so the parser-facing definitions of the
  * applicant's identity fields cannot drift between document kinds.
  */
 export const AI_FIELD_DEFINITIONS = `FIELD DEFINITIONS
-These four fields are distinct and are never interchangeable.
+These five roles are distinct and are never interchangeable.
 - Professional headline: a short self-description of the applicant (for example "Product-minded software generalist"). It appears only as the first part of the contact line under the applicant's name. It is not an employer name, job title, or location.
-- Job title: the exact role held at one employer (for example "Senior Product Engineer"). It appears only after "—" in an entry heading: "### Employer Name — Job Title".
+- Target job title: the role the applicant is applying for. It appears only in the cover letter POSITION section, or inside cover letter prose. It never appears in the contact line or a location slot.
+- Employment job title: the exact role held at one employer (for example "Senior Product Engineer"). It appears only after "—" in an entry heading: "### Employer Name — Job Title".
+- Job title: either the target job title (POSITION) or the employment job title (after "—"). The two are never interchangeable.
 - Employer name: the organization where the role was held. It appears only before "—" in that entry heading.
-- Geographic location: a verified city and region or country (for example "Toronto, ON"), or an explicitly confirmed work arrangement such as "Remote", "Hybrid", "On-site", or "Online". It appears only in a location slot: the last part of the contact line, or the part after "|" in an entry metadata line.
+- Geographic location: a verified geographic location (a verified city and region or country, for example "Toronto, ON"), or an explicitly confirmed work arrangement such as "Remote", "Hybrid", "On-site", or "Online". It appears only in a location slot: the last non-link part of the contact line, or the part after "|" in an entry metadata line.
 
-LOCATION RULES
+CONTACT LINE CONTRACT
+The contact line is one line directly under "# Full Name". Its slots are, in this exact order:
+Professional Headline | email | phone | Location | Link | Link
+- Separate each part with "|". Do not add labels such as "Email:" or "Location:".
+- Every part after the name is optional. When a value is unavailable, OMIT THE PART ENTIRELY. Never leave an empty "|" slot and do not substitute a different value.
+- The headline is always the first part when present.
+- The email, phone, and links are recognised by their own format; they may be omitted without shifting the values that follow.
+- The location is always the last part when present, before any links.
+- Write at most one professional headline. Never repeat the target job title after the phone number.
 - Never put a job title, employer name, or professional headline in a location slot.
-- If no verified geographic location is available, omit the location entirely. Write only the date range on an entry metadata line, for example "2022 – Present". Do not add a "|" part.
-- Never infer or fabricate a location from an employer name, job title, or job description.
-- Contact line order is fixed: "Professional Headline | email | phone | location". The headline is always the first part when present; the location is always the last part when present. Omit a field instead of filling its slot with a different field.`;
+
+LOCATION VALIDATION
+Valid location values:
+- A verified city with a region or country: "Toronto, ON", "Vancouver, British Columbia", "Berlin, Germany".
+- A confirmed work arrangement: "Remote", "Hybrid", "On-site", "Online", "Remote (Canada)".
+Invalid location values (never place these in a location slot):
+- "Senior Product Engineer" — an employment or target job title.
+- "Product-minded software generalist" — a professional headline.
+- "Brightline Labs" — an employer name.
+- An address, a phone country code, or a time zone guessed from another field.
+Never infer a location from an employer name, job title, job description, phone country code, or time zone. If no verified location exists, omit the location entirely and write no location part at all.
+
+ENTRY METADATA
+An entry metadata line follows its "### Employer Name — Job Title" heading and uses this shape:
+Month Year – Month Year | City, Province
+- Write only the date range when the location is unverified: "2022 – Present".
+- Never write a job title, employer name, or professional headline after "|".
+- Never invent a date or location to fill a slot.
+
+CONTACT LINE EXAMPLES
+Each line below is exactly what belongs under "# Full Name". It is not a label list.
+${AI_CONTACT_LINE_EXAMPLES.map((line, index) => `${index + 1}. ${line}`).join('\n')}
+- Example 2 has no professional headline.
+- Example 3 has no location.
+- Example 4 has no phone and no location, and keeps two links.
+- Example 5 keeps a confirmed remote arrangement and two links.`;
 
 export const RESUME_AI_EXAMPLE = `${FENCE}text
 # Jordan Avery
@@ -119,7 +165,7 @@ The fence is only a delivery container and is NOT part of the document content. 
 Inside the code block, use this structure. Replace the example values with the applicant's verified information:
 
 # Full Name
-Professional Headline | email | phone | location
+Professional Headline | email | phone | Location | Link
 
 ## SUMMARY
 A concise, job-specific professional summary.
@@ -146,6 +192,7 @@ ${AI_FIELD_DEFINITIONS}
 Optional sections: include only when supported by verified records. Use ## CERTIFICATIONS, ## PROJECTS, ## VOLUNTEER, ## LANGUAGES, ## AWARDS, or ## INTERESTS.
 
 IMPORTANT
+- The target job title never appears in the contact line. A professional headline may equal the employment job title, but it appears only as the first part of the contact line.
 - Confirm the exact supported headings and entry syntax against this template; it is generated from the parser that reads the document.
 - Generate examples and instructions directly from parser-supported aliases.
 - Do not create unsupported formatting requirements.
@@ -204,7 +251,7 @@ The fence is only a delivery container and is NOT part of the document content. 
 Inside the code block, use this structure:
 
 # Full Name
-Headline (optional) | email | phone | location | link
+Professional Headline | email | phone | Location | Link
 
 ## DATE
 October 18, 2026
@@ -241,6 +288,7 @@ ${AI_FIELD_DEFINITIONS}
 RULES
 - Exactly one top-level # heading.
 - The next non-empty line is the contact line. Separate its parts with "|".
+- POSITION contains the target job title. It must never appear in the contact line or a location slot.
 - Major sections begin with ##. Put one detail per line in RECIPIENT.
 - BODY contains the letter paragraphs. Separate paragraphs with a blank line. Use natural paragraphs, never bullets.
 - Required content is the applicant's name and at least one BODY paragraph. DATE, RECIPIENT, POSITION, SALUTATION, CLOSING, SIGNATURE, and the contact line are optional; include them only when the applicant provides the information.
@@ -294,7 +342,7 @@ RESUME SECTION
 Use this structure after the resume delimiter:
 
 # Full Name
-Professional Headline | email | phone | location
+Professional Headline | email | phone | Location | Link
 
 ## SUMMARY
 A concise, job-specific professional summary.
@@ -323,7 +371,7 @@ COVER LETTER SECTION
 Use this structure after the cover letter delimiter:
 
 # Full Name
-Headline (optional) | email | phone | location | link
+Professional Headline | email | phone | Location | Link
 
 ## DATE
 October 18, 2026
@@ -359,6 +407,8 @@ ${AI_FIELD_DEFINITIONS}
 
 FORMATTING RULES
 - Exactly one top-level # heading per document.
+- POSITION contains the target job title. It must never appear in the contact line or a location slot.
+- The professional headline may equal the employment job title, but it appears only as the first part of the contact line.
 - Major sections begin with ##.
 - Entries begin with ###.
 - Bullets begin with "- ".

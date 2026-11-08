@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] — 2026-11-08
+
+### Added
+
+- **Eight genuinely redesigned résumé compositions.** Executive, Modern Minimal, Classic, Creative, Compact, Academic, Contemporary, and Bold now differ structurally, not just in type and colour: centered or split or banner identity blocks, left and right tinted rails, bar and filled and framed section headings, dates aligned beside titles, and an academic date gutter. Professional Two-Column and ATS Simple are unchanged.
+- **Structural design primitives.** A design now declares a page arrangement (`linear`, `balanced`, `sidebarLeft`, `sidebarRight`), an identity variant (`stacked`, `centered`, `split`, `banner`, `compact`), a section-heading decoration (`none`, `underline`, `trailing`, `bar`, `fill`, `topRule`, `boxed`), an entry layout (`stacked`, `titleRow`, `gutter`), and a sidebar tint/divider. The layout resolves these into the same absolute-positioned block model consumed by the preview, PDF, and DOCX.
+- **Compact Format workspace drawer.** **Format** now opens a fixed, non-modal drawer with **Designs** and **Formatting** tabs instead of pushing an oversized gallery into the page. Designs are shown as compact, proportional SVG thumbnails in a responsive grid; formatting controls are grouped under Page, Typography, and Spacing, with a persistent reset footer. The drawer closes with its button or Escape, restores focus to the Format button, supports arrow-key tab navigation, and becomes a full-screen sheet under 720 px. The résumé preview stays visible while designs are browsed.
+- **Defensive contact-line parsing.** Email, phone, and links are classified by shape, so an omitted field never shifts later values. Free text is accepted as a location only when it validates as a verified geographic place or confirmed arrangement and does not read as a job title, employer, or professional headline. Entry metadata after `|` is validated the same way. Rejected values produce warnings instead of silently occupying Location.
+- **An explicit AI contact contract.** All three templates share five field roles (professional headline, target job title, employment job title, employer, geographic location), one canonical contact-line structure, an omit-the-part rule, valid and invalid location examples, and five published examples covering a missing headline, missing location, missing phone, and multiple links.
+- **Regression coverage** for malformed AI résumés, cover letters, and application kits; structural composition and content preservation across all ten designs; thumbnail accuracy; PDF/DOCX rendering of bands, rules, gutters, and tab-aligned rows; and the Format drawer.
+
+### Fixed
+
+- Contact parsing now accepts comma-free regional locations (`Toronto ON`, `New York NY`, `Toronto ON M5V 2T6`), three-part addresses (`New York, NY, USA`), phone extensions, slash-separated phone numbers, and modern domains such as `.ai`. Additional emails and phones are ignored with a warning instead of leaking into the professional headline.
+- Entry metadata validation rejects a much wider set of employment titles (`Scrum Master`, `Copywriter`, `Social Worker`, `Barista`, `Construction Worker`, `Line Cook`) and employer names, while still accepting legitimate places that contain role-like words (`Research Triangle Park, NC`).
+- DOCX accent-bar headings use a valid OOXML border size; academic gutter rows no longer apply the gutter offset twice; wrapped section headings and long identity names fit their columns; and sidebar dividers align with the tint edge in the preview, PDF, and Word output.
+- The Format drawer returns focus to the Format button only after a user-initiated close, so switching kit tabs keeps focus on the tab that was activated.
+
+### Changed
+
+- Contact and entry location warnings now appear in the build warnings shown after preparation.
+- The design registry exposes arrangement, header, heading, entry, and sidebar traits. Cover-letter styles keep their existing four treatments.
+- Version bumped to 0.2.1.
+
+### Tests
+
+- 551 tests across 38 files, including the new `aiFieldPlacement`, `designComposition`, `designThumbnail`, `exportDesigns`, and `formattingDrawer` suites.
+
 ## [0.2.0] — 2026-11-02
 
 ### Added

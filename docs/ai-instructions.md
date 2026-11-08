@@ -41,16 +41,46 @@ The combined parser validates both sections before any document is replaced. Mis
 
 ## Identity fields and locations
 
-All three templates include one shared definition block so the assistant cannot confuse the applicant's identity fields. The block distinguishes:
+All three templates include one shared definition block so the assistant cannot confuse the applicant's identity fields. The block distinguishes five roles:
 
 - **Professional headline** — the applicant's short self-description on the contact line under their name. It is never an employer, job title, or location.
-- **Job title** — the role held at one employer, written only after the `—` in a `### Employer Name — Job Title` entry heading.
+- **Target job title** — the role the applicant is applying for. It appears only in the cover letter `POSITION` section (or in letter prose), never in the contact line.
+- **Employment job title** — the role held at one employer, written only after the `—` in a `### Employer Name — Job Title` entry heading.
 - **Employer name** — the organization where the role was held, written only before the `—` in that heading.
-- **Geographic location** — a verified city and region/country (`Toronto, ON`), or an explicitly confirmed arrangement (`Remote`, `Hybrid`, `On-site`, or `Online`). It appears only in a location slot: the last part of the contact line, or the part after `|` in an entry metadata line.
+- **Geographic location** — a verified city and region/country (`Toronto, ON`), or an explicitly confirmed arrangement (`Remote`, `Hybrid`, `On-site`, `Online`, `Remote (Canada)`). It appears only in a location slot: the last non-link part of the contact line, or the part after `|` in an entry metadata line.
 
-The same block states that a job title, employer, or headline must never fill a location slot; that an unverified location must be omitted entirely; and that the contact-line order is fixed (`Professional Headline | email | phone | location`). When an entry has no verified location, the metadata line carries only the date range (`2022 – Present`), which the parser reads as a date range with no location — no fabricated value is introduced.
+### Contact-line contract
 
-The block is the exported `AI_FIELD_DEFINITIONS` constant in [`src/lib/aiInstructions.ts`](../src/lib/aiInstructions.ts), and `tests/aiInstructions.test.ts` fails if any template stops including it.
+All three templates use one canonical structure:
+
+```text
+Professional Headline | email | phone | Location | Link | Link
+```
+
+- Every part after the name is optional. If a value is unavailable, omit the part entirely. Never leave an empty `|` slot and never substitute another value.
+- The headline is always the first part when present; the location is always the last part before links.
+- A professional headline may equal the employment job title, but the target job title never appears in the contact line.
+- Never place a job title, employer, or professional headline in a location slot.
+
+### Location validation
+
+Valid location values are a verified city with a region or country (`Toronto, ON`, `Vancouver, British Columbia`, `Berlin, Germany`) or a confirmed work arrangement (`Remote`, `Hybrid`, `On-site`, `Remote (Canada)`). The templates explicitly mark job titles, headlines, employer names, addresses, and inferred locations as invalid, and instruct the assistant never to infer a location from an employer name, job title, phone country code, time zone, or job description. When no verified location exists, the contact line carries no location part and an entry metadata line carries only its date range (`2022 – Present`).
+
+### Published examples
+
+`AI_CONTACT_LINE_EXAMPLES` in [`src/lib/aiInstructions.ts`](../src/lib/aiInstructions.ts) contains the five real examples copied into every template:
+
+1. Full contact line with headline, email, phone, location, and one link.
+2. No headline.
+3. No location.
+4. No phone and no location, with two links.
+5. A confirmed remote arrangement with two links.
+
+`tests/aiInstructions.test.ts` and `tests/aiFieldPlacement.test.ts` parse every example with the real parser, so an example cannot drift from parser behaviour. The same tests feed realistic malformed résumé, cover-letter, and application-kit output and assert that a missing headline or location never moves a job title into the Location field.
+
+The parser side is also defensive: email, phone, and links are recognised by pattern, and a geographic value is accepted only when it validates as a place or confirmed arrangement and does not read as a role. Entry metadata after `|` is validated the same way. A rejected value produces a warning instead of silently landing in the wrong field.
+
+The shared block is the exported `AI_FIELD_DEFINITIONS` constant, and `tests/aiInstructions.test.ts` fails if any template stops including it.
 
 ## Workflow
 

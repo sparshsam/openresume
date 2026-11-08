@@ -103,13 +103,23 @@ TypeScript, React, Vite
 
 ## Contact line
 
-Parts are separated by `|` and classified in order:
+The single line directly under `# Name` uses this order:
+
+```text
+Professional Headline | email | phone | Location | Link | Link
+```
+
+Every part after the name is optional. When a value is unavailable, omit the part entirely; never leave an empty slot and never substitute another field.
+
+Each part is classified by its own shape, not by its position:
 
 1. Contains `@` → email.
 2. Phone-shaped → phone.
-3. URL-shaped (`https://`, `www.`, or `domain.tld/path`) → link.
-4. Before any contact detail → headline.
-5. Otherwise → location, or headline if location is already set.
+3. URL-shaped (`https://`, `www.`, or a known `domain.tld/path`) → link.
+4. Free text that reads as a verified geographic location or a confirmed work arrangement → location. Examples: `Toronto, ON`, `Vancouver, British Columbia`, `Berlin, Germany`, `New York, NY`, `Toronto ON`, `New York, NY, USA`, `Remote`, `Hybrid`, `On-site`, `Remote (Canada)`, `Toronto (Remote)`.
+5. Remaining free text → professional headline.
+
+The parser validates the location slot instead of trusting it. A value that reads as a job title, employer, or professional headline (`Senior Product Engineer`, `Product-minded software generalist`, `Brightline Labs`) is never accepted as a location. If the final contact value is title-like, it is kept as the headline (or appended to an existing headline) and a warning is emitted; the location remains empty. Because email, phone, and links are pattern-matched, a missing field never shifts a later value into the wrong field. A second email or phone is ignored with a warning rather than becoming headline text.
 
 Links are displayed by their label and exported with an `https://` scheme when one is missing.
 
@@ -140,8 +150,10 @@ The line immediately after a `###` header may be metadata:
 ```
 
 - Two or more parts → first is the date range, the rest form the location.
+- If the value after `|` reads as a job title or professional headline, it is rejected as a location with a warning; the date range is kept.
 - One part containing a year, month, `Present`, or `Current` → date range.
 - One part without a date → location.
+- A missing location is written as a date-only line (`2022 – Present`); no value is fabricated or borrowed from another field.
 
 A metadata line is recognised only before the entry has body text or bullets.
 

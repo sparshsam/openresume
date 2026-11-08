@@ -78,8 +78,8 @@ export function Header({
                 className="button"
                 aria-expanded={formattingOpen}
                 aria-controls="formatting-panel"
-                aria-label="Formatting"
-                title="Document formatting"
+                aria-label={formattingOpen ? 'Close formatting' : 'Formatting'}
+                title={formattingOpen ? 'Close document formatting' : 'Document formatting'}
                 onClick={onToggleFormatting}
               >
                 <Icon name="sliders" />

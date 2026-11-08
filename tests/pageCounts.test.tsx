@@ -58,6 +58,7 @@ describe('live page counts', () => {
     expect(within(banner).getByText('1 page')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     expect(within(screen.getByRole('banner')).getByText('2 pages')).toBeInTheDocument();
@@ -71,6 +72,7 @@ describe('live page counts', () => {
     renderApp();
     await build(user, 'resume');
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     const pageLabel = () =>
@@ -107,6 +109,7 @@ describe('live page counts', () => {
     expect(screen.getByText('Resume: 1 page | Cover Letter: 1 page')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
     expect(screen.getByText('Resume: 2 pages | Cover Letter: 1 page')).toBeInTheDocument();
 

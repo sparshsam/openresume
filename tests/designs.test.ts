@@ -42,12 +42,61 @@ describe('resume design registry', () => {
         scale: 1,
         letterSpacingPt: 0,
         color: 'accent',
-        rule: 'none',
+        decor: 'none',
       });
       expect(design.body).toMatchObject({ scale: 1, lineScale: 1, bulletChar: '•' });
     }
     expect(resolveResumeDesign('twoColumn').columns).toBe(2);
+    expect(resolveResumeDesign('twoColumn').arrangement).toBe('balanced');
+    expect(resolveResumeDesign('twoColumn').header.variant).toBe('stacked');
+    expect(resolveResumeDesign('twoColumn').item.layout).toBe('stacked');
     expect(resolveResumeDesign('atsSimple').columns).toBe(1);
+    expect(resolveResumeDesign('atsSimple').arrangement).toBe('linear');
+  });
+
+  it('derives the column count from the arrangement', () => {
+    for (const design of RESUME_DESIGNS) {
+      expect(design.columns, design.id).toBe(design.arrangement === 'linear' ? 1 : 2);
+    }
+  });
+
+  it('gives every design a distinct structural composition', () => {
+    const signatures = new Set(
+      RESUME_DESIGNS.map((design) =>
+        [
+          design.arrangement,
+          design.header.variant,
+          design.heading.decor,
+          design.item.layout,
+          design.sidebar.tint,
+          design.fontFamily,
+        ].join('|'),
+      ),
+    );
+    expect(signatures.size).toBe(RESUME_DESIGNS.length);
+  });
+
+  it('uses genuinely different arrangements, headers, headings, and entry layouts', () => {
+    expect(new Set(RESUME_DESIGNS.map((design) => design.arrangement)).size).toBeGreaterThanOrEqual(
+      3,
+    );
+    expect(
+      new Set(RESUME_DESIGNS.map((design) => design.header.variant)).size,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      new Set(RESUME_DESIGNS.map((design) => design.heading.decor)).size,
+    ).toBeGreaterThanOrEqual(5);
+    expect(new Set(RESUME_DESIGNS.map((design) => design.item.layout)).size).toBe(3);
+  });
+
+  it('keeps the original designs free of sidebar tint and structural decoration', () => {
+    for (const id of ORIGINAL_LAYOUTS) {
+      const design = resolveResumeDesign(id);
+      expect(design.sidebar.tint).toBe('none');
+      expect(design.sidebar.divider).toBe(false);
+      expect(design.heading.decor).toBe('none');
+      expect(design.item.layout).toBe('stacked');
+    }
   });
 
   it('offers both single- and two-column designs and both font families', () => {
