@@ -54,6 +54,12 @@ describe('resume design registry', () => {
     expect(resolveResumeDesign('atsSimple').arrangement).toBe('linear');
   });
 
+  it('derives the column count from the arrangement', () => {
+    for (const design of RESUME_DESIGNS) {
+      expect(design.columns, design.id).toBe(design.arrangement === 'linear' ? 1 : 2);
+    }
+  });
+
   it('gives every design a distinct structural composition', () => {
     const signatures = new Set(
       RESUME_DESIGNS.map((design) =>
@@ -74,12 +80,12 @@ describe('resume design registry', () => {
     expect(new Set(RESUME_DESIGNS.map((design) => design.arrangement)).size).toBeGreaterThanOrEqual(
       3,
     );
-    expect(new Set(RESUME_DESIGNS.map((design) => design.header.variant)).size).toBeGreaterThanOrEqual(
-      4,
-    );
-    expect(new Set(RESUME_DESIGNS.map((design) => design.heading.decor)).size).toBeGreaterThanOrEqual(
-      5,
-    );
+    expect(
+      new Set(RESUME_DESIGNS.map((design) => design.header.variant)).size,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      new Set(RESUME_DESIGNS.map((design) => design.heading.decor)).size,
+    ).toBeGreaterThanOrEqual(5);
     expect(new Set(RESUME_DESIGNS.map((design) => design.item.layout)).size).toBe(3);
   });
 

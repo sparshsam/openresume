@@ -275,9 +275,7 @@ describe('AI contact-line contract', () => {
 
   it('distinguishes the target job title from the employment job title in both prose templates', () => {
     expect(RESUME_AI_INSTRUCTIONS).toMatch(/target job title never appears in the contact line/i);
-    expect(COVER_LETTER_AI_INSTRUCTIONS).toMatch(
-      /POSITION contains the target job title/i,
-    );
+    expect(COVER_LETTER_AI_INSTRUCTIONS).toMatch(/POSITION contains the target job title/i);
     expect(APPLICATION_KIT_AI_INSTRUCTIONS).toMatch(/POSITION contains the target job title/i);
   });
 });

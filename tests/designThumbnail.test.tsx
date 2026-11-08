@@ -4,9 +4,7 @@ import { DesignThumbnail } from '../src/components/DesignThumbnail';
 import { COVER_LETTER_STYLES, RESUME_DESIGNS, resolveResumeDesign } from '../src/lib/designs';
 
 function renderResume(id: (typeof RESUME_DESIGNS)[number]['id']): SVGSVGElement {
-  const { container } = render(
-    <DesignThumbnail kind="resume" design={resolveResumeDesign(id)} />,
-  );
+  const { container } = render(<DesignThumbnail kind="resume" design={resolveResumeDesign(id)} />);
   const svg = container.querySelector('svg.design-thumb');
   if (!svg) throw new Error(`missing thumbnail for ${id}`);
   return svg as SVGSVGElement;
@@ -33,7 +31,15 @@ describe('design thumbnails', () => {
       expect(tints.length, id).toBeGreaterThan(0);
     }
 
-    for (const id of ['twoColumn', 'atsSimple', 'executive', 'modernMinimal', 'classic', 'academic', 'bold'] as const) {
+    for (const id of [
+      'twoColumn',
+      'atsSimple',
+      'executive',
+      'modernMinimal',
+      'classic',
+      'academic',
+      'bold',
+    ] as const) {
       const svg = renderResume(id);
       const tints = [...svg.querySelectorAll('rect')].filter((rect) =>
         ['#e7efe8', '#f2f4f0'].includes(rect.getAttribute('fill') ?? ''),
@@ -58,14 +64,15 @@ describe('design thumbnails', () => {
   it('draws heading decorations that match the registry', () => {
     const bold = renderResume('bold');
     const boldHeadingBands = [...bold.querySelectorAll('rect')].filter(
-      (rect) => rect.getAttribute('fill') === '#14532d' && Number(rect.getAttribute('height')) === 6,
+      (rect) =>
+        rect.getAttribute('fill') === '#14532d' && Number(rect.getAttribute('height')) === 6,
     );
     expect(boldHeadingBands.length).toBeGreaterThan(0);
 
     const modern = renderResume('modernMinimal');
-    expect([...modern.querySelectorAll('rect')].some((rect) => rect.getAttribute('fill') === '#9aa39a')).toBe(
-      true,
-    );
+    expect(
+      [...modern.querySelectorAll('rect')].some((rect) => rect.getAttribute('fill') === '#9aa39a'),
+    ).toBe(true);
 
     const academic = renderResume('academic');
     const gutterDates = [...academic.querySelectorAll('rect')].filter(

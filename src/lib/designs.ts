@@ -45,8 +45,7 @@ export type ResumeArrangement = 'linear' | 'balanced' | 'sidebarRight' | 'sideba
 export type HeaderVariant = 'stacked' | 'centered' | 'split' | 'banner' | 'compact';
 
 /** How a section heading is decorated. */
-export type HeadingDecor =
-  'none' | 'underline' | 'trailing' | 'bar' | 'fill' | 'topRule' | 'boxed';
+export type HeadingDecor = 'none' | 'underline' | 'trailing' | 'bar' | 'fill' | 'topRule' | 'boxed';
 
 /** How an entry's title, dates, and location are arranged. */
 export type ItemLayout = 'stacked' | 'titleRow' | 'gutter';
@@ -198,22 +197,20 @@ const IDENTITY_BODY: BodyDesign = {
   bulletAfterScale: 1,
 };
 
-function design(
-  traits: {
-    id: ResumeLayoutId;
-    name: string;
-    description: string;
-    suggestedLetterStyle: CoverLetterStyleId;
-    columns: 1 | 2;
-    arrangement: ResumeArrangement;
-    fontFamily: FontFamily;
-    header: Partial<HeaderDesign>;
-    heading: Partial<HeadingDesign>;
-    item?: Partial<ItemDesign>;
-    body?: Partial<BodyDesign>;
-    sidebar?: Partial<SidebarDesign>;
-  },
-): ResumeDesign {
+function design(traits: {
+  id: ResumeLayoutId;
+  name: string;
+  description: string;
+  suggestedLetterStyle: CoverLetterStyleId;
+  columns: 1 | 2;
+  arrangement: ResumeArrangement;
+  fontFamily: FontFamily;
+  header: Partial<HeaderDesign>;
+  heading: Partial<HeadingDesign>;
+  item?: Partial<ItemDesign>;
+  body?: Partial<BodyDesign>;
+  sidebar?: Partial<SidebarDesign>;
+}): ResumeDesign {
   return {
     id: traits.id,
     name: traits.name,

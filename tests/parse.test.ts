@@ -211,9 +211,7 @@ describe('parseResume field placement', () => {
     expect(item?.dateRange).toBe('2022 – Present');
     expect(item?.location).toBeUndefined();
     expect(
-      warnings.some(
-        (warning) => warning.includes('location') && warning.includes('job title'),
-      ),
+      warnings.some((warning) => warning.includes('location') && warning.includes('job title')),
     ).toBe(true);
   });
 

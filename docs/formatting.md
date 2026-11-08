@@ -14,42 +14,53 @@ Formatting is content-level: it stays with that document for the current session
 
 The preview header shows the selected size and the exact page count.
 
+## The Format drawer
+
+**Format** opens a compact, non-modal drawer docked to the left of the workspace. It is a fixed panel, not a block in the document flow, so opening it never pushes the preview or the résumé down. The drawer keeps the résumé preview visible on desktop and becomes a full-screen sheet with a dismiss backdrop under 720 px.
+
+The drawer separates its two jobs into tabs:
+
+- **Designs** — the résumé design gallery, or the four letter styles for a cover letter.
+- **Formatting** — page, typography, spacing, accent, and pagination controls.
+
+The tablist supports arrow-key navigation. The drawer has a close button, closes on Escape, and returns focus to the **Format** button when it closes. The accent swatches are in **Formatting**, and **Reset to defaults** stays in the drawer footer so it is always reachable.
+
 ## Controls
 
-| Control               | Options                                | Shown for              | Effect                                                                     |
-| --------------------- | -------------------------------------- | ---------------------- | -------------------------------------------------------------------------- |
-| Browse Designs        | Ten résumé designs                     | Resume                 | Switches layout and visual styling without changing any content            |
-| Letter style          | Classic / Modern / Executive / Minimal | Cover letter           | Switches the letter's header, font family, and subject treatment           |
-| Application context   | Five optional contexts                 | Resume                 | Highlights suggested designs; never switches automatically                 |
-| Keep entries together | On / Off                               | Resume                 | Moves a whole entry to the next page when it fits there                    |
-| Page margins          | Narrow / Normal / Wide                 | Both                   | Side margins 28/44/58 pt; top and bottom 30/40/52 pt                       |
-| Font size             | Small / Standard / Large               | Both                   | Scales name, headline, heading, body, and small text by 0.93 / 1.00 / 1.08 |
-| Line spacing          | Compact / Standard / Relaxed           | Both                   | Body line height factor 1.22 / 1.37 / 1.52                                 |
-| Section spacing       | Compact / Standard / Relaxed           | Both                   | Section separation: 12 / 16 / 22 pt before, 3.5 / 5 / 7 pt after           |
-| Paragraph spacing     | Compact / Standard / Relaxed           | Cover letter           | Space after each body paragraph: 4 / 8 / 14 pt, multiplied by density      |
-| Bullet spacing        | Compact / Standard / Relaxed           | Resume                 | Space after each bullet                                                    |
-| Column spacing        | Narrow / Standard / Wide               | Two-column resume only | Gap between the main and side columns: 14 / 22 / 32 pt                     |
-| Content density       | Compact / Balanced / Spacious          | Both                   | Multiplies vertical spacing by 0.82 / 1.00 / 1.22                          |
-| Accent Colour         | Nine professional presets              | Both                   | Name, headings, decorative header rule, and other accent text              |
+| Control               | Options                                | Shown for              | Effect                                                                                                |
+| --------------------- | -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| Browse Designs        | Ten résumé designs                     | Resume                 | Switches the document composition — header, columns, headings, and entries — without changing content |
+| Letter style          | Classic / Modern / Executive / Minimal | Cover letter           | Switches the letter's header, font family, and subject treatment                                      |
+| Application context   | Five optional contexts                 | Resume                 | Highlights suggested designs; never switches automatically                                            |
+| Keep entries together | On / Off                               | Resume                 | Moves a whole entry to the next page when it fits there                                               |
+| Page margins          | Narrow / Normal / Wide                 | Both                   | Side margins 28/44/58 pt; top and bottom 30/40/52 pt                                                  |
+| Font size             | Small / Standard / Large               | Both                   | Scales name, headline, heading, body, and small text by 0.93 / 1.00 / 1.08                            |
+| Line spacing          | Compact / Standard / Relaxed           | Both                   | Body line height factor 1.22 / 1.37 / 1.52                                                            |
+| Section spacing       | Compact / Standard / Relaxed           | Both                   | Section separation: 12 / 16 / 22 pt before, 3.5 / 5 / 7 pt after                                      |
+| Paragraph spacing     | Compact / Standard / Relaxed           | Cover letter           | Space after each body paragraph: 4 / 8 / 14 pt, multiplied by density                                 |
+| Bullet spacing        | Compact / Standard / Relaxed           | Resume                 | Space after each bullet                                                                               |
+| Column spacing        | Narrow / Standard / Wide               | Two-column resume only | Gap between the main and side columns: 14 / 22 / 32 pt                                                |
+| Content density       | Compact / Balanced / Spacious          | Both                   | Multiplies vertical spacing by 0.82 / 1.00 / 1.22                                                     |
+| Accent Colour         | Nine professional presets              | Both                   | Name, headings, decorative header rule, and other accent text                                         |
 
 Only controls relevant to the selected document are shown. Cover letters are single-column and have no bullets, so those controls are hidden; paragraph spacing and letter style are shown only for letters. **Column spacing** is hidden for single-column designs, and the per-section Main/Side selector is hidden whenever the active design has one column.
 
 ## Résumé designs
 
-| Design                  | Columns | Font      | Distinguishing treatment                                     |
-| ----------------------- | ------- | --------- | ------------------------------------------------------------ |
-| Professional Two-Column | Two     | Helvetica | Balanced main and side columns; accent header rule (default) |
-| ATS Simple              | One     | Helvetica | Plain headings, linear author order, table-free Word output  |
-| Executive               | One     | Times     | Centered identity, letter-spaced headings, fine rule         |
-| Modern Minimal          | One     | Helvetica | Larger name, no header rule, quiet text-colour headings      |
-| Classic                 | One     | Times     | Centered identity, traditional headings, understated rule    |
-| Creative                | Two     | Helvetica | Oversized name, heavy accent rule, accent heading rules      |
-| Compact                 | Two     | Helvetica | Smaller type and tighter spacing for dense content           |
-| Academic                | One     | Times     | Serif body with understated ruled headings for research      |
-| Contemporary            | One     | Helvetica | Centered header, accent rule, lightly ruled section headings |
-| Bold                    | Two     | Helvetica | Oversized identity, thick header and heading rules           |
+| Design                  | Layout     | Identity block                               | Section headings                   | Entries                           | Font      |
+| ----------------------- | ---------- | -------------------------------------------- | ---------------------------------- | --------------------------------- | --------- |
+| Professional Two-Column | Balanced   | Left, rule under the contact line            | Plain uppercase accent text        | Stacked title, subtitle, metadata | Helvetica |
+| ATS Simple              | Linear     | Left, rule under the contact line            | Plain uppercase accent text        | Stacked; table-free Word output   | Helvetica |
+| Executive               | Linear     | Centered serif masthead with a double rule   | Uppercase, underlined              | Dates aligned to the right        | Times     |
+| Modern Minimal          | Linear     | Split: name and headline left, contact right | Quiet trailing rules               | Dates aligned to the right        | Helvetica |
+| Classic                 | Linear     | Centered serif identity with a double rule   | Centered, framed with fine rules   | Dates aligned to the right        | Times     |
+| Creative                | Left rail  | Oversized stacked identity                   | Thick accent bars                  | Stacked entries                   | Helvetica |
+| Compact                 | Balanced   | Compact identity with a right tinted rail    | Small accent bars                  | Inline dates, dense spacing       | Helvetica |
+| Academic                | Linear     | Split identity; dates in a left margin       | Fine underlined headings           | Dated left gutter, indented body  | Times     |
+| Contemporary            | Right rail | Accent banner header                         | Top rules                          | Dates aligned to the right        | Helvetica |
+| Bold                    | Linear     | Solid accent banner                          | Filled accent bands, reversed text | Dates aligned to the right        | Helvetica |
 
-Each design is a registry entry that supplies a column count, font family, header alignment and rule, heading treatment, and typographic and spacing scales. Content, measurement, pagination, preview, and both exporters are shared; a design changes presentation, never the document model. Switching designs preserves every section, entry, field, bullet, accent, page size, and spacing preset, and stores the previous design for switching back.
+Each design is a registry entry that supplies a page arrangement (`linear`, `balanced`, `sidebarLeft`, `sidebarRight`), a header variant (`stacked`, `centered`, `split`, `banner`, `compact`), a heading decoration (`none`, `underline`, `trailing`, `bar`, `fill`, `topRule`, `boxed`), an entry layout (`stacked`, `titleRow`, `gutter`), a sidebar treatment, a font family, and typographic and spacing scales. Content, measurement, pagination, preview, and both exporters are shared; a design changes composition, never the document model. Switching designs preserves every section, entry, field, bullet, accent, page size, and spacing preset, and stores the previous design for switching back.
 
 **ATS Simple** keeps conventional uppercase section headings, left-aligned linear text, real Word bullets, and no tables, positioned columns, text boxes, or images. Its combined Word export is a plain paragraph flow so text extraction sees the same order as the page.
 
@@ -119,7 +130,7 @@ Density is a vertical-rhythm multiplier, not an override. A `Relaxed` section sp
 
 ### Column geometry
 
-Resume content width is `page width − 2 × side margin`. The main column keeps roughly 63% of the content width; the gap comes from the column-spacing control; the side column takes the remainder. If a combination would push the side column below 100 pt, the gap is reduced first.
+Resume content width is `page width − 2 × side margin`. The main column keeps roughly 63% of the content width in Professional Two-Column, 62% in Creative, 66% in Compact, and 68% in Contemporary; the gap comes from the column-spacing control; the side column takes the remainder. If a combination would push the side column below 100 pt, the gap is reduced first. Sidebar designs draw a document-level tint and, where configured, a divider rule in the gap; both exports use the same resolved colour.
 
 Cover letters use the full content width as a single column.
 

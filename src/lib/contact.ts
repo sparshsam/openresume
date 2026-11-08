@@ -666,6 +666,10 @@ function isGeographicLocation(value: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return false;
 
+  // "Toronto (Remote)" keeps the city and the confirmed arrangement.
+  const hybrid = /^(.+?)\s*\((remote|hybrid|on-?site|online)\)$/i.exec(trimmed);
+  if (hybrid) return isGeographicLocation(hybrid[1]);
+
   const segments = trimmed
     .split('/')
     .map((segment) => segment.trim())

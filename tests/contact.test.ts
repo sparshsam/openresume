@@ -41,9 +41,7 @@ describe('parseContactLine', () => {
   });
 
   it('never accepts a job title as the location when no location exists', () => {
-    const parsed = parseContactLine(
-      'jordan@example.com | +1 555 0142 | Senior Product Engineer',
-    );
+    const parsed = parseContactLine('jordan@example.com | +1 555 0142 | Senior Product Engineer');
 
     expect(parsed.contact.location).toBeUndefined();
     expect(parsed.headline).toBe('Senior Product Engineer');
@@ -108,6 +106,7 @@ describe('parseContactLine', () => {
       'Singapore',
       'London',
       'Toronto, ON / Remote',
+      'Toronto (Remote)',
     ]) {
       expect(looksLikeLocation(value), value).toBe(true);
     }
@@ -131,9 +130,7 @@ describe('parseContactLine', () => {
     );
 
     expect(parsed.contact.location).toBeUndefined();
-    expect(parsed.headline).toBe(
-      'Product-minded software generalist · Senior Product Engineer',
-    );
+    expect(parsed.headline).toBe('Product-minded software generalist · Senior Product Engineer');
   });
 
   it('keeps a location that appears before a title-like value', () => {
@@ -142,8 +139,6 @@ describe('parseContactLine', () => {
     );
 
     expect(parsed.contact.location).toBe('Toronto, ON');
-    expect(parsed.headline).toBe(
-      'Product-minded software generalist · Senior Product Engineer',
-    );
+    expect(parsed.headline).toBe('Product-minded software generalist · Senior Product Engineer');
   });
 });

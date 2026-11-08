@@ -50,7 +50,7 @@ Every build opens the workspace at the top, regardless of how far the preparatio
 - **Brand** is labeled **OpenResume home** on the landing and preparation screens, and **Back to document selection** in a workspace; both return to the landing page.
 - In a workspace, a small label shows **Resume** or **Cover Letter**.
 - **New** opens preparation for the current document type.
-- **Format** toggles document-specific formatting controls.
+- **Format** opens a compact, non-modal Format drawer docked to the left of the workspace.
 - **PDF** and **Word** export the current document.
 - **Theme** toggles light/dark and stays far right.
 
@@ -58,19 +58,26 @@ Landing and preparation screens show only the brand and theme controls. All acti
 
 ## Formatting
 
-The workspace formatting panel contains **Browse Designs** (resumes) or **Letter style** (cover letters), page size, margins, font size, spacing, density, pagination controls, and **Accent Colour**.
+**Format** opens a fixed, non-modal drawer instead of a page section. It never pushes the editor, preview, or résumé down. On desktop it docks over the left editor column, leaving the résumé preview visible while designs are browsed; under 720 px it becomes a full-screen sheet with a dismiss backdrop. The drawer closes with its close button or Escape and returns focus to the **Format** button.
 
-- **Browse Designs** is a native radio group of ten cards. Each card shows a locally rendered SVG thumbnail of the same fictional sample, the design name, and a one-line description; the selected card has a visible accent border and check. Arrow keys move and select within the group, and the grid becomes one column on narrow screens.
+The drawer separates its two jobs into tabs:
+
+- **Designs** — **Browse Designs** for resumes, or **Letter style** for cover letters.
+- **Formatting** — accent, page, typography, spacing, density, and pagination controls.
+
+The tablist is keyboard operable: Left/Right arrows move between tabs, and each tab has `aria-selected` and a labelled tab panel.
+
+- **Browse Designs** is a native radio group of ten compact cards in a responsive grid (`repeat(auto-fill, minmax(104px, 1fr))`). Each card shows a locally rendered, proportional SVG thumbnail of the same fictional sample, the design name, and the design description as a hover title and accessible name. The selected card has a visible accent border and check.
 - An optional **Application context** selector highlights suggested designs with a “Suggested” badge and explains that recommendations are informational and do not predict hiring outcomes. It never switches the design.
 - **Column spacing** appears only when the active design uses two columns; the per-section Main/Side selector follows the same rule.
 - **Keep entries together** and each section's **New page** checkbox control pagination. Section headings always stay with their first entry.
-- **Letter style** is a radio gallery of Classic, Modern, Executive, and Minimal Letter cards. When a resume exists, a one-click suggestion names the coordinated style but never applies it automatically.
+- **Letter style** is a compact radio gallery of Classic, Modern, Executive, and Minimal Letter cards. When a resume exists, a one-click suggestion names the coordinated style but never applies it automatically.
 - Accent Colour is a native radio group of nine swatches: Green (default), Blue, Navy, Teal, Purple, Red, Orange, Brown, and Charcoal.
 - Each swatch has an accessible colour name, keyboard operation, a clear selected ring, and a focus indicator.
 - The selected colour name is shown in text.
-- The accent updates the live document header, rule, and resume section headings wherever the design assigns an accent role. The same value flows into PDF and DOCX.
+- The accent updates the live document header, rule, resume section headings, banner header, and filled section bands wherever the design assigns an accent role. The same value flows into PDF and DOCX.
 - Accent is per document and survives navigation for the session. It is not stored in the browser.
-- **Reset to defaults** restores Green, Professional Two-Column, Classic Letter, and the standard formatting presets.
+- **Reset to defaults** stays in the drawer footer and restores Green, Professional Two-Column, Classic Letter, and the standard formatting presets.
 
 ## Resume workspace
 
@@ -166,6 +173,7 @@ Light/dark/system behavior is unchanged: `data-theme`, system preference on firs
 | 721–1040px | Editor above preview                                                    |
 | ≤ 720px    | Header becomes two rows: brand + theme, then icon-only document actions |
 | ≤ 760px    | Landing cards stack; preparation textarea shrinks                       |
+| ≤ 720px    | Format drawer becomes a full-screen sheet with a dismiss backdrop       |
 | ≤ 560px    | Formatting controls and footer stack; toasts span the viewport margins  |
 
 At every width the document page scales to fit; text remains selectable and the document is never inverted for dark mode.

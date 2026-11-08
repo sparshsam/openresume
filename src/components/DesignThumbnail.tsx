@@ -26,15 +26,25 @@ function headingDecor(
 ) {
   switch (decor) {
     case 'underline':
-      return <rect x={x} y={y + 3} width={width} height={Math.max(0.35, thickness)} fill={accent} />;
+      return (
+        <rect x={x} y={y + 3} width={width} height={Math.max(0.35, thickness)} fill={accent} />
+      );
     case 'trailing':
       return (
-        <rect x={x + width * 0.38} y={y + 3} width={width * 0.62} height={Math.max(0.3, thickness)} fill={MUTED} />
+        <rect
+          x={x + width * 0.38}
+          y={y + 3}
+          width={width * 0.62}
+          height={Math.max(0.3, thickness)}
+          fill={MUTED}
+        />
       );
     case 'bar':
       return <rect x={x} y={y - 2.2} width={1.4} height={4.4} fill={accent} />;
     case 'topRule':
-      return <rect x={x} y={y - 2.8} width={width} height={Math.max(0.6, thickness)} fill={accent} />;
+      return (
+        <rect x={x} y={y - 2.8} width={width} height={Math.max(0.6, thickness)} fill={accent} />
+      );
     case 'boxed':
       return (
         <>
@@ -71,7 +81,8 @@ function Section({
   y: number;
   width: number;
 }) {
-  const headingColor = design.heading.decor === 'fill' ? BAND_TEXT : design.heading.color === 'accent' ? accent : INK;
+  const headingColor =
+    design.heading.decor === 'fill' ? BAND_TEXT : design.heading.color === 'accent' ? accent : INK;
   const inset = design.heading.decor === 'bar' ? 4 : design.heading.decor === 'fill' ? 1.5 : 0;
   return (
     <g>
@@ -92,8 +103,23 @@ function Section({
         if (design.item.layout === 'titleRow' && index % 2 === 0) {
           return (
             <g key={index}>
-              <rect x={x} y={rowY} width={width * 0.5} height={1.4} rx={0.3} fill={INK} opacity={0.72} />
-              <rect x={x + width * 0.62} y={rowY} width={width * 0.38} height={1.2} rx={0.3} fill={MUTED} />
+              <rect
+                x={x}
+                y={rowY}
+                width={width * 0.5}
+                height={1.4}
+                rx={0.3}
+                fill={INK}
+                opacity={0.72}
+              />
+              <rect
+                x={x + width * 0.62}
+                y={rowY}
+                width={width * 0.38}
+                height={1.2}
+                rx={0.3}
+                fill={MUTED}
+              />
             </g>
           );
         }
@@ -101,7 +127,15 @@ function Section({
           return (
             <g key={index}>
               <rect x={x} y={rowY} width={11} height={1.2} rx={0.3} fill={MUTED} />
-              <rect x={x + 15} y={rowY} width={width - 15} height={1.4} rx={0.3} fill={INK} opacity={0.72} />
+              <rect
+                x={x + 15}
+                y={rowY}
+                width={width - 15}
+                height={1.4}
+                rx={0.3}
+                fill={INK}
+                opacity={0.72}
+              />
             </g>
           );
         }
@@ -110,7 +144,10 @@ function Section({
             key={index}
             x={x + (design.item.layout === 'gutter' ? 15 : 0)}
             y={rowY}
-            width={(width - (design.item.layout === 'gutter' ? 15 : 0)) * (index === lines - 1 ? 0.62 : 0.94)}
+            width={
+              (width - (design.item.layout === 'gutter' ? 15 : 0)) *
+              (index === lines - 1 ? 0.62 : 0.94)
+            }
             height={1.3}
             rx={0.3}
             fill={LINE}
@@ -134,7 +171,14 @@ function ResumeThumbnail({ design }: { design: ResumeDesign }) {
   const header = (
     <>
       {design.header.variant === 'banner' ? (
-        <rect x={6} y={6} width={108} height={design.heading.decor === 'fill' ? 25 : 23} rx={1} fill={accent} />
+        <rect
+          x={6}
+          y={6}
+          width={108}
+          height={design.heading.decor === 'fill' ? 25 : 23}
+          rx={1}
+          fill={accent}
+        />
       ) : null}
       <text
         x={design.header.variant === 'banner' ? 11 : nameX}
@@ -159,25 +203,67 @@ function ResumeThumbnail({ design }: { design: ResumeDesign }) {
         </>
       ) : design.header.variant === 'split' || design.header.variant === 'compact' ? (
         <>
-          <text x={nameX} y={21} fontSize={3.2} fill={MUTED} textAnchor={nameAnchor} fontFamily={fontFamily}>
+          <text
+            x={nameX}
+            y={21}
+            fontSize={3.2}
+            fill={MUTED}
+            textAnchor={nameAnchor}
+            fontFamily={fontFamily}
+          >
             Product-minded software generalist
           </text>
-          <text x={PAGE_RIGHT} y={14} fontSize={2.7} fill={MUTED} textAnchor={contactAnchor} fontFamily={fontFamily}>
+          <text
+            x={PAGE_RIGHT}
+            y={14}
+            fontSize={2.7}
+            fill={MUTED}
+            textAnchor={contactAnchor}
+            fontFamily={fontFamily}
+          >
             jordan.avery@example.com
           </text>
-          <text x={PAGE_RIGHT} y={17.2} fontSize={2.7} fill={MUTED} textAnchor={contactAnchor} fontFamily={fontFamily}>
+          <text
+            x={PAGE_RIGHT}
+            y={17.2}
+            fontSize={2.7}
+            fill={MUTED}
+            textAnchor={contactAnchor}
+            fontFamily={fontFamily}
+          >
             +1 555 0142 · Toronto, ON
           </text>
-          <text x={PAGE_RIGHT} y={20.4} fontSize={2.7} fill={MUTED} textAnchor={contactAnchor} fontFamily={fontFamily}>
+          <text
+            x={PAGE_RIGHT}
+            y={20.4}
+            fontSize={2.7}
+            fill={MUTED}
+            textAnchor={contactAnchor}
+            fontFamily={fontFamily}
+          >
             linkedin.com/in/jordanavery
           </text>
         </>
       ) : (
         <>
-          <text x={nameX} y={21} fontSize={3.3} fill={MUTED} textAnchor={nameAnchor} fontFamily={fontFamily}>
+          <text
+            x={nameX}
+            y={21}
+            fontSize={3.3}
+            fill={MUTED}
+            textAnchor={nameAnchor}
+            fontFamily={fontFamily}
+          >
             Product-minded software generalist
           </text>
-          <text x={nameX} y={25} fontSize={2.8} fill={MUTED} textAnchor={nameAnchor} fontFamily={fontFamily}>
+          <text
+            x={nameX}
+            y={25}
+            fontSize={2.8}
+            fill={MUTED}
+            textAnchor={nameAnchor}
+            fontFamily={fontFamily}
+          >
             jordan.avery@example.com · Toronto, ON
           </text>
         </>
@@ -200,7 +286,10 @@ function ResumeThumbnail({ design }: { design: ResumeDesign }) {
       {design.header.doubleRule && design.header.showRule ? (
         <rect
           x={PAGE_LEFT}
-          y={(design.header.variant === 'split' || design.header.variant === 'compact' ? 25 : 28) + 1.6}
+          y={
+            (design.header.variant === 'split' || design.header.variant === 'compact' ? 25 : 28) +
+            1.6
+          }
           width={PAGE_RIGHT - PAGE_LEFT}
           height={0.35}
           fill={
@@ -216,7 +305,8 @@ function ResumeThumbnail({ design }: { design: ResumeDesign }) {
   );
 
   if (design.header.variant === 'banner') headerBottom = 41;
-  else if (design.header.variant === 'split' || design.header.variant === 'compact') headerBottom = 30;
+  else if (design.header.variant === 'split' || design.header.variant === 'compact')
+    headerBottom = 30;
   else headerBottom = 32;
 
   const bodyTop = headerBottom + 4;
@@ -291,7 +381,13 @@ function ResumeThumbnail({ design }: { design: ResumeDesign }) {
         />
       ) : null}
       {dividerX !== undefined && design.sidebar.divider ? (
-        <rect x={dividerX} y={bodyTop - 2} width={0.5} height={PAGE_BOTTOM - bodyTop + 2} fill={LINE} />
+        <rect
+          x={dividerX}
+          y={bodyTop - 2}
+          width={0.5}
+          height={PAGE_BOTTOM - bodyTop + 2}
+          fill={LINE}
+        />
       ) : null}
       {header}
       {columns.map((column, columnIndex) =>
@@ -423,8 +519,7 @@ function LetterThumbnail({ style }: { style: CoverLetterStyle }) {
 
 export function DesignThumbnail(
   props:
-    | { kind: 'resume'; design: ResumeDesign }
-    | { kind: 'coverLetter'; style: CoverLetterStyle },
+    { kind: 'resume'; design: ResumeDesign } | { kind: 'coverLetter'; style: CoverLetterStyle },
 ) {
   return props.kind === 'resume' ? (
     <ResumeThumbnail design={props.design} />

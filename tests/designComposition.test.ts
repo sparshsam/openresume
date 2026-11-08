@@ -15,7 +15,14 @@ function blocksFor(layoutId: ResumeLayoutId) {
 
 describe('structural design composition', () => {
   it('places metadata beside the title for title-row designs', () => {
-    for (const layoutId of ['executive', 'modernMinimal', 'classic', 'compact', 'contemporary', 'bold'] as const) {
+    for (const layoutId of [
+      'executive',
+      'modernMinimal',
+      'classic',
+      'compact',
+      'contemporary',
+      'bold',
+    ] as const) {
       const rows = blocksFor(layoutId).filter((block) => block.rowLayout === 'metaRight');
       expect(rows.length, layoutId).toBeGreaterThan(0);
       const row = rows[0];
