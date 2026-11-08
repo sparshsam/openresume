@@ -149,6 +149,7 @@ export function parseCoverLetter(input: string): CoverLetterParseResult {
     if (awaitingContact && !sawContactLine && trimmed) {
       const parsed = parseContactLine(trimmed);
       coverLetter.applicant.contact = parsed.contact;
+      warnings.push(...parsed.warnings);
       if (parsed.headline) coverLetter.applicant.headline = parsed.headline;
       sawContactLine = true;
       awaitingContact = false;

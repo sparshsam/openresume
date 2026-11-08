@@ -192,3 +192,38 @@ describe('parseResume', () => {
     expect(warnings.some((warning) => warning.includes('additional resume heading'))).toBe(true);
   });
 });
+
+describe('parseResume field placement', () => {
+  it('rejects a job title in an entry location slot and warns', () => {
+    const input = [
+      '# Jordan Avery',
+      'jordan@example.com | +1 555 0142 | Toronto, ON',
+      '',
+      '## EXPERIENCE',
+      '### Brightline Labs — Senior Product Engineer',
+      '2022 – Present | Senior Product Engineer',
+      '- Did work.',
+    ].join('\n');
+
+    const { resume, warnings } = parseResume(input);
+    const item = resume.sections.find((section) => section.kind === 'experience')?.items[0];
+
+    expect(item?.dateRange).toBe('2022 – Present');
+    expect(item?.location).toBeUndefined();
+    expect(
+      warnings.some(
+        (warning) => warning.includes('location') && warning.includes('job title'),
+      ),
+    ).toBe(true);
+  });
+
+  it('surfaces a contact warning when a title occupies the final contact slot', () => {
+    const { resume, warnings } = parseResume(
+      '# Jordan Avery\nJordan Avery | jordan@example.com | +1 555 0142 | Senior Product Engineer',
+    );
+
+    expect(resume.contact.location).toBeUndefined();
+    expect(resume.header.headline).toBe('Jordan Avery · Senior Product Engineer');
+    expect(warnings.some((warning) => warning.includes('job title'))).toBe(true);
+  });
+});

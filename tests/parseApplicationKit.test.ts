@@ -142,3 +142,33 @@ describe('parseApplicationKit', () => {
     expectFailure('   \n\n', 'Paste the combined');
   });
 });
+
+describe('parseApplicationKit field placement', () => {
+  it('keeps job titles out of both documents’ location fields', () => {
+    const malformedResume = `# Jordan Avery
+jordan.avery@example.com | +1 555 0142 | Senior Product Engineer | Toronto, ON
+
+## EXPERIENCE
+### Brightline Labs — Senior Product Engineer
+2022 – Present | Senior Product Engineer
+- Rebuilt a document workflow.`;
+    const malformedLetter = `# Jordan Avery
+jordan.avery@example.com | +1 555 0142 | Senior Product Engineer
+
+## BODY
+I am applying for the role.`;
+
+    const result = parseApplicationKit(
+      `${RESUME_DELIMITER}\n${malformedResume}\n\n${COVER_LETTER_DELIMITER}\n${malformedLetter}`,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.resume.contact.location).toBe('Toronto, ON');
+    expect(result.coverLetter.applicant.contact.location).toBeUndefined();
+    expect(result.resume.sections[0].items[0].location).toBeUndefined();
+    expect(
+      result.warnings.filter((warning) => warning.includes('job title')).length,
+    ).toBeGreaterThanOrEqual(2);
+  });
+});

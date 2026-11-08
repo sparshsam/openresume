@@ -1,5 +1,5 @@
 import { stripEnclosingCodeFence } from './codeFence';
-import { parseContactLine } from './contact';
+import { looksLikeJobTitle, parseContactLine } from './contact';
 import {
   DEFAULT_FORMAT,
   DEFAULT_TEMPLATE,
@@ -238,6 +238,7 @@ export function parseResume(input: string): ParseResult {
       const parsedContact = parseContactLine(trimmed);
       if (parsedContact.headline) resume.header.headline = parsedContact.headline;
       resume.contact = parsedContact.contact;
+      warnings.push(...parsedContact.warnings);
       sawContactLine = true;
       awaitingContact = false;
       continue;
@@ -261,7 +262,14 @@ export function parseResume(input: string): ParseResult {
         .filter(Boolean);
       if (parts.length >= 2) {
         currentItem.dateRange = parts[0];
-        currentItem.location = parts.slice(1).join(' | ');
+        const candidateLocation = parts.slice(1).join(' | ');
+        if (looksLikeJobTitle(candidateLocation)) {
+          warnings.push(
+            `Ignored a location value that looks like a job title: "${candidateLocation}". Ask for the verified city and region instead.`,
+          );
+        } else {
+          currentItem.location = candidateLocation;
+        }
       } else if (DATE_RE.test(parts[0])) {
         currentItem.dateRange = parts[0];
       } else {
