@@ -57,6 +57,10 @@ export interface FlowBlock {
   indentLeftPt?: number;
   /** Marks a title-and-metadata row so DOCX can lay it out with tab stops. */
   rowLayout?: 'metaRight' | 'metaLeft';
+  /** Heading decoration consumed by DOCX paragraph borders and shading. */
+  decorKind?: string;
+  /** Horizontal alignment of the block's text. */
+  alignment?: 'left' | 'center';
   /** Rectangles drawn relative to the block start. */
   rules?: FlowRect[];
   /** A filled rectangle drawn behind the block. */
@@ -95,6 +99,8 @@ export interface PlacedBlock {
   rules?: PlacedRule[];
   band?: PlacedBand;
   rowLayout?: 'metaRight' | 'metaLeft';
+  decorKind?: string;
+  alignment?: 'left' | 'center';
   indentLeftPt?: number;
 }
 
@@ -171,6 +177,8 @@ export function paginateColumn(
       rules: rules.length > 0 ? rules : undefined,
       band: block.band ? placeRect(block.band, 0, yPt) : undefined,
       rowLayout: block.rowLayout,
+      decorKind: block.decorKind,
+      alignment: block.alignment,
       indentLeftPt: block.indentLeftPt,
     };
     current.push(placed);

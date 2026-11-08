@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { HeaderLayout, Layout, PageLayout } from './layout';
 import type { FontSpec } from './measure';
+import type { PlacedRect } from './paginate';
 import { applicationKitFilename, documentFilename } from './filename';
 import type { DocumentMeta } from './documentMeta';
 import { DEFAULT_APPLICATION_KIT_ORDER, type ApplicationKitOrder } from '../types/applicationKit';
@@ -39,7 +40,14 @@ function drawLine(
   );
 }
 
+function fillRect(doc: jsPDF, rect: PlacedRect): void {
+  if (rect.widthPt <= 0 || rect.heightPt <= 0) return;
+  doc.setFillColor(rect.color);
+  doc.rect(rect.xPt, rect.yPt, rect.widthPt, rect.heightPt, 'F');
+}
+
 function drawHeader(doc: jsPDF, header: HeaderLayout): void {
+  if (header.band) fillRect(doc, header.band);
   const lines = [
     header.name,
     ...(header.headline ? [header.headline] : []),
@@ -48,21 +56,26 @@ function drawHeader(doc: jsPDF, header: HeaderLayout): void {
   for (const line of lines) {
     drawLine(doc, line.text, line.xPt, line.yPt, line.font, line.color);
   }
-  if (header.rule) {
-    doc.setDrawColor(header.rule.color);
-    doc.setLineWidth(header.rule.widthPt);
-    doc.line(header.rule.x1Pt, header.rule.y1Pt, header.rule.x2Pt, header.rule.y2Pt);
+  for (const rule of [header.rule, header.secondRule]) {
+    if (!rule) continue;
+    fillRect(doc, {
+      xPt: rule.x1Pt,
+      yPt: rule.y1Pt,
+      widthPt: rule.x2Pt - rule.x1Pt,
+      heightPt: rule.widthPt,
+      color: rule.color,
+    });
   }
 }
 
 function drawPage(doc: jsPDF, page: PageLayout): void {
+  for (const background of page.backgrounds ?? []) fillRect(doc, background);
+  if (page.divider) fillRect(doc, page.divider);
   if (page.header) drawHeader(doc, page.header);
 
   for (const block of page.blocks) {
-    if (block.rule) {
-      doc.setFillColor(block.rule.color);
-      doc.rect(block.rule.xPt, block.rule.yPt, block.rule.widthPt, block.rule.heightPt, 'F');
-    }
+    if (block.band) fillRect(doc, block.band);
+    for (const rule of block.rules ?? (block.rule ? [block.rule] : [])) fillRect(doc, rule);
     for (const line of block.lines) {
       drawLine(doc, line.text, line.xPt, line.yPt, line.font, line.color);
     }

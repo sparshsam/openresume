@@ -155,7 +155,10 @@ export function tintAccent(accent: string, strength: number): string {
   return `#${channels.join('')}`.toUpperCase();
 }
 
-function resolveSidebarTint(tint: ResumeDesign['sidebar']['tint'], accent: string): string | undefined {
+function resolveSidebarTint(
+  tint: ResumeDesign['sidebar']['tint'],
+  accent: string,
+): string | undefined {
   if (tint === 'muted') return SIDEBAR_MUTED;
   if (tint === 'accentSoft') return tintAccent(accent, 0.08);
   return undefined;
@@ -227,9 +230,7 @@ export function buildDocumentHeader(
       color: accent,
     };
     const contactTopPt = band.yPt + band.heightPt + 10;
-    const contactRows = contactText
-      ? wrapText(contactText, contentWidthPt, contactFont)
-      : [];
+    const contactRows = contactText ? wrapText(contactText, contentWidthPt, contactFont) : [];
     const contactLines = contactRows.map((text, index) => ({
       text,
       xPt: metrics.marginXPt,
@@ -239,7 +240,9 @@ export function buildDocumentHeader(
     }));
     const cursorPt = contactTopPt + contactRows.length * metrics.smallLinePt;
     const ruleY = cursorPt + design.ruleGapPt;
-    const rule = design.showRule ? ruleAt(ruleY, design.ruleWidthPt, pickDesignColor(design.ruleColor, accent)) : undefined;
+    const rule = design.showRule
+      ? ruleAt(ruleY, design.ruleWidthPt, pickDesignColor(design.ruleColor, accent))
+      : undefined;
     const columnTop = (design.showRule ? ruleY : cursorPt) + 10;
     return {
       header: { name, headline, contactLines, rule, band },
@@ -284,7 +287,11 @@ export function buildDocumentHeader(
       : undefined;
     const secondRule =
       design.doubleRule && design.showRule
-        ? ruleAt(ruleY + 3, Math.max(0.4, design.ruleWidthPt * 0.6), pickDesignColor(design.ruleColor, accent))
+        ? ruleAt(
+            ruleY + 3,
+            Math.max(0.4, design.ruleWidthPt * 0.6),
+            pickDesignColor(design.ruleColor, accent),
+          )
         : undefined;
     const columnTop = (design.showRule ? ruleY + (secondRule ? 3 : 0) : cursorPt) + 10;
     return {
@@ -501,12 +508,13 @@ function headingBlock(
   const thicknessPt = heading.decorThicknessPt;
   const gapPt = 2;
 
-  const rule = (
-    x: number,
-    y: number,
-    width: number,
-    thickness: number,
-  ): FlowRect => ({ xOffsetPt: x, yOffsetPt: y, widthPt: width, heightPt: thickness, color: decorColor });
+  const rule = (x: number, y: number, width: number, thickness: number): FlowRect => ({
+    xOffsetPt: x,
+    yOffsetPt: y,
+    widthPt: width,
+    heightPt: thickness,
+    color: decorColor,
+  });
 
   switch (heading.decor) {
     case 'underline':
@@ -567,6 +575,8 @@ function headingBlock(
     heightOverridePt,
     rules: rules.length > 0 ? rules : undefined,
     band,
+    decorKind: heading.decor,
+    alignment: centered ? 'center' : 'left',
     lines: [
       {
         text,
@@ -597,7 +607,8 @@ interface TitleRowOptions {
 }
 
 function titleRowBlock(options: TitleRowOptions): FlowBlock | null {
-  const { title, meta, widthPt, metrics, design, sectionId, itemId, spaceBeforePt, layout } = options;
+  const { title, meta, widthPt, metrics, design, sectionId, itemId, spaceBeforePt, layout } =
+    options;
   const titleFont = boldFont(metrics, design.fontFamily);
   const metaFont = smallFont(metrics, design.fontFamily);
 
@@ -753,11 +764,15 @@ function itemBlocks(
   const meta = entryMeta(item, design);
   const useGutter = design.item.layout === 'gutter';
   const contentWidthPt = useGutter ? widthPt - design.item.gutterWidthPt : widthPt;
+  // The dated gutter holds only the date range. A verified location goes on
+  // its own indented line so a long place name cannot wrap the date column.
+  const rowMeta = useGutter ? (item.dateRange ?? '') : meta;
+  const separateLocation = useGutter && Boolean(item.location);
 
-  if (design.item.layout !== 'stacked' && item.title && meta) {
+  if (design.item.layout !== 'stacked' && item.title && rowMeta) {
     const row = titleRowBlock({
       title: item.title,
-      meta,
+      meta: rowMeta,
       widthPt,
       metrics,
       design,
@@ -811,7 +826,25 @@ function itemBlocks(
         spaceAfterPt: 0,
         keepWithNext: Boolean(item.body || item.bullets.length > 0),
       });
-      blocks.push(useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock);
+      blocks.push(
+        useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock,
+      );
+    }
+
+    if (separateLocation && item.location) {
+      const locationBlock = textBlock(item.location, contentWidthPt, {
+        kind: 'meta',
+        sectionId: section.id,
+        itemId: item.id,
+        font: small,
+        color: COLORS.muted,
+        lineHeightPt: metrics.smallLinePt,
+        spaceBeforePt: 0,
+        spaceAfterPt: 2,
+        keepWithNext: Boolean(item.body || item.bullets.length > 0),
+        splittable: false,
+      });
+      blocks.push(indentBlock(locationBlock, design.item.gutterWidthPt));
     }
   } else {
     if (item.title) {
@@ -844,7 +877,25 @@ function itemBlocks(
           item.dateRange || item.location || item.body || item.bullets.length > 0,
         ),
       });
-      blocks.push(useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock);
+      blocks.push(
+        useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock,
+      );
+    }
+
+    if (separateLocation && item.title && item.location) {
+      const locationBlock = textBlock(item.location, contentWidthPt, {
+        kind: 'meta',
+        sectionId: section.id,
+        itemId: item.id,
+        font: small,
+        color: COLORS.muted,
+        lineHeightPt: metrics.smallLinePt,
+        spaceBeforePt: 0,
+        spaceAfterPt: 2,
+        keepWithNext: Boolean(item.body || item.bullets.length > 0),
+        splittable: false,
+      });
+      blocks.push(indentBlock(locationBlock, design.item.gutterWidthPt));
     }
 
     if (meta && !(design.item.layout === 'gutter' && item.title)) {
@@ -1180,9 +1231,7 @@ export function layoutResume(resume: Resume): Layout {
   const pages: PageLayout[] = Array.from({ length: pageCount }, (_, index) => {
     const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);
     const blocks = [
-      ...(mainPages[index] ?? []).map((block) =>
-        translatePlacedBlock(block, mainX, top),
-      ),
+      ...(mainPages[index] ?? []).map((block) => translatePlacedBlock(block, mainX, top)),
       ...(sidePages[index] ?? []).map((block) => translatePlacedBlock(block, sideX, top)),
     ];
     const contentBottomPt = metrics.pageHeightPt - metrics.marginBottomPt;

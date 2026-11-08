@@ -55,8 +55,12 @@
   background: rgba(20, 83, 45, 0.07);
 }
 
-.page-rule {
+.page-rule,
+.page-band,
+.page-background,
+.page-divider {
   position: absolute;
+  pointer-events: none;
 }
 
 .page-label {

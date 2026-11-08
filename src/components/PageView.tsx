@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { PlacedLine } from '../lib/paginate';
+import type { PlacedLine, PlacedRect } from '../lib/paginate';
 import type { HeaderLine, PageLayout } from '../lib/layout';
 import type { FontSpec } from '../lib/measure';
 
@@ -39,6 +39,22 @@ function headerStyle(line: HeaderLine, lineHeightPt: number): CSSProperties {
   return textStyle(line.xPt, line.yPt, line.font, line.color, lineHeightPt);
 }
 
+function rectStyle(
+  rect: PlacedRect,
+  className: string,
+): { className: string; style: CSSProperties } {
+  return {
+    className,
+    style: {
+      left: `${rect.xPt}pt`,
+      top: `${rect.yPt}pt`,
+      width: `${rect.widthPt}pt`,
+      height: `${rect.heightPt}pt`,
+      background: rect.color,
+    },
+  };
+}
+
 export function PageView({ page, onFocusTarget }: PageViewProps) {
   return (
     <div
@@ -47,8 +63,16 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
       role="group"
       aria-label={`Resume page ${page.index + 1}`}
     >
+      {(page.backgrounds ?? []).map((rect, index) => {
+        const { className, style } = rectStyle(rect, 'page-background');
+        return <span key={`background-${index}`} className={className} style={style} />;
+      })}
+
       {page.header ? (
         <>
+          {page.header.band ? (
+            <span {...rectStyle(page.header.band, 'page-band')} aria-hidden="true" />
+          ) : null}
           <span
             className="page-line"
             style={headerStyle(page.header.name, page.header.name.font.sizePt * 1.17)}
@@ -75,35 +99,44 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
               {line.text}
             </span>
           ))}
-          {page.header.rule ? (
-            <span
-              className="page-rule"
-              style={{
-                left: `${page.header.rule.x1Pt}pt`,
-                top: `${page.header.rule.y1Pt}pt`,
-                width: `${page.header.rule.x2Pt - page.header.rule.x1Pt}pt`,
-                height: `${page.header.rule.widthPt}pt`,
-                background: page.header.rule.color,
-              }}
-            />
-          ) : null}
+          {[page.header.rule, page.header.secondRule].map((rule, index) =>
+            rule ? (
+              <span
+                key={`header-rule-${index}`}
+                className="page-rule"
+                style={{
+                  left: `${rule.x1Pt}pt`,
+                  top: `${rule.y1Pt}pt`,
+                  width: `${rule.x2Pt - rule.x1Pt}pt`,
+                  height: `${rule.widthPt}pt`,
+                  background: rule.color,
+                }}
+              />
+            ) : null,
+          )}
         </>
+      ) : null}
+
+      {page.divider ? (
+        <span {...rectStyle(page.divider, 'page-divider')} aria-hidden="true" />
       ) : null}
 
       {page.blocks.map((block, blockIndex) => (
         <span key={`block-${block.sectionId}-${block.itemId ?? 'section'}-${blockIndex}`}>
-          {block.rule ? (
+          {block.band ? <span {...rectStyle(block.band, 'page-band')} aria-hidden="true" /> : null}
+          {(block.rules ?? (block.rule ? [block.rule] : [])).map((rule, ruleIndex) => (
             <span
+              key={`rule-${ruleIndex}`}
               className="page-rule"
               style={{
-                left: `${block.rule.xPt}pt`,
-                top: `${block.rule.yPt}pt`,
-                width: `${block.rule.widthPt}pt`,
-                height: `${block.rule.heightPt}pt`,
-                background: block.rule.color,
+                left: `${rule.xPt}pt`,
+                top: `${rule.yPt}pt`,
+                width: `${rule.widthPt}pt`,
+                height: `${rule.heightPt}pt`,
+                background: rule.color,
               }}
             />
-          ) : null}
+          ))}
           {block.lines.map((line, lineIndex) => (
             <span
               key={`${block.sectionId}-${block.itemId ?? 'section'}-${blockIndex}-${lineIndex}`}
