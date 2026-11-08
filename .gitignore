@@ -10,3 +10,6 @@ coverage/
 
 # Vercel
 .vercel
+
+# Local superpowers scratch
+.superpowers/
