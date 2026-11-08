@@ -112,3 +112,38 @@ describe('paginateColumn', () => {
     expect(pages[0][0].lines).toHaveLength(40);
   });
 });
+
+describe('row and rectangle primitives', () => {
+  it('places lines with the same vertical offset on one baseline', () => {
+    const row = block([''], {
+      kind: 'titleRow',
+      heightOverridePt: 10,
+      lines: [
+        {
+          text: 'Title',
+          xOffsetPt: 0,
+          yOffsetPt: 0,
+          font: { sizePt: 10, bold: true },
+          color: '#000',
+        },
+        { text: 'Meta', xOffsetPt: 120, yOffsetPt: 0, font: { sizePt: 8 }, color: '#555' },
+      ],
+    });
+
+    const pages = paginateColumn([row], 100, 100, 200);
+    expect(pages[0][0].lines.map((line) => line.yPt)).toEqual([0, 0]);
+    expect(pages[0][0].heightPt).toBe(10);
+  });
+
+  it('places bands and rules relative to the block and keeps the first rule', () => {
+    const decorated = block(['HEADING'], {
+      rules: [{ xOffsetPt: 0, yOffsetPt: 0, widthPt: 200, heightPt: 1, color: '#000' }],
+      band: { xOffsetPt: 0, yOffsetPt: 0, widthPt: 200, heightPt: 14, color: '#14532D' },
+    });
+
+    const pages = paginateColumn([decorated], 100, 100, 200);
+    expect(pages[0][0].rules?.[0]).toMatchObject({ xPt: 0, yPt: 0, widthPt: 200, heightPt: 1 });
+    expect(pages[0][0].band).toMatchObject({ widthPt: 200, heightPt: 14 });
+    expect(pages[0][0].rule).toEqual(pages[0][0].rules?.[0]);
+  });
+});

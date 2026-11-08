@@ -60,9 +60,8 @@ function drawPage(doc: jsPDF, page: PageLayout): void {
 
   for (const block of page.blocks) {
     if (block.rule) {
-      doc.setDrawColor(block.rule.color);
-      doc.setLineWidth(block.rule.thicknessPt);
-      doc.line(block.rule.xPt, block.rule.yPt, block.rule.xPt + block.rule.widthPt, block.rule.yPt);
+      doc.setFillColor(block.rule.color);
+      doc.rect(block.rule.xPt, block.rule.yPt, block.rule.widthPt, block.rule.heightPt, 'F');
     }
     for (const line of block.lines) {
       drawLine(doc, line.text, line.xPt, line.yPt, line.font, line.color);

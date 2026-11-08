@@ -47,12 +47,12 @@ function ResumeThumbnail({ design }: ResumeThumbnailProps) {
       >
         {title}
       </text>
-      {design.heading.rule !== 'none' ? (
+      {design.heading.decor !== 'none' ? (
         <rect
           x={x}
           y={y + 2}
           width={sectionWidth}
-          height={design.heading.rule === 'thick' ? 0.9 : 0.4}
+          height={Math.max(0.4, design.heading.decorThicknessPt)}
           fill={headingFill}
         />
       ) : null}

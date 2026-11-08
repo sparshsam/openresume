@@ -1,4 +1,11 @@
-import { resolveResumeDesign, type HeaderDesign, type ResumeDesign } from './designs';
+import {
+  resolveResumeDesign,
+  type HeaderDesign,
+  type HeaderVariant,
+  type ItemLayout,
+  type ResumeArrangement,
+  type ResumeDesign,
+} from './designs';
 import { measureLineWidth, wrapText, type FontFamily, type FontSpec } from './measure';
 import { resolveMetrics, type ResolvedMetrics } from './metrics';
 import { normalizeTemplate } from './normalize';
@@ -7,7 +14,9 @@ import {
   paginateColumn,
   type BlockKind,
   type FlowBlock,
+  type FlowRect,
   type PlacedBlock,
+  type PlacedRect,
 } from './paginate';
 import { LIST_KINDS } from './parse';
 import { COLORS } from './tokens';
@@ -31,18 +40,22 @@ export interface HeaderLine {
   color: string;
 }
 
+export interface HeaderRule {
+  x1Pt: number;
+  y1Pt: number;
+  x2Pt: number;
+  y2Pt: number;
+  widthPt: number;
+  color: string;
+}
+
 export interface HeaderLayout {
   name: HeaderLine;
   headline?: HeaderLine;
   contactLines: HeaderLine[];
-  rule?: {
-    x1Pt: number;
-    y1Pt: number;
-    x2Pt: number;
-    y2Pt: number;
-    widthPt: number;
-    color: string;
-  };
+  rule?: HeaderRule;
+  secondRule?: HeaderRule;
+  band?: PlacedRect;
 }
 
 export interface PageLayout {
@@ -51,6 +64,10 @@ export interface PageLayout {
   heightPt: number;
   blocks: PlacedBlock[];
   header?: HeaderLayout;
+  /** Filled rectangles drawn behind the page content (sidebar tint). */
+  backgrounds?: PlacedRect[];
+  /** A vertical rule separating a sidebar from the main column. */
+  divider?: PlacedRect;
 }
 
 export interface Layout {
@@ -59,6 +76,14 @@ export interface Layout {
   variant: LayoutVariant;
   /** Column count; exporters choose table or linear output from this. */
   columns: 1 | 2;
+  /** How the document is composed: linear, balanced, or a sidebar. */
+  arrangement: ResumeArrangement;
+  headerVariant: HeaderVariant;
+  itemLayout: ItemLayout;
+  /** Resolved sidebar tint, if the design uses one. */
+  sidebarTint?: string;
+  sidebarSide?: 'left' | 'right';
+  sidebarDivider?: boolean;
   headerAlign: 'left' | 'center';
   fontFamily: FontFamily;
   pages: PageLayout[];
@@ -74,6 +99,10 @@ export interface DocumentIdentity {
   headline?: string;
   contact: Contact;
 }
+
+const BAND_TEXT = '#FFFFFF';
+const SIDEBAR_MUTED = '#F3F5F2';
+const DIVIDER_COLOR = '#D5DED7';
 
 function bodyFont(metrics: ResolvedMetrics, family: FontFamily): FontSpec {
   return { sizePt: metrics.bodyPt, family };
@@ -92,6 +121,7 @@ function headingFont(metrics: ResolvedMetrics, family: FontFamily, letterSpacing
 }
 
 const DEFAULT_HEADER_DESIGN: HeaderDesign = {
+  variant: 'stacked',
   align: 'left',
   nameScale: 1,
   nameLetterSpacingPt: 0,
@@ -102,12 +132,42 @@ const DEFAULT_HEADER_DESIGN: HeaderDesign = {
   ruleColor: 'accent',
   ruleGapPt: 10,
   contactJoin: '  ·  ',
+  doubleRule: false,
+  bandPaddingPt: 12,
 };
 
 function pickDesignColor(mode: 'accent' | 'text' | 'muted', accent: string): string {
   if (mode === 'accent') return accent;
   if (mode === 'muted') return COLORS.muted;
   return COLORS.text;
+}
+
+/** Mix an accent with white so a tint stays light at every accent value. */
+export function tintAccent(accent: string, strength: number): string {
+  const value = accent.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return SIDEBAR_MUTED;
+  const channels = [0, 2, 4].map((offset) => {
+    const channel = Number.parseInt(value.slice(offset, offset + 2), 16);
+    return Math.round(255 * (1 - strength) + channel * strength)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${channels.join('')}`.toUpperCase();
+}
+
+function resolveSidebarTint(tint: ResumeDesign['sidebar']['tint'], accent: string): string | undefined {
+  if (tint === 'muted') return SIDEBAR_MUTED;
+  if (tint === 'accentSoft') return tintAccent(accent, 0.08);
+  return undefined;
+}
+
+function contactParts(contact: Contact): string[] {
+  return [
+    contact.email,
+    contact.phone,
+    contact.location,
+    ...contact.links.map((link) => link.label),
+  ].filter((part): part is string => Boolean(part));
 }
 
 export function buildDocumentHeader(
@@ -123,8 +183,175 @@ export function buildDocumentHeader(
     family,
     letterSpacingPt: design.nameLetterSpacingPt,
   };
+  const headlineFont: FontSpec = { sizePt: metrics.headlinePt, family };
+  const contactFont = smallFont(metrics, family);
+  const contactText = contactParts(identity.contact).join(design.contactJoin);
+  const contentWidthPt = metrics.contentWidthPt;
+  const rightEdgePt = metrics.pageWidthPt - metrics.marginXPt;
+
+  const ruleAt = (yPt: number, widthPt: number, color: string): HeaderRule => ({
+    x1Pt: metrics.marginXPt,
+    y1Pt: yPt,
+    x2Pt: metrics.pageWidthPt - metrics.marginXPt,
+    y2Pt: yPt,
+    widthPt,
+    color,
+  });
+
+  if (design.variant === 'banner') {
+    const padding = design.bandPaddingPt;
+    const name: HeaderLine = {
+      text: identity.name,
+      xPt: metrics.marginXPt + padding,
+      yPt: metrics.marginTopPt + padding,
+      font: nameFont,
+      color: BAND_TEXT,
+    };
+    let bottomPt = name.yPt + metrics.nameLinePt;
+    let headline: HeaderLine | undefined;
+    if (identity.headline) {
+      headline = {
+        text: identity.headline,
+        xPt: metrics.marginXPt + padding,
+        yPt: bottomPt + 2,
+        font: headlineFont,
+        color: BAND_TEXT,
+      };
+      bottomPt = headline.yPt + metrics.headlineLinePt;
+    }
+    const band: PlacedRect = {
+      xPt: metrics.marginXPt,
+      yPt: metrics.marginTopPt,
+      widthPt: contentWidthPt,
+      heightPt: bottomPt - metrics.marginTopPt + padding,
+      color: accent,
+    };
+    const contactTopPt = band.yPt + band.heightPt + 10;
+    const contactRows = contactText
+      ? wrapText(contactText, contentWidthPt, contactFont)
+      : [];
+    const contactLines = contactRows.map((text, index) => ({
+      text,
+      xPt: metrics.marginXPt,
+      yPt: contactTopPt + index * metrics.smallLinePt,
+      font: contactFont,
+      color: COLORS.muted,
+    }));
+    const cursorPt = contactTopPt + contactRows.length * metrics.smallLinePt;
+    const ruleY = cursorPt + design.ruleGapPt;
+    const rule = design.showRule ? ruleAt(ruleY, design.ruleWidthPt, pickDesignColor(design.ruleColor, accent)) : undefined;
+    const columnTop = (design.showRule ? ruleY : cursorPt) + 10;
+    return {
+      header: { name, headline, contactLines, rule, band },
+      heightPt: columnTop - metrics.marginTopPt,
+    };
+  }
+
+  if (design.variant === 'split') {
+    const rightWidthPt = contentWidthPt * 0.4;
+    const name: HeaderLine = {
+      text: identity.name,
+      xPt: metrics.marginXPt,
+      yPt: metrics.marginTopPt,
+      font: nameFont,
+      color: pickDesignColor(design.nameColor, accent),
+    };
+    let leftBottomPt = name.yPt + metrics.nameLinePt;
+    let headline: HeaderLine | undefined;
+    if (identity.headline) {
+      headline = {
+        text: identity.headline,
+        xPt: metrics.marginXPt,
+        yPt: leftBottomPt + 4,
+        font: headlineFont,
+        color: COLORS.text,
+      };
+      leftBottomPt = headline.yPt + metrics.headlineLinePt;
+    }
+    const contactRows = contactText ? wrapText(contactText, rightWidthPt, contactFont) : [];
+    const contactLines = contactRows.map((text, index) => ({
+      text,
+      xPt: rightEdgePt - measureLineWidth(text, contactFont),
+      yPt: metrics.marginTopPt + index * metrics.smallLinePt,
+      font: contactFont,
+      color: COLORS.muted,
+    }));
+    const contactBottomPt = metrics.marginTopPt + contactRows.length * metrics.smallLinePt;
+    const cursorPt = Math.max(leftBottomPt, contactBottomPt);
+    const ruleY = cursorPt + design.ruleGapPt;
+    const rule = design.showRule
+      ? ruleAt(ruleY, design.ruleWidthPt, pickDesignColor(design.ruleColor, accent))
+      : undefined;
+    const secondRule =
+      design.doubleRule && design.showRule
+        ? ruleAt(ruleY + 3, Math.max(0.4, design.ruleWidthPt * 0.6), pickDesignColor(design.ruleColor, accent))
+        : undefined;
+    const columnTop = (design.showRule ? ruleY + (secondRule ? 3 : 0) : cursorPt) + 10;
+    return {
+      header: { name, headline, contactLines, rule, secondRule },
+      heightPt: columnTop - metrics.marginTopPt,
+    };
+  }
+
+  if (design.variant === 'compact') {
+    const contactWidthPt = contentWidthPt * 0.42;
+    const contactRows = contactText ? wrapText(contactText, contactWidthPt, contactFont) : [];
+    const contactLines = contactRows.map((text, index) => ({
+      text,
+      xPt: rightEdgePt - measureLineWidth(text, contactFont),
+      yPt: metrics.marginTopPt + index * metrics.smallLinePt,
+      font: contactFont,
+      color: COLORS.muted,
+    }));
+    const contactBottomPt = metrics.marginTopPt + contactRows.length * metrics.smallLinePt;
+    const nameWidthPt = measureLineWidth(identity.name, nameFont);
+    const headlineInline =
+      Boolean(identity.headline) &&
+      nameWidthPt + 12 + measureLineWidth(identity.headline ?? '', headlineFont) <=
+        contentWidthPt * 0.55;
+    const name: HeaderLine = {
+      text: identity.name,
+      xPt: metrics.marginXPt,
+      yPt: metrics.marginTopPt,
+      font: nameFont,
+      color: pickDesignColor(design.nameColor, accent),
+    };
+    let leftBottomPt = name.yPt + metrics.nameLinePt;
+    let headline: HeaderLine | undefined;
+    if (identity.headline) {
+      headline = headlineInline
+        ? {
+            text: identity.headline,
+            xPt: metrics.marginXPt + nameWidthPt + 12,
+            yPt: name.yPt + (metrics.nameLinePt - metrics.headlineLinePt) / 2,
+            font: headlineFont,
+            color: COLORS.text,
+          }
+        : {
+            text: identity.headline,
+            xPt: metrics.marginXPt,
+            yPt: leftBottomPt + 2,
+            font: headlineFont,
+            color: COLORS.text,
+          };
+      if (!headlineInline) leftBottomPt = headline.yPt + metrics.headlineLinePt;
+    }
+    const cursorPt = Math.max(leftBottomPt, contactBottomPt);
+    const ruleY = cursorPt + design.ruleGapPt;
+    const rule = design.showRule
+      ? ruleAt(ruleY, design.ruleWidthPt, pickDesignColor(design.ruleColor, accent))
+      : undefined;
+    const columnTop = (design.showRule ? ruleY : cursorPt) + 10;
+    return {
+      header: { name, headline, contactLines, rule },
+      heightPt: columnTop - metrics.marginTopPt,
+    };
+  }
+
+  // Stacked and centered variants share the original identity composition.
+  const centered = design.variant === 'centered' || design.align === 'center';
   const alignX = (text: string, font: FontSpec): number =>
-    design.align === 'center'
+    centered
       ? Math.max(metrics.marginXPt, (metrics.pageWidthPt - measureLineWidth(text, font)) / 2)
       : metrics.marginXPt;
 
@@ -141,7 +368,6 @@ export function buildDocumentHeader(
 
   if (identity.headline) {
     const yPt = cursor + 4;
-    const headlineFont: FontSpec = { sizePt: metrics.headlinePt, family };
     headline = {
       text: identity.headline,
       xPt: alignX(identity.headline, headlineFont),
@@ -152,15 +378,7 @@ export function buildDocumentHeader(
     cursor = yPt + metrics.headlineLinePt;
   }
 
-  const contactParts = [
-    identity.contact.email,
-    identity.contact.phone,
-    identity.contact.location,
-    ...identity.contact.links.map((link) => link.label),
-  ].filter((part): part is string => Boolean(part));
-  const contactText = contactParts.join(design.contactJoin);
-  const contactFont = smallFont(metrics, family);
-  const contactRows = contactText ? wrapText(contactText, metrics.contentWidthPt, contactFont) : [];
+  const contactRows = contactText ? wrapText(contactText, contentWidthPt, contactFont) : [];
 
   const contactTop = cursor + (contactRows.length > 0 ? 8 : 0);
   const contactLines = contactRows.map((text, index) => ({
@@ -173,24 +391,16 @@ export function buildDocumentHeader(
 
   cursor = contactTop + contactRows.length * metrics.smallLinePt;
   const ruleY = cursor + design.ruleGapPt;
-  const columnTop = (design.showRule ? ruleY : cursor) + 10;
+  const ruleColor = pickDesignColor(design.ruleColor, accent);
+  const rule = design.showRule ? ruleAt(ruleY, design.ruleWidthPt, ruleColor) : undefined;
+  const secondRule =
+    design.doubleRule && design.showRule
+      ? ruleAt(ruleY + 3, Math.max(0.4, design.ruleWidthPt * 0.6), ruleColor)
+      : undefined;
+  const columnTop = (design.showRule ? ruleY + (secondRule ? 3 : 0) : cursor) + 10;
 
   return {
-    header: {
-      name,
-      headline,
-      contactLines,
-      rule: design.showRule
-        ? {
-            x1Pt: metrics.marginXPt,
-            y1Pt: ruleY,
-            x2Pt: metrics.pageWidthPt - metrics.marginXPt,
-            y2Pt: ruleY,
-            widthPt: design.ruleWidthPt,
-            color: pickDesignColor(design.ruleColor, accent),
-          }
-        : undefined,
-    },
+    header: { name, headline, contactLines, rule, secondRule },
     heightPt: columnTop - metrics.marginTopPt,
   };
 }
@@ -226,6 +436,14 @@ export function textBlock(text: string, widthPt: number, options: TextBlockOptio
     spaceAfterPt: options.spaceAfterPt,
     splittable: options.splittable ?? true,
     keepWithNext: options.keepWithNext,
+  };
+}
+
+function indentBlock(block: FlowBlock, indentPt: number): FlowBlock {
+  return {
+    ...block,
+    indentLeftPt: indentPt,
+    lines: block.lines.map((line) => ({ ...line, xOffsetPt: line.xOffsetPt + indentPt })),
   };
 }
 
@@ -266,31 +484,194 @@ function headingBlock(
   metrics: ResolvedMetrics,
   accent: string,
   design: ResumeDesign,
+  widthPt: number,
 ): FlowBlock {
   const heading = design.heading;
   const text = heading.transform === 'upper' ? section.title.toUpperCase() : section.title;
+  const font = headingFont(metrics, design.fontFamily, heading.letterSpacingPt);
+  const textWidthPt = measureLineWidth(text, font);
+  const centered = heading.align === 'center';
+  let xOffsetPt = centered ? Math.max(0, (widthPt - textWidthPt) / 2) : 0;
+  let yOffsetPt = 0;
+  const rules: FlowRect[] = [];
+  let band: FlowRect | undefined;
+  let heightOverridePt: number | undefined;
+  let spaceAfterPt = metrics.sectionAfterPt;
+  const decorColor = pickDesignColor(heading.decorColor, accent);
+  const thicknessPt = heading.decorThicknessPt;
+  const gapPt = 2;
+
+  const rule = (
+    x: number,
+    y: number,
+    width: number,
+    thickness: number,
+  ): FlowRect => ({ xOffsetPt: x, yOffsetPt: y, widthPt: width, heightPt: thickness, color: decorColor });
+
+  switch (heading.decor) {
+    case 'underline':
+      rules.push(rule(0, metrics.headingLinePt + gapPt, widthPt, thicknessPt));
+      spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + gapPt + 1);
+      break;
+    case 'trailing': {
+      const startPt = xOffsetPt + textWidthPt + 6;
+      if (startPt < widthPt) {
+        rules.push(rule(startPt, metrics.headingLinePt + gapPt, widthPt - startPt, thicknessPt));
+      }
+      spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + gapPt + 1);
+      break;
+    }
+    case 'bar':
+      xOffsetPt += thicknessPt + 8;
+      rules.push(rule(0, 0, thicknessPt, metrics.headingLinePt));
+      break;
+    case 'fill':
+      heightOverridePt = metrics.headingLinePt + 8;
+      yOffsetPt = 4;
+      xOffsetPt += 8;
+      band = {
+        xOffsetPt: 0,
+        yOffsetPt: 0,
+        widthPt,
+        heightPt: heightOverridePt,
+        color: decorColor,
+      };
+      break;
+    case 'topRule':
+      heightOverridePt = metrics.headingLinePt + 5;
+      yOffsetPt = 5;
+      rules.push(rule(0, 0, widthPt, thicknessPt));
+      break;
+    case 'boxed':
+      heightOverridePt = metrics.headingLinePt + 10;
+      yOffsetPt = 4;
+      rules.push(rule(0, 0, widthPt, thicknessPt));
+      rules.push(rule(0, metrics.headingLinePt + 7, widthPt, thicknessPt));
+      spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + 3);
+      break;
+    case 'none':
+    default:
+      break;
+  }
+
+  const color = heading.decor === 'fill' ? BAND_TEXT : pickDesignColor(heading.color, accent);
+
   return {
     sectionId: section.id,
     kind: 'heading',
     lineHeightPt: metrics.headingLinePt,
     spaceBeforePt: first ? 0 : metrics.sectionBeforePt,
-    spaceAfterPt: metrics.sectionAfterPt,
+    spaceAfterPt,
     splittable: false,
     keepWithNext: true,
-    headingRule:
-      heading.rule === 'none'
-        ? undefined
-        : {
-            color: pickDesignColor(heading.ruleColor, accent),
-            widthPt: heading.ruleWidthPt,
-          },
+    heightOverridePt,
+    rules: rules.length > 0 ? rules : undefined,
+    band,
     lines: [
       {
         text,
-        xOffsetPt: 0,
-        font: headingFont(metrics, design.fontFamily, heading.letterSpacingPt),
-        color: pickDesignColor(heading.color, accent),
+        xOffsetPt,
+        yOffsetPt,
+        font,
+        color,
       },
+    ],
+  };
+}
+
+function entryMeta(item: ResumeItem, design: ResumeDesign): string {
+  return [item.dateRange, item.location].filter(Boolean).join(design.item.metaSeparator);
+}
+
+interface TitleRowOptions {
+  title: string;
+  meta: string;
+  widthPt: number;
+  metrics: ResolvedMetrics;
+  design: ResumeDesign;
+  sectionId: string;
+  itemId: string;
+  spaceBeforePt: number;
+  layout: 'metaRight' | 'metaLeft';
+  gutterWidthPt?: number;
+}
+
+function titleRowBlock(options: TitleRowOptions): FlowBlock | null {
+  const { title, meta, widthPt, metrics, design, sectionId, itemId, spaceBeforePt, layout } = options;
+  const titleFont = boldFont(metrics, design.fontFamily);
+  const metaFont = smallFont(metrics, design.fontFamily);
+
+  if (layout === 'metaRight') {
+    const metaWidthPt = measureLineWidth(meta, metaFont);
+    if (metaWidthPt > widthPt * 0.52) return null;
+    const titleWidthPt = widthPt - metaWidthPt - 10;
+    const titleLines = wrapText(title, titleWidthPt, titleFont);
+    const heightPt = Math.max(1, titleLines.length) * metrics.bodyLinePt;
+    return {
+      sectionId,
+      itemId,
+      kind: 'titleRow',
+      lineHeightPt: metrics.bodyLinePt,
+      heightOverridePt: heightPt,
+      spaceBeforePt,
+      spaceAfterPt: 0,
+      splittable: false,
+      keepWithNext: true,
+      rowLayout: 'metaRight',
+      lines: [
+        ...titleLines.map((text, index) => ({
+          text,
+          xOffsetPt: 0,
+          yOffsetPt: index * metrics.bodyLinePt,
+          font: titleFont,
+          color: COLORS.text,
+        })),
+        {
+          text: meta,
+          xOffsetPt: widthPt - metaWidthPt,
+          yOffsetPt: 0,
+          font: metaFont,
+          color: COLORS.muted,
+        },
+      ],
+    };
+  }
+
+  const gutterWidthPt = options.gutterWidthPt ?? design.item.gutterWidthPt;
+  const metaLines = wrapText(meta, Math.max(24, gutterWidthPt - 6), metaFont);
+  const titleWidthPt = Math.max(24, widthPt - gutterWidthPt - 4);
+  const titleLines = wrapText(title, titleWidthPt, titleFont);
+  const heightPt = Math.max(
+    metaLines.length * metrics.smallLinePt,
+    titleLines.length * metrics.bodyLinePt,
+  );
+  return {
+    sectionId,
+    itemId,
+    kind: 'titleRow',
+    lineHeightPt: metrics.bodyLinePt,
+    heightOverridePt: heightPt,
+    spaceBeforePt,
+    spaceAfterPt: 0,
+    splittable: false,
+    keepWithNext: true,
+    rowLayout: 'metaLeft',
+    indentLeftPt: gutterWidthPt,
+    lines: [
+      ...metaLines.map((text, index) => ({
+        text,
+        xOffsetPt: 0,
+        yOffsetPt: index * metrics.smallLinePt,
+        font: metaFont,
+        color: COLORS.muted,
+      })),
+      ...titleLines.map((text, index) => ({
+        text,
+        xOffsetPt: gutterWidthPt,
+        yOffsetPt: index * metrics.bodyLinePt,
+        font: titleFont,
+        color: COLORS.text,
+      })),
     ],
   };
 }
@@ -369,9 +750,72 @@ function itemBlocks(
     return blocks;
   }
 
-  if (item.title) {
-    blocks.push(
-      textBlock(item.title, widthPt, {
+  const meta = entryMeta(item, design);
+  const useGutter = design.item.layout === 'gutter';
+  const contentWidthPt = useGutter ? widthPt - design.item.gutterWidthPt : widthPt;
+
+  if (design.item.layout !== 'stacked' && item.title && meta) {
+    const row = titleRowBlock({
+      title: item.title,
+      meta,
+      widthPt,
+      metrics,
+      design,
+      sectionId: section.id,
+      itemId: item.id,
+      spaceBeforePt: before,
+      layout: useGutter ? 'metaLeft' : 'metaRight',
+    });
+    if (row) {
+      blocks.push(row);
+    } else {
+      blocks.push(
+        textBlock(item.title, widthPt, {
+          kind: 'title',
+          sectionId: section.id,
+          itemId: item.id,
+          font: bold,
+          color: COLORS.text,
+          lineHeightPt: metrics.bodyLinePt,
+          spaceBeforePt: before,
+          spaceAfterPt: 0,
+          keepWithNext: true,
+          splittable: false,
+        }),
+      );
+      blocks.push(
+        textBlock(meta, widthPt, {
+          kind: 'meta',
+          sectionId: section.id,
+          itemId: item.id,
+          font: small,
+          color: COLORS.muted,
+          lineHeightPt: metrics.smallLinePt,
+          spaceBeforePt: 1.5,
+          spaceAfterPt: 2,
+          keepWithNext: Boolean(item.subtitle || item.body || item.bullets.length > 0),
+          splittable: false,
+        }),
+      );
+    }
+
+    if (item.subtitle) {
+      const subtitleBlock = textBlock(item.subtitle, contentWidthPt, {
+        kind: 'subtitle',
+        sectionId: section.id,
+        itemId: item.id,
+        font: body,
+        color: COLORS.text,
+        lineHeightPt: metrics.bodyLinePt,
+        spaceBeforePt: 0,
+        spaceAfterPt: 0,
+        keepWithNext: Boolean(item.body || item.bullets.length > 0),
+      });
+      blocks.push(useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock);
+    }
+  } else {
+    if (item.title) {
+      const titleBlock = textBlock(item.title, contentWidthPt, {
         kind: 'title',
         sectionId: section.id,
         itemId: item.id,
@@ -382,13 +826,12 @@ function itemBlocks(
         spaceAfterPt: 0,
         keepWithNext: true,
         splittable: false,
-      }),
-    );
-  }
+      });
+      blocks.push(useGutter ? indentBlock(titleBlock, design.item.gutterWidthPt) : titleBlock);
+    }
 
-  if (item.subtitle) {
-    blocks.push(
-      textBlock(item.subtitle, widthPt, {
+    if (item.subtitle) {
+      const subtitleBlock = textBlock(item.subtitle, contentWidthPt, {
         kind: 'subtitle',
         sectionId: section.id,
         itemId: item.id,
@@ -400,14 +843,12 @@ function itemBlocks(
         keepWithNext: Boolean(
           item.dateRange || item.location || item.body || item.bullets.length > 0,
         ),
-      }),
-    );
-  }
+      });
+      blocks.push(useGutter ? indentBlock(subtitleBlock, design.item.gutterWidthPt) : subtitleBlock);
+    }
 
-  const meta = [item.dateRange, item.location].filter(Boolean).join('  ·  ');
-  if (meta) {
-    blocks.push(
-      textBlock(meta, widthPt, {
+    if (meta && !(design.item.layout === 'gutter' && item.title)) {
+      const metaBlock = textBlock(meta, useGutter ? design.item.gutterWidthPt : widthPt, {
         kind: 'meta',
         sectionId: section.id,
         itemId: item.id,
@@ -418,27 +859,28 @@ function itemBlocks(
         spaceAfterPt: 2,
         keepWithNext: Boolean(item.body || item.bullets.length > 0),
         splittable: false,
-      }),
-    );
+      });
+      blocks.push(metaBlock);
+    }
   }
 
   if (item.body) {
-    blocks.push(
-      textBlock(item.body, widthPt, {
-        kind: 'body',
-        sectionId: section.id,
-        itemId: item.id,
-        font: body,
-        color: COLORS.text,
-        lineHeightPt: metrics.bodyLinePt,
-        spaceBeforePt: item.title || item.subtitle || meta ? 0 : before,
-        spaceAfterPt: metrics.paragraphAfterPt,
-      }),
-    );
+    const bodyBlock = textBlock(item.body, contentWidthPt, {
+      kind: 'body',
+      sectionId: section.id,
+      itemId: item.id,
+      font: body,
+      color: COLORS.text,
+      lineHeightPt: metrics.bodyLinePt,
+      spaceBeforePt: item.title || item.subtitle || meta ? 0 : before,
+      spaceAfterPt: metrics.paragraphAfterPt,
+    });
+    blocks.push(useGutter ? indentBlock(bodyBlock, design.item.gutterWidthPt) : bodyBlock);
   }
 
-  for (const bullet of item.bullets) {
-    blocks.push(bulletBlock(bullet, widthPt, metrics, section.id, design, item.id));
+  for (const text of item.bullets) {
+    const bullet = bulletBlock(text, contentWidthPt, metrics, section.id, design, item.id);
+    blocks.push(useGutter ? indentBlock(bullet, design.item.gutterWidthPt) : bullet);
   }
 
   return blocks;
@@ -506,7 +948,7 @@ function buildSectionBlocks(
   for (const section of sections) {
     if (!section.enabled || !hasContent(section)) continue;
 
-    const heading = headingBlock(section, first, metrics, accent, design);
+    const heading = headingBlock(section, first, metrics, accent, design, widthPt);
     if (section.startOnNewPage) heading.forcePageBreak = true;
 
     const groups = sectionGroups(section, widthPt, metrics, design);
@@ -534,12 +976,12 @@ function buildSectionBlocks(
 function buildColumnBlocks(
   resume: Resume,
   column: ColumnId,
+  widthPt: number,
   metrics: ResolvedMetrics,
   accent: string,
   design: ResumeDesign,
   keepEntriesTogether: boolean,
 ): FlowBlock[] {
-  const widthPt = column === 'main' ? metrics.mainWidthPt : metrics.sideWidthPt;
   return buildSectionBlocks(
     resume.sections.filter((section) => section.column === column),
     widthPt,
@@ -551,6 +993,11 @@ function buildColumnBlocks(
 }
 
 export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: number): PlacedBlock {
+  const translate = (rect: PlacedRect): PlacedRect => ({
+    ...rect,
+    xPt: rect.xPt + xPt,
+    yPt: rect.yPt + yPt,
+  });
   return {
     ...block,
     xPt: block.xPt + xPt,
@@ -560,15 +1007,15 @@ export function translatePlacedBlock(block: PlacedBlock, xPt: number, yPt: numbe
       xPt: line.xPt + xPt,
       yPt: line.yPt + yPt,
     })),
-    rule: block.rule
-      ? { ...block.rule, xPt: block.rule.xPt + xPt, yPt: block.rule.yPt + yPt }
-      : undefined,
+    rule: block.rule ? translate(block.rule) : undefined,
+    rules: block.rules ? block.rules.map(translate) : undefined,
+    band: block.band ? translate(block.band) : undefined,
   };
 }
 
 /**
- * Places one linear block flow down the full content width. Used by the ATS
- * Simple resume template; each block keeps the shared item formatting.
+ * Places one linear block flow down the full content width. Used by linear
+ * resume designs; each block keeps the shared item formatting.
  */
 export function assembleSingleColumnPages(
   blocks: FlowBlock[],
@@ -623,6 +1070,13 @@ function resumeLayout(
     kind: 'resume',
     variant: design.id,
     columns: design.columns,
+    arrangement: design.arrangement,
+    headerVariant: design.header.variant,
+    itemLayout: design.item.layout,
+    sidebarTint: resolveSidebarTint(design.sidebar.tint, accent),
+    sidebarSide:
+      design.columns === 2 ? (design.arrangement === 'sidebarLeft' ? 'left' : 'right') : undefined,
+    sidebarDivider: design.sidebar.divider,
     headerAlign: design.header.align,
     fontFamily: design.fontFamily,
     pages,
@@ -652,7 +1106,7 @@ export function layoutResume(resume: Resume): Layout {
     design.fontFamily,
   );
 
-  if (design.columns === 1) {
+  if (design.arrangement === 'linear') {
     // One linear reading order across every section, regardless of the
     // two-column `column` assignment stored on each section.
     const blocks = buildSectionBlocks(
@@ -678,6 +1132,7 @@ export function layoutResume(resume: Resume): Layout {
   const mainBlocks = buildColumnBlocks(
     resume,
     'main',
+    metrics.mainWidthPt,
     metrics,
     accent,
     design,
@@ -686,6 +1141,7 @@ export function layoutResume(resume: Resume): Layout {
   const sideBlocks = buildColumnBlocks(
     resume,
     'side',
+    metrics.sideWidthPt,
     metrics,
     accent,
     design,
@@ -709,22 +1165,54 @@ export function layoutResume(resume: Resume): Layout {
   );
 
   const pageCount = Math.max(1, mainPages.length, sidePages.length);
-  const sideX = metrics.marginXPt + metrics.mainWidthPt + metrics.gapPt;
+  const sidebarOnLeft = design.arrangement === 'sidebarLeft';
+  const mainX = sidebarOnLeft
+    ? metrics.marginXPt + metrics.sideWidthPt + metrics.gapPt
+    : metrics.marginXPt;
+  const sideX = sidebarOnLeft
+    ? metrics.marginXPt
+    : metrics.marginXPt + metrics.mainWidthPt + metrics.gapPt;
+  const sidebarTint = resolveSidebarTint(design.sidebar.tint, accent);
+  const dividerX = sidebarOnLeft
+    ? metrics.marginXPt + metrics.sideWidthPt + metrics.gapPt / 2
+    : sideX - metrics.gapPt / 2;
 
   const pages: PageLayout[] = Array.from({ length: pageCount }, (_, index) => {
     const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);
     const blocks = [
       ...(mainPages[index] ?? []).map((block) =>
-        translatePlacedBlock(block, metrics.marginXPt, top),
+        translatePlacedBlock(block, mainX, top),
       ),
       ...(sidePages[index] ?? []).map((block) => translatePlacedBlock(block, sideX, top)),
     ];
+    const contentBottomPt = metrics.pageHeightPt - metrics.marginBottomPt;
+    const backgroundHeightPt = Math.max(0, contentBottomPt - top);
     return {
       index,
       widthPt: metrics.pageWidthPt,
       heightPt: metrics.pageHeightPt,
       blocks,
       header: index === 0 ? header : undefined,
+      backgrounds: sidebarTint
+        ? [
+            {
+              xPt: sideX,
+              yPt: top,
+              widthPt: metrics.sideWidthPt,
+              heightPt: backgroundHeightPt,
+              color: sidebarTint,
+            },
+          ]
+        : undefined,
+      divider: design.sidebar.divider
+        ? {
+            xPt: dividerX,
+            yPt: top,
+            widthPt: 0.6,
+            heightPt: backgroundHeightPt,
+            color: DIVIDER_COLOR,
+          }
+        : undefined,
     };
   });
 

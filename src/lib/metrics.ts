@@ -124,11 +124,12 @@ export function resolveMetrics(
   const section = SECTION_SPACING[normalized.format.sectionSpacing];
 
   const isCoverLetter = kind === 'coverLetter';
+  const resumeDesign = isCoverLetter ? undefined : resolveResumeDesign(normalized.layout);
   const design = isCoverLetter
     ? resolveCoverLetterStyle(normalized.letterStyle)
-    : resolveResumeDesign(normalized.layout);
+    : (resumeDesign as ReturnType<typeof resolveResumeDesign>);
   const bodyDesign = design.body;
-  const headingDesign = isCoverLetter ? undefined : resolveResumeDesign(normalized.layout).heading;
+  const headingDesign = resumeDesign?.heading;
   const metaScale = 'metaScale' in bodyDesign ? bodyDesign.metaScale : 1;
   const bodySpacing =
     'itemBeforeScale' in bodyDesign
@@ -136,7 +137,8 @@ export function resolveMetrics(
       : { itemBeforeScale: 1, paragraphAfterScale: 1, bulletAfterScale: 1 };
 
   const contentWidthPt = page.widthPt - margin.xPt * 2;
-  const mainWidthPt = contentWidthPt * MAIN_COLUMN_RATIO;
+  const sideRatio = resumeDesign?.sidebar.widthRatio ?? 1 - MAIN_COLUMN_RATIO;
+  const mainWidthPt = contentWidthPt * (1 - sideRatio);
   let gapPt = COLUMN_GAPS[normalized.format.columnSpacing];
   let sideWidthPt = contentWidthPt - mainWidthPt - gapPt;
 

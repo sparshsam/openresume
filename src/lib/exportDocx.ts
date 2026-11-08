@@ -284,7 +284,7 @@ function paragraphFor(
       ? {
           bottom: {
             style: BorderStyle.SINGLE,
-            size: Math.max(1, Math.round(block.rule.thicknessPt * 8)),
+            size: Math.max(1, Math.round(block.rule.heightPt * 8)),
             color: hexColor(block.rule.color),
             space: 1,
           },

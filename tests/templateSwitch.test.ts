@@ -100,7 +100,8 @@ describe('resume template switching', () => {
     expect(headingBlocks.length).toBeGreaterThan(0);
     for (const heading of headingBlocks) {
       expect(heading.lines[0].font.family).toBe(design.fontFamily);
-      expect(Boolean(heading.rule)).toBe(design.heading.rule !== 'none');
+      const decorated = Boolean(heading.band) || (heading.rules?.length ?? 0) > 0;
+      expect(decorated).toBe(design.heading.decor !== 'none');
     }
   });
 
@@ -118,7 +119,7 @@ describe('resume template switching', () => {
           design.header.ruleWidthPt,
           header?.name.font.sizePt.toFixed(2),
           design.heading.letterSpacingPt,
-          design.heading.rule,
+          design.heading.decor,
           design.heading.scale,
           design.body.scale,
           design.body.lineScale,

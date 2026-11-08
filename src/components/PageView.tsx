@@ -99,7 +99,7 @@ export function PageView({ page, onFocusTarget }: PageViewProps) {
                 left: `${block.rule.xPt}pt`,
                 top: `${block.rule.yPt}pt`,
                 width: `${block.rule.widthPt}pt`,
-                height: `${block.rule.thicknessPt}pt`,
+                height: `${block.rule.heightPt}pt`,
                 background: block.rule.color,
               }}
             />
