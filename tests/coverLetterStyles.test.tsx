@@ -153,6 +153,7 @@ describe('coordinated cover letter suggestion', () => {
     renderApp();
     await buildResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /Executive\./ }));
 
     await user.click(
@@ -160,6 +161,7 @@ describe('coordinated cover letter suggestion', () => {
     );
     await buildCoverLetter(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
 
     expect(screen.getByText(/Executive pairs well with Executive Letter/)).toBeInTheDocument();
     const letterGallery = screen.getByRole('radiogroup', { name: 'Letter style' });

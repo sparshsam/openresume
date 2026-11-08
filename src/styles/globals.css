@@ -1833,3 +1833,221 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Format drawer ──────────────────────────────── */
+
+.format-backdrop {
+  display: none;
+}
+
+.format-drawer {
+  position: fixed;
+  top: var(--header-height);
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100vw);
+  padding: 0;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 0;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.format-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.format-drawer-eyebrow {
+  margin: 0 0 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.format-drawer-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.format-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  margin: 10px 16px 0;
+  padding: 3px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-muted);
+}
+
+.format-tabs [role='tab'] {
+  flex: 1;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.format-tabs [role='tab'][aria-selected='true'] {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.format-tabs [role='tab']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.format-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
+}
+
+.format-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.format-panel[hidden] {
+  display: none;
+}
+
+.format-group-heading {
+  margin: 8px 0 -2px;
+}
+
+.format-drawer-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.format-drawer-footer .formatting-note {
+  flex: 1;
+}
+
+.format-drawer .formatting-accent,
+.format-drawer .formatting-grid {
+  max-width: none;
+}
+
+.format-drawer .formatting-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.design-gallery--compact {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+
+.design-gallery--compact .design-card {
+  gap: 6px;
+  padding: 6px;
+}
+
+.design-gallery--compact .design-thumb-frame {
+  padding: 3px;
+}
+
+.design-gallery--compact .design-card-name {
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.design-gallery--compact .design-badge {
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.design-gallery-section {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.design-gallery-toolbar {
+  margin-bottom: 8px;
+}
+
+.design-context-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.design-recommendation {
+  margin-bottom: 8px;
+  font-size: 11.5px;
+}
+
+@media (max-width: 480px) {
+  .format-drawer .formatting-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .format-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.42);
+    cursor: default;
+  }
+
+  .format-drawer {
+    inset: 0;
+    width: 100%;
+    border-right: 0;
+    z-index: 40;
+  }
+
+  .format-drawer-header {
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
+
+  .format-drawer-footer {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+@media print {
+  .format-backdrop {
+    display: none !important;
+  }
+}
+
+.button[aria-expanded='true'] {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-default));
+  background: var(--accent-soft);
+  color: var(--accent);
+}

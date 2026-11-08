@@ -75,7 +75,11 @@ export function DesignGallery({
           Letter style stays independent and can be changed on the cover letter.
         </p>
 
-        <div className="design-gallery" role="radiogroup" aria-labelledby="design-gallery-heading">
+        <div
+          className="design-gallery design-gallery--compact"
+          role="radiogroup"
+          aria-labelledby="design-gallery-heading"
+        >
           {RESUME_DESIGNS.map((design) => {
             const selected = template.layout === design.id;
             const isRecommended = recommended.has(design.id);
@@ -83,6 +87,7 @@ export function DesignGallery({
               <label
                 key={design.id}
                 className={`design-card${selected ? ' is-selected' : ''}${isRecommended ? ' is-recommended' : ''}`}
+                title={design.description}
               >
                 <input
                   className="design-input"
@@ -105,7 +110,6 @@ export function DesignGallery({
                       </span>
                     ) : null}
                   </span>
-                  <span className="design-card-description">{design.description}</span>
                   {isRecommended ? <span className="design-badge">Suggested</span> : null}
                 </span>
               </label>
@@ -139,14 +143,18 @@ export function DesignGallery({
         </p>
       ) : null}
       <div
-        className="design-gallery design-gallery-letter"
+        className="design-gallery design-gallery--compact design-gallery-letter"
         role="radiogroup"
         aria-labelledby="letter-style-heading"
       >
         {COVER_LETTER_STYLES.map((style) => {
           const selected = template.letterStyle === style.id;
           return (
-            <label key={style.id} className={`design-card${selected ? ' is-selected' : ''}`}>
+            <label
+              key={style.id}
+              className={`design-card${selected ? ' is-selected' : ''}`}
+              title={style.description}
+            >
               <input
                 className="design-input"
                 type="radio"
@@ -168,7 +176,6 @@ export function DesignGallery({
                     </span>
                   ) : null}
                 </span>
-                <span className="design-card-description">{style.description}</span>
               </span>
             </label>
           );

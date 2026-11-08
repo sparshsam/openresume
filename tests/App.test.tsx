@@ -1065,6 +1065,7 @@ describe('resume design gallery', () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
 
     const gallery = screen.getByRole('radiogroup', { name: 'Browse Designs' });
     expect(within(gallery).getAllByRole('radio')).toHaveLength(10);
@@ -1078,6 +1079,7 @@ describe('resume design gallery', () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleCoverLetter(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
 
     expect(screen.queryByRole('radiogroup', { name: 'Browse Designs' })).not.toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: 'Letter style' })).toBeInTheDocument();
@@ -1090,11 +1092,13 @@ describe('resume design gallery', () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     const pagesBefore = document.querySelectorAll('.page').length;
 
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     expect(screen.getByRole('radio', { name: /ATS Simple\./ })).toBeChecked();
+    await user.click(screen.getByRole('tab', { name: 'Formatting' }));
     expect(screen.queryByLabelText('Column spacing')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^Column for /)).not.toBeInTheDocument();
     expect(screen.getByText(/No layout can guarantee compatibility/)).toBeInTheDocument();
@@ -1107,7 +1111,9 @@ describe('resume design gallery', () => {
     const pagesAfter = document.querySelectorAll('.page').length;
     expect(pagesAfter).toBeGreaterThan(pagesBefore);
 
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /Professional Two-Column\./ }));
+    await user.click(screen.getByRole('tab', { name: 'Formatting' }));
     expect(screen.getByLabelText('Column spacing')).toBeInTheDocument();
     expect(screen.getAllByLabelText(/^Column for /).length).toBeGreaterThan(0);
     expect(document.querySelectorAll('.page').length).toBe(pagesBefore);
@@ -1122,14 +1128,17 @@ describe('resume design gallery', () => {
     await buildApplicationKit(user);
 
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     await user.click(screen.getByRole('tab', { name: 'Cover Letter' }));
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     expect(screen.queryByRole('radiogroup', { name: 'Browse Designs' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Resume' }));
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     expect(screen.getByRole('radio', { name: /ATS Simple\./ })).toBeChecked();
     expect(Object.keys(localStorage).filter((key) => key !== THEME_KEY)).toEqual([]);
   });
@@ -1138,6 +1147,7 @@ describe('resume design gallery', () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
     await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
 
     await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
@@ -1148,6 +1158,7 @@ describe('resume design gallery', () => {
     const user = userEvent.setup({ writeToClipboard: false });
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
 
     await user.selectOptions(screen.getByLabelText('Application context (optional)'), 'government');
 
