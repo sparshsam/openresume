@@ -13,6 +13,13 @@ All notable changes to this project will be documented in this file.
 - **An explicit AI contact contract.** All three templates share five field roles (professional headline, target job title, employment job title, employer, geographic location), one canonical contact-line structure, an omit-the-part rule, valid and invalid location examples, and five published examples covering a missing headline, missing location, missing phone, and multiple links.
 - **Regression coverage** for malformed AI résumés, cover letters, and application kits; structural composition and content preservation across all ten designs; thumbnail accuracy; PDF/DOCX rendering of bands, rules, gutters, and tab-aligned rows; and the Format drawer.
 
+### Fixed
+
+- Contact parsing now accepts comma-free regional locations (`Toronto ON`, `New York NY`, `Toronto ON M5V 2T6`), three-part addresses (`New York, NY, USA`), phone extensions, slash-separated phone numbers, and modern domains such as `.ai`. Additional emails and phones are ignored with a warning instead of leaking into the professional headline.
+- Entry metadata validation rejects a much wider set of employment titles (`Scrum Master`, `Copywriter`, `Social Worker`, `Barista`, `Construction Worker`, `Line Cook`) and employer names, while still accepting legitimate places that contain role-like words (`Research Triangle Park, NC`).
+- DOCX accent-bar headings use a valid OOXML border size; academic gutter rows no longer apply the gutter offset twice; wrapped section headings and long identity names fit their columns; and sidebar dividers align with the tint edge in the preview, PDF, and Word output.
+- The Format drawer returns focus to the Format button only after a user-initiated close, so switching kit tabs keeps focus on the tab that was activated.
+
 ### Changed
 
 - Contact and entry location warnings now appear in the build warnings shown after preparation.
@@ -21,7 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
-- 529 tests across 38 files, including the new `aiFieldPlacement`, `designComposition`, `designThumbnail`, `exportDesigns`, and `formattingDrawer` suites.
+- 551 tests across 38 files, including the new `aiFieldPlacement`, `designComposition`, `designThumbnail`, `exportDesigns`, and `formattingDrawer` suites.
 
 ## [0.2.0] — 2026-11-02
 

@@ -177,3 +177,35 @@ describe('wrapped title rows', () => {
     expect(xml).toContain(longTitle);
   });
 });
+
+describe('Word structural details', () => {
+  it('keeps accent-bar borders within the OOXML size range', async () => {
+    const xml = await docxXml(withLayout(createSampleResume(), 'creative'));
+    const sizes = [...xml.matchAll(/<w:left w:val="single"[^>]*w:sz="(\d+)"/g)].map((match) =>
+      Number(match[1]),
+    );
+    expect(sizes.length).toBeGreaterThan(0);
+    for (const size of sizes) {
+      expect(size).toBeGreaterThanOrEqual(2);
+      expect(size).toBeLessThanOrEqual(96);
+    }
+    expect(sizes).toContain(24);
+  });
+
+  it('keeps the academic gutter tab relative to the text margin', async () => {
+    const xml = await docxXml(withLayout(createSampleResume(), 'academic'));
+    const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) ?? [];
+    const row = paragraphs.find(
+      (paragraph) => paragraph.includes('Northwind Studio') && paragraph.includes('2022 – Present'),
+    );
+    expect(row).toBeTruthy();
+    expect(row).toContain('<w:tab/>');
+    expect(row).not.toContain('<w:ind w:left="1520"');
+
+    const indentedBody = paragraphs.find((paragraph) =>
+      paragraph.includes('Led the rebuild of a document workflow'),
+    );
+    expect(indentedBody).toBeTruthy();
+    expect(indentedBody).toContain('<w:ind w:left="1880"');
+  });
+});

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
 import { ThemeProvider } from '../src/components/ThemeProvider';
+import { COVER_LETTER_DELIMITER, RESUME_DELIMITER } from '../src/lib/applicationKitFormat';
 import { SAMPLE_COVER_LETTER_TEXT } from '../src/lib/coverLetterSample';
 import { SAMPLE_RESUME_TEXT } from '../src/lib/sample';
 
@@ -14,6 +15,16 @@ function renderApp() {
       <App />
     </ThemeProvider>,
   );
+}
+
+const KIT_TEXT = `${RESUME_DELIMITER}\n${SAMPLE_RESUME_TEXT}\n\n${COVER_LETTER_DELIMITER}\n${SAMPLE_COVER_LETTER_TEXT}`;
+
+async function buildKit(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
+  fireEvent.change(screen.getByLabelText('Application kit text'), {
+    target: { value: KIT_TEXT },
+  });
+  await user.click(screen.getByRole('button', { name: 'Build Application Kit' }));
 }
 
 async function build(user: User, kind: 'resume' | 'coverLetter') {
@@ -113,13 +124,40 @@ describe('format drawer', () => {
     expect(formatButton).toHaveFocus();
   });
 
+  it('does not steal focus when a kit tab closes the drawer', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await buildKit(user);
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    const coverTab = screen.getByRole('tab', { name: 'Cover Letter' });
+    await user.click(coverTab);
+
+    expect(screen.queryByRole('dialog', { name: 'Format' })).not.toBeInTheDocument();
+    expect(coverTab).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Formatting' })).not.toHaveFocus();
+  });
+
+  it('announces the header action as close while the drawer is open', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderApp();
+    await build(user, 'resume');
+    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+
+    const closeAction = screen.getByRole('button', { name: 'Close formatting' });
+    expect(closeAction).toHaveAttribute('aria-expanded', 'true');
+    await user.click(closeAction);
+    expect(screen.queryByRole('dialog', { name: 'Format' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Formatting' })).toBeInTheDocument();
+  });
+
   it('closes with the close button', async () => {
     const user = userEvent.setup({ writeToClipboard: false });
     renderApp();
     await build(user, 'resume');
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
 
-    await user.click(screen.getByRole('button', { name: 'Close formatting' }));
+    await user.click(screen.getByRole('button', { name: 'Close formatting panel' }));
     expect(screen.queryByRole('dialog', { name: 'Format' })).not.toBeInTheDocument();
   });
 

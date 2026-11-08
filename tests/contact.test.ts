@@ -142,3 +142,61 @@ describe('parseContactLine', () => {
     expect(parsed.headline).toBe('Product-minded software generalist · Senior Product Engineer');
   });
 });
+
+describe('contact classification hardening', () => {
+  it('accepts comma-free regional locations and three-part addresses', () => {
+    for (const value of [
+      'Toronto ON',
+      'New York NY',
+      'Vancouver BC',
+      'Toronto ON M5V 2T6',
+      'New York, NY, USA',
+      'San Francisco, CA, USA',
+      'London, England, UK',
+    ]) {
+      expect(looksLikeLocation(value), value).toBe(true);
+      expect(looksLikeJobTitle(value), value).toBe(false);
+    }
+  });
+
+  it('rejects non-place comma values and employer names', () => {
+    for (const value of ['Coach, Mentor', 'Brightline Labs, Inc.', 'Brightline Labs']) {
+      expect(looksLikeLocation(value) && !looksLikeJobTitle(value), value).toBe(false);
+    }
+  });
+
+  it('keeps additional emails and phones out of the headline and warns', () => {
+    const parsed = parseContactLine(
+      'Product Engineer | jordan@example.com | work@example.com | +1 555 0142 | +1 555 0143 | Toronto, ON',
+    );
+
+    expect(parsed.headline).toBe('Product Engineer');
+    expect(parsed.contact.email).toBe('jordan@example.com');
+    expect(parsed.contact.phone).toBe('+1 555 0142');
+    expect(parsed.contact.location).toBe('Toronto, ON');
+    expect(parsed.warnings.some((warning) => warning.includes('additional email'))).toBe(true);
+    expect(parsed.warnings.some((warning) => warning.includes('additional phone'))).toBe(true);
+  });
+
+  it('recognises phone extensions, slash phones, and modern domains', () => {
+    const extended = parseContactLine('Product Engineer | +1 555 0142 ext. 123 | Toronto, ON');
+    expect(extended.contact.phone).toBe('+1 555 0142 ext. 123');
+
+    const slash = parseContactLine('Product Engineer | 555/0142 | Toronto, ON');
+    expect(slash.contact.phone).toBe('555/0142');
+
+    const ai = parseContactLine('Product Engineer | jane.ai | Toronto, ON');
+    expect(ai.contact.links).toEqual([{ label: 'jane.ai', url: 'https://jane.ai' }]);
+    expect(ai.headline).toBe('Product Engineer');
+  });
+
+  it('accepts remote arrangements with a named place', () => {
+    expect(looksLikeLocation('Remote — Canada')).toBe(true);
+    expect(looksLikeLocation('Remote — Toronto, ON')).toBe(true);
+    expect(looksLikeLocation('Remote-first product leader')).toBe(false);
+  });
+
+  it('still recognises a place containing a role word as a location', () => {
+    expect(looksLikeLocation('Research Triangle Park, NC')).toBe(true);
+  });
+});

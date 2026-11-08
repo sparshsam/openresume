@@ -132,6 +132,7 @@ export function FormattingPanel({
     design: null,
     format: null,
   });
+  const closeIntent = useRef(false);
   const selectedAccent = documentAccentName(template.accent) ?? 'Custom';
   const atsSimple = kind === 'resume' && template.layout === 'atsSimple';
   const twoColumns = kind === 'resume' && resolveResumeDesign(template.layout).columns === 2;
@@ -139,13 +140,18 @@ export function FormattingPanel({
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     tabRefs.current.format?.focus();
-    return () => previous?.focus();
+    return () => {
+      // Only a user-initiated close returns focus. A programmatic close, such
+      // as switching kit tabs, keeps the focus that triggered it.
+      if (closeIntent.current) previous?.focus();
+    };
   }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
+        closeIntent.current = true;
         onClose();
       }
     };
@@ -167,7 +173,10 @@ export function FormattingPanel({
         type="button"
         className="format-backdrop"
         aria-label="Dismiss formatting"
-        onClick={onClose}
+        onClick={() => {
+          closeIntent.current = true;
+          onClose();
+        }}
       />
       <aside
         className="formatting-panel format-drawer"
@@ -186,8 +195,11 @@ export function FormattingPanel({
           <button
             type="button"
             className="icon-button"
-            aria-label="Close formatting"
-            onClick={onClose}
+            aria-label="Close formatting panel"
+            onClick={() => {
+              closeIntent.current = true;
+              onClose();
+            }}
           >
             <Icon name="x" />
           </button>

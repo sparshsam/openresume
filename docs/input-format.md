@@ -116,10 +116,10 @@ Each part is classified by its own shape, not by its position:
 1. Contains `@` → email.
 2. Phone-shaped → phone.
 3. URL-shaped (`https://`, `www.`, or a known `domain.tld/path`) → link.
-4. Free text that reads as a verified geographic location or a confirmed work arrangement → location. Examples: `Toronto, ON`, `Vancouver, British Columbia`, `Berlin, Germany`, `New York, NY`, `Remote`, `Hybrid`, `On-site`, `Remote (Canada)`, `Toronto (Remote)`.
+4. Free text that reads as a verified geographic location or a confirmed work arrangement → location. Examples: `Toronto, ON`, `Vancouver, British Columbia`, `Berlin, Germany`, `New York, NY`, `Toronto ON`, `New York, NY, USA`, `Remote`, `Hybrid`, `On-site`, `Remote (Canada)`, `Toronto (Remote)`.
 5. Remaining free text → professional headline.
 
-The parser validates the location slot instead of trusting it. A value that reads as a job title, employer, or professional headline (`Senior Product Engineer`, `Product-minded software generalist`, `Brightline Labs`) is never accepted as a location. If the final contact value is title-like, it is kept as the headline (or appended to an existing headline) and a warning is emitted; the location remains empty. Because email, phone, and links are pattern-matched, a missing field never shifts a later value into the wrong field.
+The parser validates the location slot instead of trusting it. A value that reads as a job title, employer, or professional headline (`Senior Product Engineer`, `Product-minded software generalist`, `Brightline Labs`) is never accepted as a location. If the final contact value is title-like, it is kept as the headline (or appended to an existing headline) and a warning is emitted; the location remains empty. Because email, phone, and links are pattern-matched, a missing field never shifts a later value into the wrong field. A second email or phone is ignored with a warning rather than becoming headline text.
 
 Links are displayed by their label and exported with an `https://` scheme when one is missing.
 

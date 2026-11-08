@@ -184,6 +184,20 @@ function resolveSidebarTint(
   return undefined;
 }
 
+/**
+ * Shrinks a single-line identity token until it fits its column. Names and
+ * headlines are intentionally single-line; reducing the size is preferable to
+ * clipping them against the page edge in the preview and PDF.
+ */
+function fitFont(text: string, font: FontSpec, maxWidthPt: number): FontSpec {
+  let sizePt = font.sizePt;
+  const minimumPt = font.sizePt * 0.45;
+  while (sizePt > minimumPt && measureLineWidth(text, { ...font, sizePt }) > maxWidthPt) {
+    sizePt -= 0.5;
+  }
+  return { ...font, sizePt: Math.max(minimumPt, sizePt) };
+}
+
 function contactParts(contact: Contact): string[] {
   return [
     contact.email,
@@ -224,24 +238,28 @@ export function buildDocumentHeader(
   if (design.variant === 'banner') {
     const padding = design.bandPaddingPt;
     const onBand = bandTextColor(accent);
+    const bannerNameFont = fitFont(identity.name, nameFont, contentWidthPt - padding * 2);
+    const bannerHeadlineFont = identity.headline
+      ? fitFont(identity.headline, headlineFont, contentWidthPt - padding * 2)
+      : undefined;
     const name: HeaderLine = {
       text: identity.name,
       xPt: metrics.marginXPt + padding,
       yPt: metrics.marginTopPt + padding,
-      font: nameFont,
+      font: bannerNameFont,
       color: onBand,
     };
-    let bottomPt = name.yPt + metrics.nameLinePt;
+    let bottomPt = name.yPt + bannerNameFont.sizePt * 1.17;
     let headline: HeaderLine | undefined;
-    if (identity.headline) {
+    if (identity.headline && bannerHeadlineFont) {
       headline = {
         text: identity.headline,
         xPt: metrics.marginXPt + padding,
         yPt: bottomPt + 2,
-        font: headlineFont,
+        font: bannerHeadlineFont,
         color: onBand,
       };
-      bottomPt = headline.yPt + metrics.headlineLinePt;
+      bottomPt = headline.yPt + bannerHeadlineFont.sizePt * 1.24;
     }
     const band: PlacedRect = {
       xPt: metrics.marginXPt,
@@ -273,24 +291,29 @@ export function buildDocumentHeader(
 
   if (design.variant === 'split') {
     const rightWidthPt = contentWidthPt * 0.4;
+    const leftWidthPt = contentWidthPt * 0.56;
+    const splitNameFont = fitFont(identity.name, nameFont, leftWidthPt);
+    const splitHeadlineFont = identity.headline
+      ? fitFont(identity.headline, headlineFont, leftWidthPt)
+      : undefined;
     const name: HeaderLine = {
       text: identity.name,
       xPt: metrics.marginXPt,
       yPt: metrics.marginTopPt,
-      font: nameFont,
+      font: splitNameFont,
       color: pickDesignColor(design.nameColor, accent),
     };
-    let leftBottomPt = name.yPt + metrics.nameLinePt;
+    let leftBottomPt = name.yPt + splitNameFont.sizePt * 1.17;
     let headline: HeaderLine | undefined;
-    if (identity.headline) {
+    if (identity.headline && splitHeadlineFont) {
       headline = {
         text: identity.headline,
         xPt: metrics.marginXPt,
         yPt: leftBottomPt + 4,
-        font: headlineFont,
+        font: splitHeadlineFont,
         color: COLORS.text,
       };
-      leftBottomPt = headline.yPt + metrics.headlineLinePt;
+      leftBottomPt = headline.yPt + splitHeadlineFont.sizePt * 1.24;
     }
     const contactRows = contactText ? wrapText(contactText, rightWidthPt, contactFont) : [];
     const contactLines = contactRows.map((text, index) => ({
@@ -332,37 +355,41 @@ export function buildDocumentHeader(
       color: COLORS.muted,
     }));
     const contactBottomPt = metrics.marginTopPt + contactRows.length * metrics.smallLinePt;
-    const nameWidthPt = measureLineWidth(identity.name, nameFont);
+    const compactNameFont = fitFont(identity.name, nameFont, contentWidthPt * 0.55);
+    const compactHeadlineFont = identity.headline
+      ? fitFont(identity.headline, headlineFont, contentWidthPt * 0.55)
+      : undefined;
+    const nameWidthPt = measureLineWidth(identity.name, compactNameFont);
     const headlineInline =
-      Boolean(identity.headline) &&
-      nameWidthPt + 12 + measureLineWidth(identity.headline ?? '', headlineFont) <=
+      Boolean(identity.headline && compactHeadlineFont) &&
+      nameWidthPt + 12 + measureLineWidth(identity.headline ?? '', compactHeadlineFont!) <=
         contentWidthPt * 0.55;
     const name: HeaderLine = {
       text: identity.name,
       xPt: metrics.marginXPt,
       yPt: metrics.marginTopPt,
-      font: nameFont,
+      font: compactNameFont,
       color: pickDesignColor(design.nameColor, accent),
     };
-    let leftBottomPt = name.yPt + metrics.nameLinePt;
+    let leftBottomPt = name.yPt + compactNameFont.sizePt * 1.17;
     let headline: HeaderLine | undefined;
-    if (identity.headline) {
+    if (identity.headline && compactHeadlineFont) {
       headline = headlineInline
         ? {
             text: identity.headline,
             xPt: metrics.marginXPt + nameWidthPt + 12,
-            yPt: name.yPt + (metrics.nameLinePt - metrics.headlineLinePt) / 2,
-            font: headlineFont,
+            yPt: name.yPt + (compactNameFont.sizePt * 1.17 - compactHeadlineFont.sizePt * 1.24) / 2,
+            font: compactHeadlineFont,
             color: COLORS.text,
           }
         : {
             text: identity.headline,
             xPt: metrics.marginXPt,
             yPt: leftBottomPt + 2,
-            font: headlineFont,
+            font: compactHeadlineFont,
             color: COLORS.text,
           };
-      if (!headlineInline) leftBottomPt = headline.yPt + metrics.headlineLinePt;
+      if (!headlineInline) leftBottomPt = headline.yPt + compactHeadlineFont.sizePt * 1.24;
     }
     const cursorPt = Math.max(leftBottomPt, contactBottomPt);
     const ruleY = cursorPt + design.ruleGapPt;
@@ -383,27 +410,31 @@ export function buildDocumentHeader(
       ? Math.max(metrics.marginXPt, (metrics.pageWidthPt - measureLineWidth(text, font)) / 2)
       : metrics.marginXPt;
 
+  const stackNameFont = fitFont(identity.name, nameFont, contentWidthPt);
+  const stackHeadlineFont = identity.headline
+    ? fitFont(identity.headline, headlineFont, contentWidthPt)
+    : undefined;
   const name: HeaderLine = {
     text: identity.name,
-    xPt: alignX(identity.name, nameFont),
+    xPt: alignX(identity.name, stackNameFont),
     yPt: metrics.marginTopPt,
-    font: nameFont,
+    font: stackNameFont,
     color: pickDesignColor(design.nameColor, accent),
   };
 
-  let cursor = metrics.marginTopPt + metrics.nameLinePt;
+  let cursor = metrics.marginTopPt + stackNameFont.sizePt * 1.17;
   let headline: HeaderLine | undefined;
 
-  if (identity.headline) {
+  if (identity.headline && stackHeadlineFont) {
     const yPt = cursor + 4;
     headline = {
       text: identity.headline,
-      xPt: alignX(identity.headline, headlineFont),
+      xPt: alignX(identity.headline, stackHeadlineFont),
       yPt,
-      font: headlineFont,
+      font: stackHeadlineFont,
       color: COLORS.text,
     };
-    cursor = yPt + metrics.headlineLinePt;
+    cursor = yPt + stackHeadlineFont.sizePt * 1.24;
   }
 
   const contactRows = contactText ? wrapText(contactText, contentWidthPt, contactFont) : [];
@@ -517,17 +548,22 @@ function headingBlock(
   const heading = design.heading;
   const text = heading.transform === 'upper' ? section.title.toUpperCase() : section.title;
   const font = headingFont(metrics, design.fontFamily, heading.letterSpacingPt);
-  const textWidthPt = measureLineWidth(text, font);
   const centered = heading.align === 'center';
-  let xOffsetPt = centered ? Math.max(0, (widthPt - textWidthPt) / 2) : 0;
-  let yOffsetPt = 0;
-  const rules: FlowRect[] = [];
-  let band: FlowRect | undefined;
-  let heightOverridePt: number | undefined;
-  let spaceAfterPt = metrics.sectionAfterPt;
-  const decorColor = pickDesignColor(heading.decorColor, accent);
   const thicknessPt = heading.decorThicknessPt;
   const gapPt = 2;
+  const insetPt = heading.decor === 'bar' ? thicknessPt + 8 : heading.decor === 'fill' ? 8 : 0;
+  const textWidthPt = Math.max(24, widthPt - insetPt);
+  const textLines = wrapText(text, textWidthPt, font);
+  const lineHeightPt = metrics.headingLinePt;
+  const textHeightPt = textLines.length * lineHeightPt;
+  const maxLineWidthPt = Math.max(...textLines.map((line) => measureLineWidth(line, font)), 0);
+
+  let yPaddingPt = 0;
+  let heightOverridePt: number | undefined;
+  let spaceAfterPt = metrics.sectionAfterPt;
+  const rules: FlowRect[] = [];
+  let band: FlowRect | undefined;
+  const decorColor = pickDesignColor(heading.decorColor, accent);
 
   const rule = (x: number, y: number, width: number, thickness: number): FlowRect => ({
     xOffsetPt: x,
@@ -539,25 +575,23 @@ function headingBlock(
 
   switch (heading.decor) {
     case 'underline':
-      rules.push(rule(0, metrics.headingLinePt + gapPt, widthPt, thicknessPt));
+      rules.push(rule(0, textHeightPt + gapPt, widthPt, thicknessPt));
       spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + gapPt + 1);
       break;
     case 'trailing': {
-      const startPt = xOffsetPt + textWidthPt + 6;
+      const startPt = insetPt + maxLineWidthPt + 6;
       if (startPt < widthPt) {
-        rules.push(rule(startPt, metrics.headingLinePt + gapPt, widthPt - startPt, thicknessPt));
+        rules.push(rule(startPt, textHeightPt + gapPt, widthPt - startPt, thicknessPt));
       }
       spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + gapPt + 1);
       break;
     }
     case 'bar':
-      xOffsetPt += thicknessPt + 8;
-      rules.push(rule(0, 0, thicknessPt, metrics.headingLinePt));
+      rules.push(rule(0, 0, thicknessPt, textHeightPt));
       break;
     case 'fill':
-      heightOverridePt = metrics.headingLinePt + 8;
-      yOffsetPt = 4;
-      xOffsetPt += 8;
+      heightOverridePt = textHeightPt + 8;
+      yPaddingPt = 4;
       band = {
         xOffsetPt: 0,
         yOffsetPt: 0,
@@ -567,15 +601,15 @@ function headingBlock(
       };
       break;
     case 'topRule':
-      heightOverridePt = metrics.headingLinePt + 5;
-      yOffsetPt = 5;
+      heightOverridePt = textHeightPt + 5;
+      yPaddingPt = 5;
       rules.push(rule(0, 0, widthPt, thicknessPt));
       break;
     case 'boxed':
-      heightOverridePt = metrics.headingLinePt + 10;
-      yOffsetPt = 4;
+      heightOverridePt = textHeightPt + 10;
+      yPaddingPt = 4;
       rules.push(rule(0, 0, widthPt, thicknessPt));
-      rules.push(rule(0, metrics.headingLinePt + 7, widthPt, thicknessPt));
+      rules.push(rule(0, textHeightPt + 7, widthPt, thicknessPt));
       spaceAfterPt = Math.max(spaceAfterPt, thicknessPt + 3);
       break;
     case 'none':
@@ -586,10 +620,21 @@ function headingBlock(
   const color =
     heading.decor === 'fill' ? bandTextColor(decorColor) : pickDesignColor(heading.color, accent);
 
+  const lines = textLines.map((line, index) => {
+    const lineWidthPt = measureLineWidth(line, font);
+    return {
+      text: line,
+      xOffsetPt: centered ? Math.max(0, (widthPt - lineWidthPt) / 2) : insetPt,
+      yOffsetPt: yPaddingPt + index * lineHeightPt,
+      font,
+      color,
+    };
+  });
+
   return {
     sectionId: section.id,
     kind: 'heading',
-    lineHeightPt: metrics.headingLinePt,
+    lineHeightPt,
     spaceBeforePt: first ? 0 : metrics.sectionBeforePt,
     spaceAfterPt,
     splittable: false,
@@ -599,15 +644,7 @@ function headingBlock(
     band,
     decorKind: heading.decor,
     alignment: centered ? 'center' : 'left',
-    lines: [
-      {
-        text,
-        xOffsetPt,
-        yOffsetPt,
-        font,
-        color,
-      },
-    ],
+    lines,
   };
 }
 
@@ -671,6 +708,9 @@ function titleRowBlock(options: TitleRowOptions): FlowBlock | null {
   }
 
   const gutterWidthPt = options.gutterWidthPt ?? design.item.gutterWidthPt;
+  // A date that cannot fit the gutter moves to a stacked metadata line, so the
+  // preview, PDF, and DOCX all use the same fallback instead of overflowing.
+  if (measureLineWidth(meta, metaFont) > gutterWidthPt - 6) return null;
   const metaLines = wrapText(meta, Math.max(24, gutterWidthPt - 6), metaFont);
   const titleWidthPt = Math.max(24, widthPt - gutterWidthPt - 4);
   const titleLines = wrapText(title, titleWidthPt, titleFont);
@@ -1246,9 +1286,9 @@ export function layoutResume(resume: Resume): Layout {
     ? metrics.marginXPt
     : metrics.marginXPt + metrics.mainWidthPt + metrics.gapPt;
   const sidebarTint = resolveSidebarTint(design.sidebar.tint, accent);
-  const dividerX = sidebarOnLeft
-    ? metrics.marginXPt + metrics.sideWidthPt + metrics.gapPt / 2
-    : sideX - metrics.gapPt / 2;
+  // The divider sits on the tint edge, which is also where the DOCX side-cell
+  // border is drawn.
+  const dividerX = sidebarOnLeft ? metrics.marginXPt + metrics.sideWidthPt : sideX;
 
   const pages: PageLayout[] = Array.from({ length: pageCount }, (_, index) => {
     const top = metrics.marginTopPt + (index === 0 ? headerHeightPt : 0);

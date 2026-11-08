@@ -1,5 +1,5 @@
 import { stripEnclosingCodeFence } from './codeFence';
-import { looksLikeJobTitle, parseContactLine } from './contact';
+import { looksLikeJobTitle, looksLikeLocation, parseContactLine } from './contact';
 import {
   DEFAULT_FORMAT,
   DEFAULT_TEMPLATE,
@@ -263,7 +263,7 @@ export function parseResume(input: string): ParseResult {
       if (parts.length >= 2) {
         currentItem.dateRange = parts[0];
         const candidateLocation = parts.slice(1).join(' | ');
-        if (looksLikeJobTitle(candidateLocation)) {
+        if (looksLikeJobTitle(candidateLocation) && !looksLikeLocation(candidateLocation)) {
           warnings.push(
             `Ignored a location value that looks like a job title: "${candidateLocation}". Ask for the verified city and region instead.`,
           );

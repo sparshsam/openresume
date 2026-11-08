@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { layoutResume } from '../src/lib/layout';
+import { measureLineWidth } from '../src/lib/measure';
+import { parseResume } from '../src/lib/parse';
 import { createSampleResume } from '../src/lib/sample';
 import type { Resume, ResumeLayoutId } from '../src/types/resume';
 
@@ -109,6 +111,14 @@ describe('structural design composition', () => {
     expect(contemporary.pages[0]?.backgrounds?.[0].xPt).toBeGreaterThan(
       contemporary.metrics.marginXPt + contemporary.metrics.mainWidthPt,
     );
+    expect(creative.pages[0]?.divider?.xPt).toBeCloseTo(
+      creative.metrics.marginXPt + creative.metrics.sideWidthPt,
+      5,
+    );
+    expect(contemporary.pages[0]?.divider?.xPt).toBeCloseTo(
+      contemporary.pages[0]?.backgrounds?.[0].xPt ?? -1,
+      5,
+    );
 
     const compact = layoutResume(withLayout(createSampleResume(), 'compact'));
     expect(compact.sidebarSide).toBe('right');
@@ -151,6 +161,39 @@ describe('structural design composition', () => {
   });
 });
 
+describe('long section headings', () => {
+  it('wraps a long heading inside a narrow rail without losing words', () => {
+    const sample = createSampleResume();
+    const longTitle = 'Professional Development and Certifications';
+    const sections = sample.sections.map((section) =>
+      section.kind === 'skills' ? { ...section, title: longTitle } : section,
+    );
+    const layout = layoutResume({
+      ...sample,
+      sections,
+      template: { ...sample.template, layout: 'compact' },
+    });
+    const skills = sections.find((section) => section.kind === 'skills');
+    const heading = layout.pages
+      .flatMap((page) => page.blocks)
+      .find((block) => block.sectionId === skills?.id && block.kind === 'heading');
+
+    expect(heading).toBeDefined();
+    expect(heading!.lines.length).toBeGreaterThan(1);
+    for (const line of heading!.lines) {
+      expect(line.xPt + measureLineWidth(line.text, line.font)).toBeLessThanOrEqual(
+        heading!.xPt + heading!.widthPt + 0.01,
+      );
+    }
+    const text = layout.pages
+      .flatMap((page) => page.blocks)
+      .flatMap((block) => block.lines.map((line) => line.text))
+      .join(' ')
+      .replace(/\s+/g, ' ');
+    expect(text).toContain(longTitle.toUpperCase());
+  });
+});
+
 describe('reversed text contrast', () => {
   it('keeps banner and fill text dark on a light accent', () => {
     const sample = createSampleResume();
@@ -176,5 +219,69 @@ describe('reversed text contrast', () => {
         expect(block.lines[0].color).toBe('#FFFFFF');
       }
     }
+  });
+});
+
+describe('long content fallbacks', () => {
+  it('moves a long academic date out of the gutter instead of overflowing', () => {
+    const { resume } = parseResume(
+      [
+        '# Jordan Avery',
+        'jordan@example.com | Toronto, ON',
+        '',
+        '## EXPERIENCE',
+        '### Northwind Studio — Senior Product Engineer',
+        'September 2019 – Present | Toronto, ON',
+        '- Led a document workflow.',
+      ].join('\n'),
+    );
+    const layout = layoutResume({
+      ...resume,
+      template: { ...resume.template, layout: 'academic' },
+    });
+    const text = layout.pages
+      .flatMap((page) => page.blocks)
+      .flatMap((block) => block.lines.map((line) => line.text))
+      .join(' ');
+    expect(text).toContain('September 2019 – Present');
+    const gutterRows = layout.pages
+      .flatMap((page) => page.blocks)
+      .filter((block) => block.rowLayout === 'metaLeft');
+    expect(
+      gutterRows.every((row) => row.lines.every((line) => !line.text.includes('September'))),
+    ).toBe(true);
+  });
+});
+
+describe('long identity blocks', () => {
+  it('fits a long name inside the bold banner without clipping', () => {
+    const sample = createSampleResume();
+    const longName = 'Alexandria Konstantinopoulos-Montgomery';
+    const layout = layoutResume({
+      ...sample,
+      header: { ...sample.header, name: longName },
+      template: { ...sample.template, layout: 'bold' },
+    });
+    const name = layout.pages[0]?.header?.name;
+    expect(name?.text).toBe(longName);
+    expect(name!.font.sizePt).toBeLessThan(layout.metrics.namePt);
+    expect(name!.xPt + measureLineWidth(longName, name!.font)).toBeLessThanOrEqual(
+      layout.pageWidthPt - layout.metrics.marginXPt + 0.01,
+    );
+  });
+
+  it('fits a long name inside a split identity', () => {
+    const sample = createSampleResume();
+    const longName = 'Alexandria Konstantinopoulos-Montgomery';
+    const layout = layoutResume({
+      ...sample,
+      header: { ...sample.header, name: longName },
+      template: { ...sample.template, layout: 'modernMinimal' },
+    });
+    const name = layout.pages[0]?.header?.name;
+    expect(name!.font.sizePt).toBeLessThan(layout.metrics.namePt);
+    expect(name!.xPt + measureLineWidth(longName, name!.font)).toBeLessThanOrEqual(
+      layout.metrics.marginXPt + layout.metrics.contentWidthPt * 0.56 + 0.01,
+    );
   });
 });

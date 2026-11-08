@@ -462,7 +462,7 @@ describe('resume workflow', () => {
     await buildSampleResume(user);
     await user.click(screen.getByRole('button', { name: 'Formatting' }));
     await user.click(screen.getByRole('radio', { name: 'Teal' }));
-    await user.click(screen.getByRole('button', { name: 'Formatting' }));
+    await user.click(screen.getByRole('button', { name: 'Close formatting' }));
 
     await user.click(screen.getByRole('link', { name: 'About' }));
     await user.click(screen.getByRole('link', { name: 'Privacy' }));

@@ -1,7 +1,7 @@
 import type { Contact } from '../types/resume';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[+()\d][\d\s().-]{6,}$/;
+const PHONE_RE = /^[+()\d][\d\s().\-/]{6,}(?:\s*(?:ext\.?|x)\s*\d+)?$/i;
 const URL_RE = /^(https?:\/\/|www\.)/i;
 const BARE_URL_RE = /^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i;
 const LEADING_PROTOCOL_RE = /^https?:\/\//i;
@@ -12,6 +12,8 @@ const LEADING_PROTOCOL_RE = /^https?:\/\//i;
  * as a website and removed from the contact line.
  */
 const KNOWN_TLDS = new Set([
+  'agency',
+  'ai',
   'app',
   'art',
   'au',
@@ -19,7 +21,9 @@ const KNOWN_TLDS = new Set([
   'biz',
   'blog',
   'ca',
+  'cc',
   'ch',
+  'cloud',
   'cn',
   'co',
   'com',
@@ -27,10 +31,13 @@ const KNOWN_TLDS = new Set([
   'de',
   'design',
   'dev',
+  'digital',
   'dk',
+  'email',
   'edu',
   'es',
   'fi',
+  'fm',
   'fr',
   'gg',
   'gov',
@@ -42,30 +49,44 @@ const KNOWN_TLDS = new Set([
   'it',
   'jp',
   'kr',
+  'life',
+  'link',
+  'live',
   'ly',
   'me',
+  'media',
   'mil',
   'net',
+  'news',
   'nl',
   'no',
   'nz',
   'online',
   'org',
+  'page',
   'pl',
   'portfolio',
   'pt',
+  'run',
   'se',
   'sg',
+  'sh',
   'shop',
   'site',
   'so',
+  'space',
   'store',
+  'studio',
   'tech',
   'travel',
+  'tv',
   'uk',
   'us',
+  'website',
   'work',
+  'world',
   'xyz',
+  'zone',
 ]);
 
 /**
@@ -211,11 +232,120 @@ const ROLE_WORDS = new Set([
   'writer',
 ]);
 
+const EXTRA_ROLE_WORDS = new Set([
+  'administrative',
+  'agile',
+  'animator',
+  'archivist',
+  'assembler',
+  'assurance',
+  'baker',
+  'barber',
+  'barista',
+  'bookkeeper',
+  'butcher',
+  'buyer',
+  'cad',
+  'chain',
+  'civil',
+  'cleaner',
+  'company',
+  'construction',
+  'consulting',
+  'cook',
+  'copywriter',
+  'corp',
+  'corporation',
+  'counselor',
+  'courier',
+  'curator',
+  'custodian',
+  'dancer',
+  'dispatcher',
+  'drafter',
+  'electrical',
+  'entrepreneur',
+  'estate',
+  'estimator',
+  'facilities',
+  'fashion',
+  'firefighter',
+  'florist',
+  'foreman',
+  'forklift',
+  'graphic',
+  'group',
+  'guard',
+  'hairdresser',
+  'holdings',
+  'host',
+  'hostess',
+  'housekeeper',
+  'hvac',
+  'hygienist',
+  'inc',
+  'industrial',
+  'inspector',
+  'insurance',
+  'interior',
+  'janitor',
+  'judge',
+  'laboratory',
+  'labs',
+  'landscaper',
+  'lecturer',
+  'llc',
+  'logistics',
+  'machinist',
+  'makeup',
+  'mason',
+  'master',
+  'mechanical',
+  'merchandiser',
+  'notary',
+  'office',
+  'operator',
+  'paramedic',
+  'partners',
+  'pharmacy',
+  'police',
+  'procurement',
+  'proprietor',
+  'psychiatrist',
+  'psychologist',
+  'real',
+  'reliability',
+  'research',
+  'retail',
+  'roofer',
+  'scheduler',
+  'scrum',
+  'shift',
+  'social',
+  'solutions',
+  'sommelier',
+  'sourcer',
+  'statistician',
+  'store',
+  'structural',
+  'studio',
+  'supply',
+  'surveyor',
+  'tailor',
+  'technologies',
+  'teller',
+  'tutor',
+  'ventures',
+  'veterinarian',
+  'videographer',
+  'warehouse',
+  'worker',
+]);
+
 const ROLE_SUFFIX_RE =
   /\b(minded|focused|driven|oriented|specialist|generalist|professional|enthusiast)\b/i;
 
-const WORK_ARRANGEMENT_RE =
-  /^(remote|hybrid|on-?site|online|distributed|telecommute|work from home|wfh)(\s*\([^)]*\)|\s*[-–—/]\s*.+)?$/i;
+const COUNTRY_ALIASES = new Set(['usa', 'us', 'uk', 'uae', 'u.s.', 'u.s.a.', 'gb', 'gbr']);
 
 const REGION_CODES = new Set(
   (
@@ -267,6 +397,8 @@ const REGION_NAMES = new Set([
   'north carolina',
   'north dakota',
   'northwest territories',
+  'england',
+  'northern ireland',
   'nova scotia',
   'nunavut',
   'ohio',
@@ -279,12 +411,14 @@ const REGION_NAMES = new Set([
   'rhode island',
   'saskatchewan',
   'south carolina',
+  'scotland',
   'south dakota',
   'tennessee',
   'texas',
   'utah',
   'vermont',
   'virginia',
+  'wales',
   'washington',
   'west virginia',
   'wisconsin',
@@ -641,19 +775,35 @@ export function looksLikeJobTitle(value: string): boolean {
   const normalized = value.toLowerCase().trim();
   if (!normalized || !/[a-zà-ÿ]/i.test(normalized)) return false;
   if (ROLE_SUFFIX_RE.test(normalized)) return true;
-  return words(normalized).some((word) => ROLE_WORDS.has(word));
+  return words(normalized).some((word) => ROLE_WORDS.has(word) || EXTRA_ROLE_WORDS.has(word));
+}
+
+function normalizePlace(value: string): string {
+  return value.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
 }
 
 /** True for a confirmed work arrangement such as Remote, Hybrid, or On-site. */
 export function isConfirmedWorkArrangement(value: string): boolean {
-  return WORK_ARRANGEMENT_RE.test(value.trim());
+  const trimmed = value.trim();
+  if (
+    /^(remote|hybrid|on-?site|online|distributed|telecommute|work from home|wfh)$/i.test(trimmed)
+  ) {
+    return true;
+  }
+  if (/^(remote|hybrid|on-?site|online)\s*\([^)]*\)$/i.test(trimmed)) return true;
+  const dash = /^(remote|hybrid|on-?site|online)\s*[-–—]\s*(.+)$/i.exec(trimmed);
+  if (!dash) return false;
+  const place = dash[2].trim();
+  return isRegion(place) || looksLikeLocation(place);
 }
 
 function isRegion(value: string): boolean {
   const compact = value.trim();
   if (REGION_CODES.has(compact.toUpperCase())) return true;
-  const normalized = compact.toLowerCase();
-  return REGION_NAMES.has(normalized) || COUNTRIES.has(normalized);
+  const normalized = normalizePlace(compact);
+  return (
+    REGION_NAMES.has(normalized) || COUNTRIES.has(normalized) || COUNTRY_ALIASES.has(normalized)
+  );
 }
 
 function isPostalRegion(value: string): boolean {
@@ -668,14 +818,21 @@ function isGeographicLocation(value: string): boolean {
 
   // "Toronto (Remote)" keeps the city and the confirmed arrangement.
   const hybrid = /^(.+?)\s*\((remote|hybrid|on-?site|online)\)$/i.exec(trimmed);
-  if (hybrid) return isGeographicLocation(hybrid[1]);
+  if (hybrid) return looksLikeLocation(hybrid[1]);
 
   const segments = trimmed
     .split('/')
     .map((segment) => segment.trim())
     .filter(Boolean);
-  if (segments.length > 1 && segments.every((segment) => isGeographicLocation(segment))) {
+  if (segments.length > 1 && segments.every((segment) => looksLikeLocation(segment))) {
     return true;
+  }
+
+  // "Toronto ON", "New York NY", and "Toronto ON M5V 2T6".
+  const noComma = /^(.+?)\s+([A-Z]{2})(?:\s+([A-Z]\d[A-Z]\s?\d[A-Z]\d))?$/i.exec(trimmed);
+  if (noComma && REGION_CODES.has(noComma[2].toUpperCase())) {
+    const place = normalizePlace(noComma[1]);
+    if (MULTIWORD_PLACES.has(place) || SINGLE_TOKEN_PLACES.has(place)) return true;
   }
 
   const commaParts = trimmed
@@ -685,13 +842,20 @@ function isGeographicLocation(value: string): boolean {
   if (commaParts.length >= 2) {
     const region = commaParts[commaParts.length - 1];
     if (isRegion(region) || isPostalRegion(region)) return true;
+    if (commaParts.length >= 3) {
+      const penultimate = commaParts[commaParts.length - 2];
+      if (isRegion(penultimate) || isPostalRegion(penultimate)) return true;
+    }
     if (commaParts.length === 2) {
-      return !/\d/.test(region) && region.length <= 24;
+      const first = normalizePlace(commaParts[0]);
+      if (MULTIWORD_PLACES.has(first) || SINGLE_TOKEN_PLACES.has(first) || COUNTRIES.has(first)) {
+        return true;
+      }
     }
     return false;
   }
 
-  const normalized = trimmed.toLowerCase();
+  const normalized = normalizePlace(trimmed);
   return MULTIWORD_PLACES.has(normalized) || SINGLE_TOKEN_PLACES.has(normalized);
 }
 
@@ -732,18 +896,26 @@ export function parseContactLine(line: string): ParsedContactLine {
     .filter(Boolean);
 
   parts.forEach((part, index) => {
-    if (!contact.email && EMAIL_RE.test(part)) {
-      contact.email = part;
-      lastContactDetailIndex = index;
-      return;
-    }
-    if (!contact.phone && PHONE_RE.test(part) && !isLink(part)) {
-      contact.phone = part;
-      lastContactDetailIndex = index;
-      return;
-    }
     if (isLink(part)) {
       contact.links.push({ label: part.replace(LEADING_PROTOCOL_RE, ''), url: toUrl(part) });
+      lastContactDetailIndex = index;
+      return;
+    }
+    if (EMAIL_RE.test(part)) {
+      if (!contact.email) {
+        contact.email = part;
+      } else {
+        warnings.push(`Ignored an additional email address: "${part}". One email is supported.`);
+      }
+      lastContactDetailIndex = index;
+      return;
+    }
+    if (PHONE_RE.test(part)) {
+      if (!contact.phone) {
+        contact.phone = part;
+      } else {
+        warnings.push(`Ignored an additional phone number: "${part}". One phone is supported.`);
+      }
       lastContactDetailIndex = index;
       return;
     }

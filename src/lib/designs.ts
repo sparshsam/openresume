@@ -380,7 +380,7 @@ export const RESUME_DESIGNS: ResumeDesign[] = [
       bulletChar: '–',
       itemBeforeScale: 1.1,
     },
-    sidebar: { tint: 'accentSoft', widthRatio: 0.38 },
+    sidebar: { tint: 'accentSoft', divider: true, widthRatio: 0.38 },
   }),
   design({
     id: 'compact',

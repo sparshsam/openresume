@@ -300,7 +300,15 @@ function decorativeBorder(block: PlacedBlock): IParagraphOptions['border'] | und
         bottom: { style: BorderStyle.SINGLE, size, color, space: 2 },
       };
     case 'bar':
-      return { left: { style: BorderStyle.SINGLE, size: Math.max(8, size * 3), color, space: 4 } };
+      return {
+        left: {
+          style: BorderStyle.SINGLE,
+          // The bar rectangle's thickness is its width, not its height.
+          size: Math.max(8, Math.min(96, Math.round((rule?.widthPt ?? 1) * 8))),
+          color,
+          space: 4,
+        },
+      };
     case 'fill':
     default:
       return undefined;
@@ -315,6 +323,7 @@ function paragraphFor(
   const style = styleFor(block, metrics);
   const sourceFont = block.lines[0]?.font;
   const indentTwip = Math.round((block.indentLeftPt ?? 0) * PT_TO_TWIP);
+  const isMetaLeftRow = block.kind === 'titleRow' && block.rowLayout === 'metaLeft';
   const tabStops =
     block.kind === 'titleRow'
       ? block.rowLayout === 'metaLeft'
@@ -365,7 +374,7 @@ function paragraphFor(
     bullet: style.bullet ? { level: 0 } : undefined,
     indent: style.bullet
       ? { left: 360 + indentTwip, hanging: 180 }
-      : indentTwip
+      : indentTwip && !isMetaLeftRow
         ? { left: indentTwip }
         : undefined,
     alignment: block.alignment === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT,
@@ -494,11 +503,11 @@ function headerParagraphs(
         const value = contactValues(identity).join('  ·  ');
         return value ? [value] : [];
       })();
-  const contactSize = Math.round(metrics.smallPt * 2);
+  const contactSize = Math.round((header?.contactLines[0]?.font.sizePt ?? metrics.smallPt) * 2);
   const contactColor = hexColor(header?.contactLines[0]?.color ?? COLORS.muted);
   const contentWidthTwip = Math.round(metrics.contentWidthPt * PT_TO_TWIP);
-  const nameSize = Math.round(metrics.namePt * 2);
-  const headlineSize = Math.round(metrics.headlinePt * 2);
+  const nameSize = Math.round((header?.name.font.sizePt ?? metrics.namePt) * 2);
+  const headlineSize = Math.round((header?.headline?.font.sizePt ?? metrics.headlinePt) * 2);
   const headlineColor = hexColor(header?.headline?.color ?? COLORS.text);
 
   const rule = header?.rule;

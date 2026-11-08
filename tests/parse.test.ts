@@ -225,3 +225,30 @@ describe('parseResume field placement', () => {
     expect(warnings.some((warning) => warning.includes('job title'))).toBe(true);
   });
 });
+
+describe('entry metadata title validation', () => {
+  it.each([
+    'Scrum Master',
+    'Copywriter',
+    'Social Worker',
+    'Barista',
+    'Construction Worker',
+    'Line Cook',
+    'Brightline Labs',
+  ])('rejects %s as an entry location', (value) => {
+    const { resume, warnings } = parseResume(
+      `# Jordan Avery\njordan@example.com | Toronto, ON\n\n## EXPERIENCE\n### Brightline Labs — Role\n2022 – Present | ${value}\n- Did work.`,
+    );
+    const item = resume.sections[0].items[0];
+    expect(item.location).toBeUndefined();
+    expect(warnings.some((warning) => warning.includes('job title'))).toBe(true);
+  });
+
+  it('keeps a legitimate place containing a role word', () => {
+    const { resume, warnings } = parseResume(
+      '# Jordan Avery\njordan@example.com | Toronto, ON\n\n## EXPERIENCE\n### Brightline Labs — Role\n2022 – Present | Research Triangle Park, NC\n- Did work.',
+    );
+    expect(resume.sections[0].items[0].location).toBe('Research Triangle Park, NC');
+    expect(warnings.some((warning) => warning.includes('job title'))).toBe(false);
+  });
+});
