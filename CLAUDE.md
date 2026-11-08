@@ -18,13 +18,14 @@ Required reading before every session:
 
 A client-only React + TypeScript + Vite resume and cover letter builder. Structured text is prepared, parsed deterministically, laid out with one of ten résumé designs or four single-column letter styles (US Letter default plus A4 and US Legal), previewed, and exported as selectable-text PDF and editable DOCX.
 
-## Current state (2026-11-02)
+## Current state (2026-11-08)
 
 - **Published:** https://github.com/sparshsam/openresume — public, MIT.
-- **Version:** v0.2.0 (ten résumé designs, design gallery, four letter styles, pagination controls, drag ordering, live page counts, recommendations), released and deployed.
-- **Release:** annotated tag `v0.2.0`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.0. PR [#9](https://github.com/sparshsam/openresume/pull/9) merged as `8636cc0d9b1698fc888fa71c6bc35f7c1ea0cd0a`. That application build was verified on `resume.kovina.org` as deployment `dpl_EHo2SCkJWVU7P3FbfZUPSzgyh5MW`, serving bundle `main-CabQ44_i.js` (contains `0.2.0` and the gallery/pagination strings). Documentation-only commits may follow and can create additional deployments of the same bundle.
+- **Version:** v0.2.1 (eight structurally redesigned résumé compositions, compact Format drawer, defensive contact/location parsing, explicit AI contact contract), released and deployed.
+- **Release:** annotated tag `v0.2.1`; GitHub pre-release published at https://github.com/sparshsam/openresume/releases/tag/v0.2.1. PR [#12](https://github.com/sparshsam/openresume/pull/12) merged as `73141693ee1ae4a62e7dc1b12ac137fda6a8e13c`. The application build was verified on `resume.kovina.org` as deployment `dpl_5seJX3ki1JaPVgQjKM8MBxcB8qgS`, READY, serving bundle `main-CSXAa6aE.js` (contains `0.2.1`, `Close formatting`, `Browse Designs`, and the expanded parser vocabulary). Documentation-only commits may follow and can create additional deployments of the same bundle.
+- **Prior release:** v0.2.0 — PR [#9](https://github.com/sparshsam/openresume/pull/9) merged as `8636cc0d9b1698fc888fa71c6bc35f7c1ea0cd0a` (ten designs, gallery, letter styles, pagination controls).
 - **Prior release:** v0.1.13 — PR [#8](https://github.com/sparshsam/openresume/pull/8) merged as `71ef633133a428ee66e5784da9b1c941be4cbd13` (workspace scroll reset and unambiguous AI identity fields).
-- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.2.0 run passed with 444 tests across 33 files.
+- **CI:** `.github/workflows/ci.yml` runs lint, format check, typecheck, tests, and build. Latest v0.2.1 run passed with 551 tests across 38 files.
 - **Verification baseline:** `npm run check` and `npm run format:check`.
 - **README:** includes the canonical Kovina Collection footer.
 - **Deployment:** https://resume.kovina.org is the primary production address; the original Vercel deployment remains at https://openresume-sigma.vercel.app. Vercel project `openresume`, linked to GitHub `main`; PRs get preview deployments; no environment variables; no backend, accounts, analytics, or cloud storage. See `docs/deployment.md`.
