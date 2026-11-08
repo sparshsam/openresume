@@ -100,7 +100,6 @@ export interface DocumentIdentity {
   contact: Contact;
 }
 
-const BAND_TEXT = '#FFFFFF';
 const SIDEBAR_MUTED = '#F3F5F2';
 const DIVIDER_COLOR = '#D5DED7';
 
@@ -140,6 +139,27 @@ function pickDesignColor(mode: 'accent' | 'text' | 'muted', accent: string): str
   if (mode === 'accent') return accent;
   if (mode === 'muted') return COLORS.muted;
   return COLORS.text;
+}
+
+function channelLuminance(channel: number): number {
+  const value = channel / 255;
+  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+export function relativeLuminance(hex: string): number {
+  const value = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return 0;
+  const [red, green, blue] = [0, 2, 4].map((offset) =>
+    channelLuminance(Number.parseInt(value.slice(offset, offset + 2), 16)),
+  );
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+/** Reversed text stays legible even when a template carries a light accent. */
+export function bandTextColor(accent: string): string {
+  const luminance = relativeLuminance(accent);
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  return whiteContrast >= 4.5 ? '#FFFFFF' : COLORS.text;
 }
 
 /** Mix an accent with white so a tint stays light at every accent value. */
@@ -203,12 +223,13 @@ export function buildDocumentHeader(
 
   if (design.variant === 'banner') {
     const padding = design.bandPaddingPt;
+    const onBand = bandTextColor(accent);
     const name: HeaderLine = {
       text: identity.name,
       xPt: metrics.marginXPt + padding,
       yPt: metrics.marginTopPt + padding,
       font: nameFont,
-      color: BAND_TEXT,
+      color: onBand,
     };
     let bottomPt = name.yPt + metrics.nameLinePt;
     let headline: HeaderLine | undefined;
@@ -218,7 +239,7 @@ export function buildDocumentHeader(
         xPt: metrics.marginXPt + padding,
         yPt: bottomPt + 2,
         font: headlineFont,
-        color: BAND_TEXT,
+        color: onBand,
       };
       bottomPt = headline.yPt + metrics.headlineLinePt;
     }
@@ -562,7 +583,8 @@ function headingBlock(
       break;
   }
 
-  const color = heading.decor === 'fill' ? BAND_TEXT : pickDesignColor(heading.color, accent);
+  const color =
+    heading.decor === 'fill' ? bandTextColor(decorColor) : pickDesignColor(heading.color, accent);
 
   return {
     sectionId: section.id,

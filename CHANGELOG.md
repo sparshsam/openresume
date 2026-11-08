@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
-- 526 tests across 38 files, including the new `aiFieldPlacement`, `designComposition`, `designThumbnail`, `exportDesigns`, and `formattingDrawer` suites.
+- 529 tests across 38 files, including the new `aiFieldPlacement`, `designComposition`, `designThumbnail`, `exportDesigns`, and `formattingDrawer` suites.
 
 ## [0.2.0] — 2026-11-02
 

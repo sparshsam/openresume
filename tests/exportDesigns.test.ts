@@ -149,3 +149,31 @@ describe('new design exports', () => {
     expect(contemporary.indexOf('SUMMARY')).toBeLessThan(contemporary.indexOf('SKILLS'));
   });
 });
+
+describe('wrapped title rows', () => {
+  it('keeps every wrapped title word in the DOCX run', async () => {
+    const longTitle =
+      'Northwind Document Systems, Cooperative Research Laboratory, Regional Publishing Archive, and International Standards Consortium for Accessible Documents';
+    const { resume } = parseResume(
+      [
+        '# Jordan Avery',
+        'jordan@example.com | +1 555 0142 | Toronto, ON',
+        '',
+        '## EXPERIENCE',
+        `### ${longTitle} — Senior Product Engineer`,
+        '2022 – Present | Toronto, ON',
+        '- Rebuilt a document workflow.',
+      ].join('\n'),
+    );
+    const resumeWithDesign = withLayout(resume, 'executive');
+    const layout = layoutResume(resumeWithDesign);
+    const rows = layout.pages
+      .flatMap((page) => page.blocks)
+      .filter((block) => block.rowLayout === 'metaRight');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0].lines.filter((line) => line.font.bold).length).toBeGreaterThan(1);
+
+    const xml = await docxXml(resumeWithDesign);
+    expect(xml).toContain(longTitle);
+  });
+});

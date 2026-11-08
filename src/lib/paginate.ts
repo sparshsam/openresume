@@ -65,8 +65,6 @@ export interface FlowBlock {
   rules?: FlowRect[];
   /** A filled rectangle drawn behind the block. */
   band?: FlowRect;
-  /** A rule drawn under the block's text, aligned with the column width. */
-  headingRule?: { color: string; widthPt: number };
 }
 
 export interface PlacedLine extends FlowLine {
@@ -148,17 +146,7 @@ export function paginateColumn(
   const place = (block: FlowBlock, spaceBeforePt: number, spaceAfterPt: number) => {
     const yPt = usedPt + spaceBeforePt;
     const heightPt = textHeight(block);
-    const textBottomPt = yPt + heightPt;
     const rules: PlacedRule[] = (block.rules ?? []).map((rect) => placeRect(rect, 0, yPt));
-    if (block.headingRule) {
-      rules.push({
-        xPt: 0,
-        yPt: textBottomPt + 1.5,
-        widthPt: columnWidthPt,
-        heightPt: block.headingRule.widthPt,
-        color: block.headingRule.color,
-      });
-    }
     const placed: PlacedBlock = {
       sectionId: block.sectionId,
       itemId: block.itemId,

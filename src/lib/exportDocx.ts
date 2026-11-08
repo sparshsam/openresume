@@ -336,11 +336,14 @@ function paragraphFor(
 
   let children: (TextRun | Tab)[];
   if (block.kind === 'titleRow') {
-    const titleLine = block.lines.find((line) => line.font.bold) ?? block.lines[0];
-    const metaLine =
-      block.lines.find((line) => !line.font.bold) ?? block.lines[block.lines.length - 1];
-    const titleRun = run(titleLine.text, titleLine.font, titleLine.color);
-    const metaRun = run(metaLine.text, metaLine.font, metaLine.color);
+    const titleLines = block.lines.filter((line) => line.font.bold);
+    const metaLines = block.lines.filter((line) => !line.font.bold);
+    const titleLine = titleLines[0] ?? block.lines[0];
+    const metaLine = metaLines[0] ?? block.lines[block.lines.length - 1];
+    const titleText = titleLines.map((line) => line.text).join(' ') || titleLine.text;
+    const metaText = metaLines.map((line) => line.text).join(' ') || metaLine.text;
+    const titleRun = run(titleText, titleLine.font, titleLine.color);
+    const metaRun = run(metaText, metaLine.font, metaLine.color);
     children =
       block.rowLayout === 'metaLeft'
         ? [metaRun, new Tab(), titleRun]

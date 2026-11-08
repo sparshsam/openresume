@@ -150,3 +150,31 @@ describe('structural design composition', () => {
     }
   });
 });
+
+describe('reversed text contrast', () => {
+  it('keeps banner and fill text dark on a light accent', () => {
+    const sample = createSampleResume();
+    const resume: Resume = {
+      ...sample,
+      template: { ...sample.template, layout: 'bold', accent: '#FDE68A' },
+    };
+    const layout = layoutResume(resume);
+    expect(layout.pages[0]?.header?.name.color).toBe('#1A1A1A');
+    expect(layout.pages[0]?.header?.headline?.color).toBe('#1A1A1A');
+    for (const block of layout.pages.flatMap((page) => page.blocks)) {
+      if (block.kind === 'heading' && block.band) {
+        expect(block.lines[0].color).toBe('#1A1A1A');
+      }
+    }
+  });
+
+  it('keeps reversed text white on the default dark accent', () => {
+    const layout = layoutResume(withLayout(createSampleResume(), 'bold'));
+    expect(layout.pages[0]?.header?.name.color).toBe('#FFFFFF');
+    for (const block of layout.pages.flatMap((page) => page.blocks)) {
+      if (block.kind === 'heading' && block.band) {
+        expect(block.lines[0].color).toBe('#FFFFFF');
+      }
+    }
+  });
+});

@@ -153,6 +153,14 @@ describe('resume template switching', () => {
     expect(resume.sections.map((section) => `${section.id}:${section.column}`)).toEqual(
       storedColumns,
     );
+
+    // Sidebar designs reinterpret the stored columns without rewriting them.
+    for (const layoutId of ['creative', 'compact', 'contemporary', 'academic'] as const) {
+      layoutResume(withLayout(resume, layoutId));
+      expect(resume.sections.map((section) => `${section.id}:${section.column}`)).toEqual(
+        storedColumns,
+      );
+    }
   });
 
   it('switching designs never changes the underlying document model', () => {
