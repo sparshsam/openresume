@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file.
 - **Guided completion screen.** Step 5 opens the employer's application URL in a new tab, reminds the client to have the downloaded documents ready, and states that OpenResume does not submit applications.
 - **Regression coverage** for route handling, malformed job context, contract limits and URL safety, prompt safeguards, resume-only and Application Kit flows, parse recovery, guided filenames, guided exports, application links, and the unchanged default builder.
 
+### Fixed
+
+- A résumé-only rebuild keeps an existing cover letter in the session but hides it from review and download, instead of silently deleting it.
+- Job URL fields are trimmed; only valid `https:` links are rendered as anchors, including while the job form is being edited.
+- Legacy draft cleanup now also runs on `/prepare`; stale job-context warnings clear when the job details are edited; the echoed contract version is bounded; and the listing summary is clearly marked as untrusted data in the prompt.
+
 ### Changed
 
 - Added `prepare.html` as a second Vite entry with its own metadata and `noindex, follow`; `/prepare` is served by `cleanUrls`.
@@ -20,7 +26,7 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
-- 597 tests across 44 files, including the new `jobContext`, `guidedPrompt`, `guidedWorkflow`, `guidedExport`, and `resumeValidation` suites.
+- 605 tests across 44 files, including the new `jobContext`, `guidedPrompt`, `guidedWorkflow`, `guidedExport`, and `resumeValidation` suites.
 
 ## [0.2.1] — 2026-11-08
 

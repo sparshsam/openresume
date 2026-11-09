@@ -1,5 +1,5 @@
 import { guidedFilename } from '../../lib/filename';
-import type { JobContext } from '../../lib/jobContext';
+import { isSafeHttpsUrl, type JobContext } from '../../lib/jobContext';
 import type { CoverLetter } from '../../types/coverLetter';
 import type { Resume } from '../../types/resume';
 
@@ -66,7 +66,7 @@ export function GuidedStepApply({
           </p>
         </div>
 
-        {job.applicationUrl ? (
+        {job.applicationUrl && isSafeHttpsUrl(job.applicationUrl) ? (
           <a
             className="button button-primary guided-primary guided-apply-button"
             href={job.applicationUrl}

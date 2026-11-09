@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
 import { ThemeProvider } from '../src/components/ThemeProvider';
 import { APPLICATION_KIT_SAMPLE_TEXT } from '../src/lib/applicationKitSample';
-import { SAMPLE_RESUME_TEXT } from '../src/lib/sample';
+import { SAMPLE_RESUME_TEXT, createSampleResume } from '../src/lib/sample';
+import { createSampleCoverLetter } from '../src/lib/coverLetterSample';
+import { COVER_LETTER_DRAFT_KEY, DRAFT_KEY } from '../src/lib/storage';
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -115,6 +117,8 @@ describe('guided prepare route', () => {
       screen.getByRole('link', { name: 'Open the employer application page' }),
     ).toHaveAttribute('href', 'https://jobs.example.com/apply/42');
     expect(screen.queryByLabelText('Job title')).not.toBeInTheDocument();
+    const editButton = screen.getByRole('button', { name: 'Edit job details' });
+    expect(editButton).not.toHaveAttribute('aria-controls');
 
     const continueButton = screen.getByRole('button', { name: 'Continue' });
     expect(continueButton).toBeDisabled();
@@ -123,7 +127,8 @@ describe('guided prepare route', () => {
     await user.click(screen.getByRole('checkbox', { name: /I have opened my AI assistant/ }));
     expect(continueButton).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: 'Edit job details' }));
+    await user.click(editButton);
+    expect(editButton).toHaveAttribute('aria-controls', 'guided-job-form');
     expect(screen.getByLabelText('Job title')).toHaveValue('Senior Product Engineer');
     expect(screen.getByLabelText('Job-description URL (https)')).toHaveValue(
       'https://jobs.example.com/description/42',
@@ -146,6 +151,20 @@ describe('guided prepare route', () => {
     expect(
       screen.getAllByRole('alert').some((alert) => alert.textContent?.includes('https://')),
     ).toBe(true);
+  });
+
+  it('clears stale job-context warnings after an edit', () => {
+    renderGuided(`?jd_url=${encodeURIComponent('javascript:alert(1)')}`);
+    expect(
+      screen.getByText(/was ignored because it is not a safe https address/),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Job title'), {
+      target: { value: 'Designer' },
+    });
+    expect(
+      screen.queryByText(/was ignored because it is not a safe https address/),
+    ).not.toBeInTheDocument();
   });
 
   it('handles an unsupported contract version and unsafe URLs gracefully', () => {
@@ -215,6 +234,102 @@ describe('guided prepare route', () => {
       screen.getByRole('button', { name: 'Download résumé in both formats' }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Resume preview')).toBeInTheDocument();
+  });
+
+  it('moves focus and the current-step marker when continuing', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderGuided(jobSearch());
+    await chooseAssistant(user);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Prepare tailored content' }),
+    ).toHaveFocus();
+    const progress = screen.getByRole('navigation', { name: 'Application progress' });
+    const items = within(progress).getAllByRole('listitem');
+    expect(items[1]).toHaveAttribute('aria-current', 'step');
+    expect(items[0]).not.toHaveAttribute('aria-current');
+  });
+
+  it('normalizes blank job URLs and refuses unsafe links', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderGuided();
+
+    fireEvent.change(screen.getByLabelText('Job-description URL (https)'), {
+      target: { value: '   ' },
+    });
+    expect(screen.getByLabelText('Job-description URL (https)')).toHaveValue('');
+    await chooseAssistant(user);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Copy AI tailoring prompt' }));
+    expect(writeText.mock.calls[0][0]).toContain('Job-description URL: Not provided');
+
+    await user.click(screen.getByRole('button', { name: '← Back' }));
+    fireEvent.change(screen.getByLabelText('Job-description URL (https)'), {
+      target: { value: 'javascript:alert(1)' },
+    });
+    expect(screen.queryByRole('link', { name: 'Open the job description' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  });
+
+  it('keeps a previously built cover letter out of a résumé-only rebuild without deleting it', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderGuided(jobSearch());
+    await toPrepareStep(user);
+    await user.click(screen.getByRole('radio', { name: /Résumé \+ cover letter/ }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('AI-generated content'), {
+      target: { value: APPLICATION_KIT_SAMPLE_TEXT },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build documents' }));
+    expect(screen.getByRole('tab', { name: 'Cover letter' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '← Back' }));
+    await user.click(screen.getByRole('button', { name: '← Back' }));
+    await user.click(screen.getByRole('radio', { name: /Résumé only/ }));
+    expect(screen.getByText(/kept in this session/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('AI-generated content'), {
+      target: { value: SAMPLE_RESUME_TEXT },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build documents' }));
+
+    expect(screen.queryByRole('tab', { name: 'Cover letter' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue to application →' }));
+    expect(screen.queryByText(/Cover_Letter\.(pdf|docx)/)).not.toBeInTheDocument();
+  });
+
+  it('keeps a chosen template through a Back and rebuild', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
+    renderGuided(jobSearch());
+    await toBuildStep(user);
+    fireEvent.change(screen.getByLabelText('AI-generated content'), {
+      target: { value: SAMPLE_RESUME_TEXT },
+    });
+    await user.click(screen.getByRole('button', { name: 'Build documents' }));
+
+    await user.click(screen.getByRole('button', { name: 'Format' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
+    await user.click(screen.getByRole('radio', { name: /ATS Simple\./ }));
+    await user.click(screen.getByRole('button', { name: 'Close formatting panel' }));
+
+    await user.click(screen.getByRole('button', { name: '← Back' }));
+    await user.click(screen.getByRole('button', { name: 'Build documents' }));
+    await user.click(screen.getByRole('button', { name: 'Format' }));
+    await user.click(screen.getByRole('tab', { name: 'Designs' }));
+    expect(screen.getByRole('radio', { name: /ATS Simple\./ })).toBeChecked();
+  });
+
+  it('cleans legacy drafts on the guided route', async () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(createSampleResume()));
+    localStorage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify(createSampleCoverLetter()));
+    renderGuided();
+
+    await waitFor(() => {
+      expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+      expect(localStorage.getItem(COVER_LETTER_DRAFT_KEY)).toBeNull();
+    });
   });
 
   it('builds a résumé-and-cover-letter kit and exposes both documents', async () => {

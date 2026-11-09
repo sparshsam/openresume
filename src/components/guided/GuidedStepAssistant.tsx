@@ -63,7 +63,7 @@ export function GuidedStepAssistant({
             className="button button-small"
             onClick={() => setEditing((value) => !value)}
             aria-expanded={editing}
-            aria-controls="guided-job-form"
+            aria-controls={editing ? 'guided-job-form' : undefined}
           >
             {editing ? 'Done editing' : 'Edit job details'}
           </button>
@@ -76,7 +76,7 @@ export function GuidedStepAssistant({
           <dd>{display(job.employer)}</dd>
           <dt>Location</dt>
           <dd>{display(job.location)}</dd>
-          {job.jobDescriptionUrl ? (
+          {job.jobDescriptionUrl && isSafeHttpsUrl(job.jobDescriptionUrl) ? (
             <>
               <dt>Job description</dt>
               <dd>
@@ -86,7 +86,7 @@ export function GuidedStepAssistant({
               </dd>
             </>
           ) : null}
-          {job.applicationUrl ? (
+          {job.applicationUrl && isSafeHttpsUrl(job.applicationUrl) ? (
             <>
               <dt>Application page</dt>
               <dd>
@@ -97,6 +97,13 @@ export function GuidedStepAssistant({
             </>
           ) : null}
         </dl>
+
+        {!job.jobDescriptionUrl ? (
+          <p className="guided-callout">
+            No job-description URL was provided. The prompt will ask your AI assistant to request
+            the complete description.
+          </p>
+        ) : null}
 
         {jobWarnings.length > 0 ? (
           <ul className="guided-warning-list" aria-label="Job detail warnings">
@@ -166,7 +173,9 @@ export function GuidedStepAssistant({
                 maxLength={2048}
                 aria-invalid={Boolean(descriptionError)}
                 aria-describedby={descriptionError ? 'guided-jd-url-error' : undefined}
-                onChange={(event) => onJobChange({ jobDescriptionUrl: event.target.value })}
+                onChange={(event) =>
+                  onJobChange({ jobDescriptionUrl: event.target.value.trim() || undefined })
+                }
               />
               {descriptionError ? (
                 <p className="guided-field-error" id="guided-jd-url-error" role="alert">
@@ -187,7 +196,9 @@ export function GuidedStepAssistant({
                 maxLength={2048}
                 aria-invalid={Boolean(applicationError)}
                 aria-describedby={applicationError ? 'guided-apply-url-error' : undefined}
-                onChange={(event) => onJobChange({ applicationUrl: event.target.value })}
+                onChange={(event) =>
+                  onJobChange({ applicationUrl: event.target.value.trim() || undefined })
+                }
               />
               {applicationError ? (
                 <p className="guided-field-error" id="guided-apply-url-error" role="alert">

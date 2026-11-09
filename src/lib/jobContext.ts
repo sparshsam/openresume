@@ -28,8 +28,10 @@ export interface JobContextResult {
   hasContext: boolean;
 }
 
+const FORMAT_CHARACTERS = /[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g;
+
 function cleanShort(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
+  return value.replace(FORMAT_CHARACTERS, '').replace(/\s+/g, ' ').trim();
 }
 
 function cleanText(value: string): string {
@@ -111,10 +113,12 @@ export function parseJobContext(search: string): JobContextResult {
 
   const rawVersion = params.get('contract');
   if (rawVersion !== null) {
-    const requested = Number.parseInt(rawVersion, 10);
-    if (!Number.isFinite(requested) || requested !== JOB_CONTEXT_VERSION) {
+    const normalizedVersion = rawVersion.trim();
+    if (normalizedVersion !== String(JOB_CONTEXT_VERSION)) {
+      // Keep the echoed version bounded even if the query string is hostile.
+      const shown = normalizedVersion.slice(0, 4) || '(empty)';
       warnings.push(
-        `Unsupported job-context contract version "${rawVersion}". Reading the version ${JOB_CONTEXT_VERSION} fields.`,
+        `Unsupported job-context contract version "${shown}". Reading the version ${JOB_CONTEXT_VERSION} fields.`,
       );
     }
   }
@@ -156,6 +160,7 @@ export function parseJobContext(search: string): JobContextResult {
 export function isSafeHttpsUrl(value: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return true;
+  if (trimmed.length > JOB_CONTEXT_LIMITS.url) return false;
   try {
     const parsed = new URL(trimmed);
     return (

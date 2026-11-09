@@ -56,6 +56,24 @@ describe('parseJobContext', () => {
     expect(invalid.warnings.some((warning) => warning.includes('contract version'))).toBe(true);
   });
 
+  it('accepts only the exact supported contract version', () => {
+    const malformed = parseJobContext(`?${search({ contract: '1x', job_title: 'Designer' })}`);
+    expect(malformed.warnings.some((warning) => warning.includes('contract version'))).toBe(true);
+
+    const long = parseJobContext(`?${search({ contract: '9'.repeat(40), job_title: 'Designer' })}`);
+    const warning = long.warnings.find((entry) => entry.includes('contract version')) ?? '';
+    expect(warning).toContain('9999');
+    expect(warning.length).toBeLessThan(160);
+  });
+
+  it('strips bidirectional and zero-width format characters', () => {
+    const { job } = parseJobContext(
+      `?${search({ job_title: 'Back\u202eEngineer\u200b', employer: 'Acme\ufeff' })}`,
+    );
+    expect(job.title).toBe('BackEngineer');
+    expect(job.employer).toBe('Acme');
+  });
+
   it('works without context', () => {
     const result = parseJobContext('');
     expect(result.hasContext).toBe(false);

@@ -12,6 +12,7 @@ import { parseResume } from '../../lib/parse';
 import { parseApplicationKit } from '../../lib/parseApplicationKit';
 import { resumeHasContent } from '../../lib/resumeValidation';
 import { applyPageMeta } from '../../lib/publicPages';
+import { clearLegacyDrafts } from '../../lib/storage';
 import { findGuidedAssistant, type GuidedAssistantId } from '../../lib/guidedAssistants';
 import { isSafeHttpsUrl, parseJobContext, type JobContext } from '../../lib/jobContext';
 import { buildGuidedPrompt, type GuidedOutput } from '../../lib/guidedPrompt';
@@ -73,6 +74,7 @@ export function GuidedWorkflow() {
   const [resume, setResume] = useState<Resume | null>(null);
   const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [jobWarnings, setJobWarnings] = useState<string[]>(initial.warnings);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToastId = useRef(0);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -91,6 +93,7 @@ export function GuidedWorkflow() {
 
   useEffect(() => {
     applyPageMeta('prepare');
+    clearLegacyDrafts();
   }, []);
 
   useEffect(() => {
@@ -139,6 +142,8 @@ export function GuidedWorkflow() {
 
   const updateJob = (patch: Partial<JobContext>) => {
     setJob((current) => ({ ...current, ...patch }));
+    // Warnings describe the incoming URL context, not the edited values.
+    setJobWarnings([]);
   };
 
   const buildDocuments = () => {
@@ -194,7 +199,7 @@ export function GuidedWorkflow() {
         ...parsed.resume,
         template: current?.template ?? parsed.resume.template,
       }));
-      setCoverLetter(null);
+      // A résumé-only build hides any existing cover letter without deleting it.
       setWarnings(parsed.warnings);
     }
 
@@ -215,6 +220,7 @@ export function GuidedWorkflow() {
     setResume(null);
     setCoverLetter(null);
     setWarnings([]);
+    setJobWarnings([]);
     setToasts([]);
   };
 
@@ -255,7 +261,7 @@ export function GuidedWorkflow() {
           <GuidedStepAssistant
             job={job}
             hasJobContext={hasJobContext}
-            jobWarnings={initial.warnings}
+            jobWarnings={jobWarnings}
             assistant={assistantId}
             confirmed={confirmed}
             onAssistant={setAssistantId}
@@ -272,6 +278,7 @@ export function GuidedWorkflow() {
             output={output}
             prompt={prompt}
             copyState={copyState}
+            hasHiddenCoverLetter={output === 'resume' && Boolean(coverLetter)}
             onOutput={(value) => {
               setOutput(value);
               setCopyState('idle');
@@ -300,7 +307,7 @@ export function GuidedWorkflow() {
         {step === 4 && resume ? (
           <GuidedStepReview
             resume={resume}
-            coverLetter={coverLetter}
+            coverLetter={output === 'applicationKit' ? coverLetter : null}
             job={job}
             warnings={warnings}
             onResume={(updater) =>
@@ -323,7 +330,7 @@ export function GuidedWorkflow() {
           <GuidedStepApply
             job={job}
             resume={resume}
-            coverLetter={coverLetter}
+            coverLetter={output === 'applicationKit' ? coverLetter : null}
             onBack={() => goToStep(4)}
             onStartOver={startOver}
           />

@@ -100,5 +100,12 @@ describe('guided prompt', () => {
     expect(prompt).toMatch(/Job-description URL: Not provided/i);
     expect(prompt).toMatch(/No listing summary was provided/i);
     expect(prompt).toMatch(/ask the applicant/i);
+
+    const empty = buildGuidedPrompt(
+      { version: 1, jobDescriptionUrl: '', applicationUrl: '   ' },
+      'resume',
+    );
+    expect(empty).toMatch(/Job-description URL: Not provided/i);
+    expect(empty).toMatch(/Employer application URL: Not provided/i);
   });
 });

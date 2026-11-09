@@ -1,4 +1,5 @@
 import type { GuidedAssistant } from '../../lib/guidedAssistants';
+import { isSafeHttpsUrl } from '../../lib/jobContext';
 import type { JobContext } from '../../lib/jobContext';
 import type { GuidedOutput } from '../../lib/guidedPrompt';
 
@@ -10,6 +11,7 @@ interface GuidedStepPrepareProps {
   output: GuidedOutput;
   prompt: string;
   copyState: CopyState;
+  hasHiddenCoverLetter: boolean;
   onOutput: (output: GuidedOutput) => void;
   onCopy: () => void;
   onBack: () => void;
@@ -22,6 +24,7 @@ export function GuidedStepPrepare({
   output,
   prompt,
   copyState,
+  hasHiddenCoverLetter,
   onOutput,
   onCopy,
   onBack,
@@ -69,10 +72,17 @@ export function GuidedStepPrepare({
           </label>
         </fieldset>
 
+        {hasHiddenCoverLetter ? (
+          <p className="guided-note">
+            Your existing cover letter is kept in this session but will not be included in this
+            résumé-only application. Choose “Résumé + cover letter” and rebuild to include it.
+          </p>
+        ) : null}
+
         <div className="guided-callout">
           <p>
             <strong>Job-description link:</strong>{' '}
-            {job.jobDescriptionUrl ? (
+            {job.jobDescriptionUrl && isSafeHttpsUrl(job.jobDescriptionUrl) ? (
               <a href={job.jobDescriptionUrl} target="_blank" rel="noopener noreferrer">
                 {job.jobDescriptionUrl}
               </a>
