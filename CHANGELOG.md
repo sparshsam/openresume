@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] — 2026-11-08
+
+### Added
+
+- **Guided job-application workflow at `/prepare`.** A separate route for clients arriving from the Kovina Job Directory. It guides the client through assistant selection, a job-specific tailoring prompt, structured-content build, review/download, and apply. The default landing page and builder are unchanged.
+- **Versioned Job Directory contract.** `parseJobContext` reads public `contract=1` fields from the query string: job ID, title, employer, location, job-description URL, employer application URL, listing details, and qualifications. URLs must be safe `https:` values; oversize values are limited or dropped with warnings; unknown parameters are ignored; the route works without context.
+- **Job-specific guided prompt.** `buildGuidedPrompt` requires both the applicant's base résumé and the complete job description, includes the job-description URL, asks for pasted text or screenshots when the URL cannot be read, explicitly refuses to treat the listing summary as the full description, and reuses the shared field-placement and structured-output contracts.
+- **Reused review and export engines.** Step 4 composes the existing editor, live preview, templates, formatting drawer, and PDF/DOCX exporters. Guided downloads use `ApplicantName_JobTitle_Resume.pdf` and `ApplicantName_JobTitle_Cover_Letter.docx`; the default builder keeps its existing names.
+- **Guided completion screen.** Step 5 opens the employer's application URL in a new tab, reminds the client to have the downloaded documents ready, and states that OpenResume does not submit applications.
+- **Regression coverage** for route handling, malformed job context, contract limits and URL safety, prompt safeguards, resume-only and Application Kit flows, parse recovery, guided filenames, guided exports, application links, and the unchanged default builder.
+
+### Changed
+
+- Added `prepare.html` as a second Vite entry with its own metadata and `noindex, follow`; `/prepare` is served by `cleanUrls`.
+- Version bumped to 0.3.0.
+
+### Tests
+
+- 597 tests across 44 files, including the new `jobContext`, `guidedPrompt`, `guidedWorkflow`, `guidedExport`, and `resumeValidation` suites.
+
 ## [0.2.1] — 2026-11-08
 
 ### Added

@@ -46,46 +46,49 @@ flowchart LR
 
 ## Modules
 
-| Module                                     | Responsibility                                        | Must not                          |
-| ------------------------------------------ | ----------------------------------------------------- | --------------------------------- |
-| `src/components/LandingPage.tsx`           | Document selection and session Open actions           | Own document state                |
-| `src/components/ToastRegion.tsx`           | Dismissible success and error notifications           | Hold document state               |
-| `src/components/InfoPages.tsx`             | About, Privacy, and Terms content                     | Own application state             |
-| `src/components/InternalLink.tsx`          | History-based internal navigation without reloads     | Bypass the app router             |
-| `src/lib/publicPages.ts`                   | Path resolution, page metadata, and history push      | Persist documents                 |
-| `src/components/PrepareScreen.tsx`         | Shared preparation, validation, AI copy, examples     | Parse with a wrong parser         |
-| `src/components/Header.tsx`                | Brand, context actions, status, theme slot            | Own document state                |
-| `src/components/ThemeProvider.tsx`         | Resolve and persist light/dark theme                  | Affect document colors            |
-| `src/lib/theme.ts`                         | Theme context, key, and system detection              | Render UI                         |
-| `src/lib/themeAssets.ts`                   | Single visible header and favicon mapping             | Alter generated artwork           |
-| `src/lib/tokens.ts`                        | Document accent palette and fixed neutral colors      | Read UI theme tokens              |
-| `src/components/Footer.tsx`                | Kovina attribution, links, and version                | Invent branding                   |
-| `src/lib/appMeta.ts`                       | Build-time application version                        | Read the network                  |
-| `src/lib/codeFence.ts`                     | Strip one complete enclosing fence; preserve interior | Touch ambiguous or partial fences |
-| `src/lib/applicationKitFormat.ts`          | Shared Application Kit delimiter constants            | Parse or render                   |
-| `src/lib/parseApplicationKit.ts`           | Split one delimited input into two existing parses    | Duplicate parser rules            |
-| `src/components/ApplicationKitToolbar.tsx` | Kit tabs and combined/separate export actions         | Own document state                |
-| `src/lib/parse.ts`                         | Deterministic text → `Resume`; warnings, no throwing  | Know about React or layout        |
-| `src/lib/parseCoverLetter.ts`              | Deterministic text → `CoverLetter`; warnings          | Know about React or layout        |
-| `src/lib/aiInstructions.ts`                | Parser-generated AI instruction templates             | Duplicate parser rules            |
-| `src/lib/coverLetterLayout.ts`             | Single-column letter layout and pagination            | Recalculate resume layout         |
-| `src/lib/coverLetterEdits.ts`              | Pure cover letter edit helpers                        | Mutate inputs                     |
-| `src/lib/coverLetterScaffold.ts`           | Reuse resume identity in a letter scaffold            | Generate letter body content      |
-| `src/lib/serialize.ts`                     | `Resume` → canonical input text (round-trip)          | Lose information                  |
-| `src/lib/normalize.ts`                     | Upgrade legacy templates and reject invalid presets   | Invent unsupported values         |
-| `src/lib/designs.ts`                       | Résumé design and letter style registry               | Render or parse                   |
-| `src/components/DesignGallery.tsx`         | Accessible design and letter-style selection          | Own document state                |
-| `src/components/DesignThumbnail.tsx`       | Locally rendered SVG design previews                  | Fetch images                      |
-| `src/lib/metrics.ts`                       | Presets and design scales → geometry and typography   | Read the DOM                      |
-| `src/lib/measure.ts`                       | Helvetica/Times AFM metrics and greedy word wrap      | Depend on the DOM                 |
-| `src/lib/paginate.ts`                      | Flow blocks → pages at line boundaries                | Drop or duplicate lines           |
-| `src/lib/layout.ts`                        | Resume flow blocks, header, page assembly             | Render or export                  |
-| `src/lib/content.ts`                       | Content strings for resume and letter parity checks   | Render or export                  |
-| `src/lib/exportPdf.ts`                     | Draw either `Layout` with jsPDF as selectable text    | Recalculate pagination            |
-| `src/lib/exportDocx.ts`                    | Resume tables and single-column letter documents      | Rasterize or flatten text         |
-| `src/lib/storage.ts`                       | Validate and remove identified legacy draft entries   | Touch unrelated storage           |
-| `src/lib/resumeEdits.ts`                   | Pure immutable resume edit helpers                    | Mutate inputs                     |
-| `src/App.tsx`                              | Builder view, public-page route, and both documents   | Contain layout logic              |
+| Module                                     | Responsibility                                               | Must not                                   |
+| ------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------ |
+| `src/components/LandingPage.tsx`           | Document selection and session Open actions                  | Own document state                         |
+| `src/components/ToastRegion.tsx`           | Dismissible success and error notifications                  | Hold document state                        |
+| `src/components/InfoPages.tsx`             | About, Privacy, and Terms content                            | Own application state                      |
+| `src/components/InternalLink.tsx`          | History-based internal navigation without reloads            | Bypass the app router                      |
+| `src/lib/publicPages.ts`                   | Path resolution, page metadata, and history push             | Persist documents                          |
+| `src/components/PrepareScreen.tsx`         | Shared preparation, validation, AI copy, examples            | Parse with a wrong parser                  |
+| `src/components/Header.tsx`                | Brand, context actions, status, theme slot                   | Own document state                         |
+| `src/components/ThemeProvider.tsx`         | Resolve and persist light/dark theme                         | Affect document colors                     |
+| `src/lib/theme.ts`                         | Theme context, key, and system detection                     | Render UI                                  |
+| `src/lib/themeAssets.ts`                   | Single visible header and favicon mapping                    | Alter generated artwork                    |
+| `src/lib/tokens.ts`                        | Document accent palette and fixed neutral colors             | Read UI theme tokens                       |
+| `src/components/Footer.tsx`                | Kovina attribution, links, and version                       | Invent branding                            |
+| `src/lib/appMeta.ts`                       | Build-time application version                               | Read the network                           |
+| `src/lib/codeFence.ts`                     | Strip one complete enclosing fence; preserve interior        | Touch ambiguous or partial fences          |
+| `src/lib/applicationKitFormat.ts`          | Shared Application Kit delimiter constants                   | Parse or render                            |
+| `src/lib/jobContext.ts`                    | Versioned Job Directory URL contract validation              | Read the DOM or fetch URLs                 |
+| `src/lib/guidedPrompt.ts`                  | Job-specific guided AI prompt builder                        | Call an AI provider                        |
+| `src/components/guided/`                   | Five-step guided workflow, reusing editor and export engines | Fetch applicant data or transmit documents |
+| `src/lib/parseApplicationKit.ts`           | Split one delimited input into two existing parses           | Duplicate parser rules                     |
+| `src/components/ApplicationKitToolbar.tsx` | Kit tabs and combined/separate export actions                | Own document state                         |
+| `src/lib/parse.ts`                         | Deterministic text → `Resume`; warnings, no throwing         | Know about React or layout                 |
+| `src/lib/parseCoverLetter.ts`              | Deterministic text → `CoverLetter`; warnings                 | Know about React or layout                 |
+| `src/lib/aiInstructions.ts`                | Parser-generated AI instruction templates                    | Duplicate parser rules                     |
+| `src/lib/coverLetterLayout.ts`             | Single-column letter layout and pagination                   | Recalculate resume layout                  |
+| `src/lib/coverLetterEdits.ts`              | Pure cover letter edit helpers                               | Mutate inputs                              |
+| `src/lib/coverLetterScaffold.ts`           | Reuse resume identity in a letter scaffold                   | Generate letter body content               |
+| `src/lib/serialize.ts`                     | `Resume` → canonical input text (round-trip)                 | Lose information                           |
+| `src/lib/normalize.ts`                     | Upgrade legacy templates and reject invalid presets          | Invent unsupported values                  |
+| `src/lib/designs.ts`                       | Résumé design and letter style registry                      | Render or parse                            |
+| `src/components/DesignGallery.tsx`         | Accessible design and letter-style selection                 | Own document state                         |
+| `src/components/DesignThumbnail.tsx`       | Locally rendered SVG design previews                         | Fetch images                               |
+| `src/lib/metrics.ts`                       | Presets and design scales → geometry and typography          | Read the DOM                               |
+| `src/lib/measure.ts`                       | Helvetica/Times AFM metrics and greedy word wrap             | Depend on the DOM                          |
+| `src/lib/paginate.ts`                      | Flow blocks → pages at line boundaries                       | Drop or duplicate lines                    |
+| `src/lib/layout.ts`                        | Resume flow blocks, header, page assembly                    | Render or export                           |
+| `src/lib/content.ts`                       | Content strings for resume and letter parity checks          | Render or export                           |
+| `src/lib/exportPdf.ts`                     | Draw either `Layout` with jsPDF as selectable text           | Recalculate pagination                     |
+| `src/lib/exportDocx.ts`                    | Resume tables and single-column letter documents             | Rasterize or flatten text                  |
+| `src/lib/storage.ts`                       | Validate and remove identified legacy draft entries          | Touch unrelated storage                    |
+| `src/lib/resumeEdits.ts`                   | Pure immutable resume edit helpers                           | Mutate inputs                              |
+| `src/App.tsx`                              | Builder view, public-page route, and both documents          | Contain layout logic                       |
 
 ## Data model
 
@@ -127,6 +130,12 @@ Both models share `Contact`, `ResumeTemplate`, and `FormatSettings`, but have se
 ## Exports
 
 **PDF.** jsPDF in `pt` units using the layout's page dimensions, Helvetica or Times normal/bold at the computed baselines, no compression, real text runs. Header rules and section-heading rules are drawn as vector lines at the same coordinates the preview uses. Page count always equals `Layout.pages.length`.
+
+### Guided application route
+
+`/prepare` is a second Vite HTML entry, not a change to the default builder. `App` chooses between `GuidedWorkflow` and the existing builder by pathname. `GuidedWorkflow` owns only guided session state (validated job context, selected assistant, output type, pasted text, and the resulting `Resume`/`CoverLetter`) and composes the existing `EditorPanel`, `CoverLetterEditor`, `Preview`, `FormattingPanel`, `Header`, and `Footer`. It uses the same `parseResume`/`parseApplicationKit`, layout, and export functions as the default experience; no second document engine exists.
+
+Job context is parsed by `parseJobContext` from the query string. Only public job fields are read, URLs are constrained to safe `https:` values, short and long fields have hard limits, and invalid values are dropped with warnings. `buildGuidedPrompt` reuses `AI_FIELD_DEFINITIONS` and the existing `getAiInstructions` output contract, adding the required-input safeguards, the job-description URL, and an explicit warning that the listing summary is not the full description. Guided downloads use `guidedFilename`; the default `documentFilename` and `applicationKitFilename` paths are unchanged.
 
 **DOCX.** For two-column arrangements, the `docx` package builds one no-border, three-column table per logical page (main, gap, side), ordered left-to-right according to the sidebar side and with the configured sidebar tint and divider. For linear arrangements and cover letters, it builds one full-width paragraph flow per logical page with no table cells. Line fonts map to Helvetica or Times New Roman; header variants become tab-aligned paragraphs (split/compact) or shaded banner paragraphs; heading decorations become paragraph borders and shading; title rows use a right or left tab stop; gutter entries use paragraph indentation; letter spacing maps to Word character spacing. Word reflows within a logical page, so pagination is structurally consistent with the PDF rather than pixel-identical.
 

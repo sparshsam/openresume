@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApplicationKitToolbar } from './components/ApplicationKitToolbar';
+import { GuidedWorkflow } from './components/guided/GuidedWorkflow';
 import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { EditorPanel, type FocusTarget } from './components/EditorPanel';
 import { Footer } from './components/Footer';
@@ -26,7 +27,9 @@ import { copyAiInstructions } from './lib/aiClipboard';
 import { buildCoverLetterScaffold } from './lib/coverLetterScaffold';
 import { coverLetterMeta, resumeMeta } from './lib/documentMeta';
 import { applicationKitFilename, documentFilename } from './lib/filename';
+import { downloadBlob } from './lib/download';
 import { layoutResume } from './lib/layout';
+import { isGuidedPreparePath } from './lib/jobContext';
 import { applyPageMeta, infoPageFromPath, navigate, type InfoPageKey } from './lib/publicPages';
 import { resumeDesignName, suggestedLetterStyle } from './lib/designs';
 import { clearLegacyDrafts } from './lib/storage';
@@ -64,17 +67,6 @@ import type {
   SectionKind,
 } from './types/resume';
 
-function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
 type View = 'landing' | 'prepare' | 'workspace';
 
 interface PrepareBack {
@@ -84,6 +76,13 @@ interface PrepareBack {
 }
 
 export default function App() {
+  if (isGuidedPreparePath(window.location.pathname)) {
+    return <GuidedWorkflow />;
+  }
+  return <BuilderApp />;
+}
+
+function BuilderApp() {
   const [resume, setResume] = useState<Resume | null>(null);
   const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
 

@@ -21,6 +21,7 @@ export default defineConfig({
         about: page('about'),
         privacy: page('privacy'),
         terms: page('terms'),
+        prepare: page('prepare'),
       },
     },
   },

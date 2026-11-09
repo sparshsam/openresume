@@ -11,9 +11,9 @@ A privacy-first, local-first resume and cover letter builder that turns structur
 
 ## Status
 
-**Early development — v0.2.1.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
+**Early development — v0.3.0.** Built for a single-user, fast-repetition workflow first; the architecture leaves room for broader public use later.
 
-**Live:** https://resume.kovina.org (production, v0.2.1). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+**Live:** https://resume.kovina.org (production, v0.3.0). The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Description
 
@@ -34,6 +34,8 @@ Choose document → Prepare content → Build → Edit/Preview → Export
 OpenResume opens on a document-selection screen with three cards: **Resume**, **Cover Letter**, and **Application Kit**. Each card starts a new build in its preparation screen and offers **Copy AI Instructions**. A document created in the current session can be reopened from its card with **Open resume**, **Open cover letter**, or **Open application kit**.
 
 The **Application Kit** builds a tailored resume and matching cover letter together from one combined AI response. Both documents open in a tabbed workspace, remain independently editable, and can be exported as one combined PDF, one combined Word document, or separate files.
+
+A separate guided route at **`/prepare`** supports clients arriving from the Kovina Job Directory. It walks through assistant selection, a job-specific tailoring prompt, build, review, and apply, while reusing the same parsers, editors, templates, formatting, and exports. Job Directory links are documented in [docs/job-directory-integration.md](docs/job-directory-integration.md).
 
 ![OpenResume document selection](assets/hero/hero-light.png)
 
@@ -57,6 +59,7 @@ These pages share the application header, footer, themes, and responsive layout.
 - **Ten structurally distinct résumé designs**, browsable as compact proportional thumbnails in a docked Format drawer with **Designs** and **Formatting** tabs. Switching designs preserves every section, entry, field, bullet, and formatting value, and both documents in a kit stay independent.
 - **Defensive contact parsing** that classifies email, phone, and links by shape and refuses to accept a job title, employer, or headline as a location. Missing fields never shift later values, and rejected values surface as warnings.
 - **One explicit AI contact contract** shared by the résumé, cover-letter, and application-kit templates, with published examples for missing headlines, missing locations, missing phones, and multiple links.
+- **Guided job-application workflow** at `/prepare`: five accessible steps, a versioned Job Directory URL contract, a job-specific prompt that refuses to proceed without the base résumé and the full job description, reusable review/formatting/export, and guided filenames such as `Jordan-Avery_Product-Engineer_Resume.pdf`.
 - **Four cover-letter styles** with an optional coordinated suggestion when a résumé design is chosen.
 - **Drag-and-drop and button-based section ordering**, always reflected in the editor, preview, PDF, and DOCX.
 - **Pagination controls** that keep headings with their first entry, keep entries together when they fit, and let any section start on a new page without creating blank pages.

@@ -21,6 +21,12 @@ Nothing else is persisted. Documents are lost on reload, navigation away, or clo
 
 Earlier releases stored documents under `openresume:draft.v1` and `openresume:cover-letter.v1`. On startup, OpenResume checks those two keys and removes them only when their contents validate as OpenResume documents. Other values in local storage are left untouched and are never read as documents.
 
+## Guided application route
+
+The `/prepare` route accepts **public job information** in its query string (job title, employer, location, job ID, job-description URL, application URL, and short listing summaries). It never reads applicant names, emails, résumés, or generated documents from the URL, and it never writes them there.
+
+Validated job context and the resulting documents stay in memory for the current page session. The route adds no storage, accounts, analytics, or network calls. When the client opens ChatGPT, Claude, or Gemini in a separate tab, the content they choose to paste there is handled by that provider under its own terms; OpenResume does not send or receive it.
+
 ## Hosting
 
 The application is served as static files by Vercel. Vercel and other infrastructure providers may process ordinary technical information such as IP addresses and HTTP request metadata to deliver and secure the site. OpenResume does not add analytics, advertising, tracking cookies, or document-content collection.

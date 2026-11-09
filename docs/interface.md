@@ -16,6 +16,20 @@ Each card is a single clickable surface with a visible primary action; the whole
 
 Build always opens preparation. When a document exists in the current session, its card also offers **Open resume**, **Open cover letter**, or **Open application kit** to return to that workspace. Reloading the page clears all documents; there are no saved-draft badges or restoration controls.
 
+## Guided application route
+
+`/prepare` is a separate, client-facing workflow for people arriving from the Kovina Job Directory. It does not replace the default landing page or builder. It uses the same header, theme, footer, parsers, editors, preview, templates, formatting, and exports.
+
+The route has five steps with a visible progress list:
+
+1. **Choose an AI assistant** — job title, employer, and location are shown from validated query parameters (or entered in a small optional form when the route is opened directly). ChatGPT, Claude, and Gemini each open their new-chat page in a separate tab. The client must confirm before continuing.
+2. **Prepare tailored content** — choose résumé-only or résumé-plus-cover-letter output, then copy one job-specific prompt. The page explains that the assistant needs the existing résumé and the complete job description.
+3. **Build documents** — paste the assistant’s structured output. The existing parsers validate identity, required content, and field placement. Errors stay inline, preserve the pasted text, and point back to the assistant.
+4. **Review and download** — the existing editor, live preview, templates, formatting drawer, and export engines are reused. Separate PDF, Word, and both-format downloads use guided filenames (`ApplicantName_JobTitle_Resume.pdf`, `ApplicantName_JobTitle_Cover_Letter.docx`). The default builder keeps its existing filenames.
+5. **Apply** — a completion screen opens the employer’s application URL in a new tab, reminds the client to have the downloaded files ready, and states that OpenResume does not submit applications.
+
+All job context and applicant content stay in the browser. The Job Directory URL contract is documented in [job-directory-integration.md](job-directory-integration.md). The route is `noindex, follow` and works without any query string.
+
 ## Preparation
 
 Each document has a preparation screen with:
