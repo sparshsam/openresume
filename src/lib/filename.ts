@@ -29,3 +29,23 @@ export function applicationKitFilename(name: string, extension: 'pdf' | 'docx'):
 export function resumeFilename(name: string, extension: 'pdf' | 'docx'): string {
   return documentFilename(name, 'resume', extension);
 }
+
+function guidedPart(value: string, fallback: string): string {
+  return sanitizeName(value) || fallback;
+}
+
+/**
+ * Guided workflow names keep the applicant, target job, and document kind
+ * visible: `ApplicantName_JobTitle_Resume.pdf`.
+ */
+export function guidedFilename(
+  name: string,
+  jobTitle: string,
+  kind: DocumentKind,
+  extension: 'pdf' | 'docx',
+): string {
+  const applicant = guidedPart(name, 'Applicant');
+  const job = guidedPart(jobTitle, 'Position');
+  const document = kind === 'resume' ? 'Resume' : 'Cover_Letter';
+  return `${applicant}_${job}_${document}.${extension}`;
+}

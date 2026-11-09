@@ -27,11 +27,29 @@ describe('public page routing and metadata', () => {
   });
 
   it('defines canonical metadata on the production domain', () => {
-    for (const page of ['home', ...PAGES] as const) {
+    for (const page of ['home', ...PAGES, 'prepare'] as const) {
       expect(PAGE_META[page].path.startsWith('/')).toBe(true);
       const canonical = `https://resume.kovina.org${PAGE_META[page].path}`;
       expect(canonical.startsWith('https://resume.kovina.org/')).toBe(true);
     }
+  });
+
+  it('prepare.html carries guided-workflow metadata', () => {
+    const html = read('prepare.html');
+    const meta = PAGE_META.prepare;
+    const canonical = `https://resume.kovina.org${meta.path}`;
+
+    expect(meta.path).toBe('/prepare');
+    expect(html).toContain(`<title>${meta.title}</title>`);
+    expect(html).toContain(`<link rel="canonical" href="${canonical}" />`);
+    expect(html).toContain('name="description"');
+    expect(html).toContain(meta.description);
+    expect(html).toContain(`<meta property="og:url" content="${canonical}" />`);
+    expect(html).toContain('https://resume.kovina.org/openresume-social.png');
+    expect(html).toContain('<meta name="robots" content="noindex, follow" />');
+    expect(html).not.toContain('application/ld+json');
+    expect(html).toContain('<div id="root"></div>');
+    expect(html).toContain('src="/src/main.tsx"');
   });
 
   it.each(PAGES)('%s.html carries matching page metadata', (page) => {
@@ -66,7 +84,7 @@ describe('public page routing and metadata', () => {
   });
 
   it('preloads the same favicons for both themes', () => {
-    for (const file of ['index.html', 'about.html', 'privacy.html', 'terms.html']) {
+    for (const file of ['index.html', 'about.html', 'privacy.html', 'terms.html', 'prepare.html']) {
       const html = read(file);
       expect(html).toContain('href="/favicon-32.png"');
       expect(html).toContain('href="/favicon-16.png"');
@@ -88,6 +106,7 @@ describe('public page routing and metadata', () => {
     };
     expect(config.cleanUrls).toBe(true);
     expect(config.headers?.some((header) => header.source === '/(about|privacy|terms)')).toBe(true);
+    expect(config.headers?.some((header) => header.source === '/prepare')).toBe(true);
     expect(read('vercel.json')).toContain('"X-Robots-Tag"');
     expect(read('vercel.json')).toContain('openresume-sigma\\\\.vercel\\\\.app');
   });

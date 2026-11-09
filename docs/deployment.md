@@ -2,7 +2,7 @@
 
 OpenResume is a static, client-only Vite application. Production is hosted on Vercel from the `main` branch.
 
-> **Deployment status:** production serves v0.2.1 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
+> **Deployment status:** production serves v0.3.0 at https://resume.kovina.org. The original Vercel deployment remains available at https://openresume-sigma.vercel.app.
 
 ## Production
 
@@ -46,6 +46,7 @@ The About, Privacy Policy, and Terms pages are separate Vite HTML entries:
 - `about.html` → `/about`
 - `privacy.html` → `/privacy`
 - `terms.html` → `/terms`
+- `prepare.html` → `/prepare` (guided application workflow; `noindex, follow`)
 
 `vercel.json` sets `cleanUrls: true`, so Vercel serves the extensionless URLs and direct requests to each path load the matching static document. Each shell carries its own title, description, canonical URL, Open Graph tags, Twitter card, favicon declarations, and the pre-hydration theme script.
 

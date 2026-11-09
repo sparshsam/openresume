@@ -1,7 +1,29 @@
+import type { ReactNode } from 'react';
 import { APP_VERSION } from '../lib/appMeta';
 import { InternalLink } from './InternalLink';
 
-export function Footer() {
+interface FooterProps {
+  /** Use full-page links on routes outside the single-page builder. */
+  plainLinks?: boolean;
+}
+
+function FooterLink({
+  href,
+  plain,
+  children,
+}: {
+  href: string;
+  plain: boolean;
+  children: ReactNode;
+}) {
+  return plain ? (
+    <a href={href}>{children}</a>
+  ) : (
+    <InternalLink href={href}>{children}</InternalLink>
+  );
+}
+
+export function Footer({ plainLinks = false }: FooterProps) {
   return (
     <footer className="app-footer" role="contentinfo">
       <div className="footer-inner">
@@ -18,9 +40,15 @@ export function Footer() {
           .
         </p>
         <nav className="footer-links" aria-label="Footer">
-          <InternalLink href="/about">About</InternalLink>
-          <InternalLink href="/privacy">Privacy</InternalLink>
-          <InternalLink href="/terms">Terms</InternalLink>
+          <FooterLink href="/about" plain={plainLinks}>
+            About
+          </FooterLink>
+          <FooterLink href="/privacy" plain={plainLinks}>
+            Privacy
+          </FooterLink>
+          <FooterLink href="/terms" plain={plainLinks}>
+            Terms
+          </FooterLink>
           <a
             href="https://github.com/sparshsam/openresume"
             target="_blank"

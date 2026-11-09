@@ -2,7 +2,7 @@ export const SITE_ORIGIN = 'https://resume.kovina.org';
 export const SOCIAL_IMAGE = `${SITE_ORIGIN}/openresume-social.png`;
 
 export type InfoPageKey = 'about' | 'privacy' | 'terms';
-type PageKey = 'home' | InfoPageKey;
+export type PageKey = 'home' | InfoPageKey | 'prepare';
 
 interface PageMeta {
   title: string;
@@ -35,6 +35,12 @@ export const PAGE_META: Record<PageKey, PageMeta> = {
       'Terms for using OpenResume, a free, open-source resume and cover letter builder from Kovina.',
     path: '/terms',
   },
+  prepare: {
+    title: 'Prepare a job application — OpenResume',
+    description:
+      'A guided, privacy-first job application workflow. Turn a tailored AI response into a precise résumé or résumé-and-cover-letter application kit.',
+    path: '/prepare',
+  },
 };
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string): void {
@@ -57,7 +63,7 @@ function setCanonical(href: string): void {
   link.href = href;
 }
 
-export function applyPageMeta(page: InfoPageKey | null): void {
+export function applyPageMeta(page: PageKey | null): void {
   const key: PageKey = page ?? 'home';
   const meta = PAGE_META[key];
   const canonical = `${SITE_ORIGIN}${meta.path}`;

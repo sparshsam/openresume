@@ -154,3 +154,16 @@ When adding a section alias or changing the input format:
 - Clipboard failure shows a clear error without losing the textarea content.
 - Copying uses the Clipboard API only; it makes no network request.
 - **Load Example** is separate: it fills the fictional example into the textarea and does not copy instructions.
+
+## Guided workflow prompt
+
+`buildGuidedPrompt(job, output)` in [`src/lib/guidedPrompt.ts`](../src/lib/guidedPrompt.ts) creates the job-specific prompt used by `/prepare`. It adds a required-input contract before the shared definitions:
+
+- The applicant's existing résumé must be uploaded or pasted.
+- The complete job description must be read from the supplied `jd_url`. If the assistant cannot access it, the prompt requires it to ask for pasted text or screenshots.
+- The listing summary supplied by Job Directory is explicitly marked as a brief preview, not a substitute for the full description.
+- The assistant must never invent applicant facts; it must ask a clarifying question when something essential is missing.
+- The output contract is the existing `getAiInstructions('resume')` or `getAiInstructions('applicationKit')`, so the guided output remains parser-compatible.
+- The shared `AI_FIELD_DEFINITIONS` block keeps the professional headline, target job title, employment job title, employer, and location separate.
+
+`tests/guidedPrompt.test.ts` checks the required-input safeguards, the job-description URL, the listing-summary warning, and both output contracts.
